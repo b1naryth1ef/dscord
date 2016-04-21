@@ -86,37 +86,37 @@ class JSONObject {
 
 // Converts a Variant array to a JSONValue array
 JSONValue convertVariantArray(Variant v) {
-	JSONValue[] result;
+  JSONValue[] result;
 
-	foreach (Variant i; v) {
-		result ~= variantToJSON(i);
-	}
+  foreach (Variant i; v) {
+    result ~= variantToJSON(i);
+  }
 
-	return JSONValue(result);
+  return JSONValue(result);
 }
 
 // Converts a Variant type to a JSONValue type
 JSONValue variantToJSON(Variant v) {
   // TODO: figure out a proper way to do this
-	if (v.type == typeid(null)) {
-		return JSONValue(null);
-	} else if (v.type == typeid(string)) {
-		return JSONValue(v.get!(string));
-	} else if (v.type == typeid(int)) {
-		return JSONValue(v.get!(int));
-	} else if (v.type == typeid(uint)) {
-		return JSONValue(v.get!(uint));
-	} else if (v.type == typeid(float)) {
-		return JSONValue(v.get!(float));
-	} else if (v.type == typeid(bool)) {
-		return JSONValue(v.get!(bool));
-	} else if (v.type == typeid(long)) {
-		return JSONValue(v.get!(long));
+  if (v.type == typeid(null)) {
+    return JSONValue(null);
+  } else if (v.type == typeid(string)) {
+    return JSONValue(v.get!(string));
+  } else if (v.type == typeid(int)) {
+    return JSONValue(v.get!(int));
+  } else if (v.type == typeid(uint)) {
+    return JSONValue(v.get!(uint));
+  } else if (v.type == typeid(float)) {
+    return JSONValue(v.get!(float));
+  } else if (v.type == typeid(bool)) {
+    return JSONValue(v.get!(bool));
+  } else if (v.type == typeid(long)) {
+    return JSONValue(v.get!(long));
   } else if (v.type == typeid(ushort)) {
     return JSONValue(v.get!(ushort));
-	} else if (v.type == typeid(double)) {
-		return JSONValue(v.get!(double));
-	} else if (v.type == typeid(JSONObject)) {
+  } else if (v.type == typeid(double)) {
+    return JSONValue(v.get!(double));
+  } else if (v.type == typeid(JSONObject)) {
     JSONValue result;
 
     foreach (a, b; v.get!(JSONObject).obj) {
@@ -125,41 +125,41 @@ JSONValue variantToJSON(Variant v) {
     return result;
   }
 
-	try {
-		assert(v.length >= 0);
-		return convertVariantArray(v);
-	} catch (Exception) {}
+  try {
+    assert(v.length >= 0);
+    return convertVariantArray(v);
+  } catch (Exception) {}
 
-	throw new BaseError("Failed to convert Variant (%s: %s) to JSONValue", v, v.type);
+  throw new BaseError("Failed to convert Variant (%s: %s) to JSONValue", v, v.type);
 }
 
 // Converts a JSONValue type to a Variant type
 Variant jsonToVariant(JSONValue v) {
-	switch (v.type) {
-		case JSON_TYPE.NULL:
-			return Variant(null);
-		case JSON_TYPE.STRING:
-			return Variant(v.str);
-		case JSON_TYPE.INTEGER:
-			return Variant(v.integer);
-		case JSON_TYPE.UINTEGER:
-			return Variant(v.uinteger);
-		case JSON_TYPE.FLOAT:
-			return Variant(v.floating);
-		case JSON_TYPE.ARRAY:
-			Variant[] data;
+  switch (v.type) {
+    case JSON_TYPE.NULL:
+      return Variant(null);
+    case JSON_TYPE.STRING:
+      return Variant(v.str);
+    case JSON_TYPE.INTEGER:
+      return Variant(v.integer);
+    case JSON_TYPE.UINTEGER:
+      return Variant(v.uinteger);
+    case JSON_TYPE.FLOAT:
+      return Variant(v.floating);
+    case JSON_TYPE.ARRAY:
+      Variant[] data;
 
-			foreach (JSONValue i; v.array) {
-				data ~= jsonToVariant(i);
-			}
-			return Variant(data);
-		case JSON_TYPE.TRUE:
-			return Variant(true);
-		case JSON_TYPE.FALSE:
-			return Variant(false);
+      foreach (JSONValue i; v.array) {
+        data ~= jsonToVariant(i);
+      }
+      return Variant(data);
+    case JSON_TYPE.TRUE:
+      return Variant(true);
+    case JSON_TYPE.FALSE:
+      return Variant(false);
     case JSON_TYPE.OBJECT:
       return Variant(new JSONObject(v));
-		default:
-			throw new BaseError("Invalid JSONValue type %s", v.type);
-	}
+    default:
+      throw new BaseError("Invalid JSONValue type %s", v.type);
+  }
 }
