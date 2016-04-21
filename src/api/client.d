@@ -51,7 +51,7 @@ class APIResponse {
   }
 
   void ok() {
-    if (100 < this.statusCode || this.statusCode < 400) {
+    if (100 < this.statusCode && this.statusCode < 400) {
       return;
     }
 

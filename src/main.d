@@ -10,9 +10,16 @@ import vibe.http.client;
 import api.client,
        types.base;
 
-void main() {
+void main(string[] args) {
+  if (args.length <= 1) {
+    writefln("Usage: %s <token>", args[0]);
+    return;
+  }
+
+  writeln(args[1]);
+
   runTask(() {
-    auto client = new APIClient(":D");
+    auto client = new APIClient(args[1]);
     auto me = client.me();
     writefln("id: %s", me.id);
     writefln("username: %s", me.username);
