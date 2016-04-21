@@ -1,0 +1,13 @@
+{
+  "name": "dscord",
+  "description": "discord client library",
+  "authors": ["Andrei Zbikowski"],
+  "homepage": "http://github.com/b1naryth1ef/dscord",
+  "license": "GPL-2.0",
+  "dependencies": {
+    "libasync": "~>0.7.9",
+    "shaker": "~>0.0.7",
+    "vibe-d": "~>0.7.28"
+  }
+}
+
