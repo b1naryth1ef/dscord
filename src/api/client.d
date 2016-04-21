@@ -142,4 +142,10 @@ class APIClient {
     res.ok();
     return this.spawn!Guild(res.json);
   }
+
+  string gateway() {
+    auto res = this.requestJSON(HTTPMethod.GET, URL("gateway"));
+    res.ok();
+    return res.json.get!string("url");
+  }
 }

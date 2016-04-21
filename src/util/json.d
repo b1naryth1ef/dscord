@@ -20,6 +20,8 @@ JSONObject[] fromJSONArray(string raw) {
 class JSONObject {
   Variant[string] obj;
 
+  this() {}
+
   this(JSONValue v) {
     this.load(v);
   }
@@ -62,6 +64,11 @@ class JSONObject {
     }
   }
 
+  JSONObject set(T)(string key, T value) {
+    this.obj[key] = value;
+    return this;
+  }
+
   Variant opIndex(string key) {
     return this.obj[key];
   }
@@ -90,6 +97,7 @@ JSONValue convertVariantArray(Variant v) {
 
 // Converts a Variant type to a JSONValue type
 JSONValue variantToJSON(Variant v) {
+  // TODO: figure out a proper way to do this
 	if (v.type == typeid(null)) {
 		return JSONValue(null);
 	} else if (v.type == typeid(string)) {
@@ -104,9 +112,18 @@ JSONValue variantToJSON(Variant v) {
 		return JSONValue(v.get!(bool));
 	} else if (v.type == typeid(long)) {
 		return JSONValue(v.get!(long));
+  } else if (v.type == typeid(ushort)) {
+    return JSONValue(v.get!(ushort));
 	} else if (v.type == typeid(double)) {
 		return JSONValue(v.get!(double));
-	}
+	} else if (v.type == typeid(JSONObject)) {
+    JSONValue result;
+
+    foreach (a, b; v.get!(JSONObject).obj) {
+      result[a] = variantToJSON(b);
+    }
+    return result;
+  }
 
 	try {
 		assert(v.length >= 0);
