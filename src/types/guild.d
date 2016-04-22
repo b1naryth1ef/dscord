@@ -6,7 +6,7 @@ import std.stdio,
 import types.base,
        util.json;
 
-alias GuildMap = Guild[Snowflake];
+alias GuildMap = ModelMap!(Snowflake, Guild);
 
 class Role {
   Snowflake id;
@@ -26,7 +26,7 @@ class Emoji {
   bool managed;
 }
 
-class Guild : APIObject {
+class Guild : Model {
   Snowflake id;
   Snowflake owner_id;
   Snowflake afk_channel_id;
@@ -47,7 +47,7 @@ class Guild : APIObject {
     super(obj);
   }
 
-  void load(JSONObject obj) {
+  override void load(JSONObject obj) {
     this.id = obj.get!Snowflake("id");
   }
 }

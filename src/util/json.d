@@ -1,7 +1,7 @@
 module util.json;
 
-import std.variant,
-       std.json;
+import std.variant;
+public import std.json;
 
 import util.errors;
 
@@ -41,7 +41,7 @@ class JSONObject {
     return this;
   }
 
-  string dumps() {
+  JSONValue asJSON() {
     int[string] hack;
     auto res = JSONValue(hack);
 
@@ -49,7 +49,16 @@ class JSONObject {
       res.object[key] = variantToJSON(value);
     }
 
-    return toJSON(&res, true);
+    return res;
+  }
+
+  string dumps() {
+    JSONValue v = this.asJSON();
+    return toJSON(&v, true);
+  }
+
+  Variant getRaw(string key) {
+    return this.obj[key];
   }
 
   T get(T)(string key) {
@@ -62,6 +71,16 @@ class JSONObject {
     } else {
       return def;
     }
+  }
+
+  JSONObject setRaw(string key, Variant value) {
+    this.obj[key] = value;
+    return this;
+  }
+
+  JSONObject setRaw(string key, JSONValue value) {
+    this.obj[key] = jsonToVariant(value);
+    return this;
   }
 
   JSONObject set(T)(string key, T value) {
@@ -97,25 +116,18 @@ JSONValue convertVariantArray(Variant v) {
 
 // Converts a Variant type to a JSONValue type
 JSONValue variantToJSON(Variant v) {
-  // TODO: figure out a proper way to do this
   if (v.type == typeid(null)) {
     return JSONValue(null);
-  } else if (v.type == typeid(string)) {
-    return JSONValue(v.get!(string));
-  } else if (v.type == typeid(int)) {
-    return JSONValue(v.get!(int));
-  } else if (v.type == typeid(uint)) {
-    return JSONValue(v.get!(uint));
-  } else if (v.type == typeid(float)) {
-    return JSONValue(v.get!(float));
-  } else if (v.type == typeid(bool)) {
-    return JSONValue(v.get!(bool));
-  } else if (v.type == typeid(long)) {
-    return JSONValue(v.get!(long));
-  } else if (v.type == typeid(ushort)) {
-    return JSONValue(v.get!(ushort));
-  } else if (v.type == typeid(double)) {
-    return JSONValue(v.get!(double));
+  } else if (v.convertsTo!string) {
+    return JSONValue(v.get!string);
+  } else if (v.convertsTo!uint) {
+    return JSONValue(v.get!uint);
+  } else if (v.convertsTo!int) {
+    return JSONValue(v.get!int);
+  } else if(v.convertsTo!float) {
+    return JSONValue(v.get!float);
+  } else if (v.convertsTo!bool) {
+    return JSONValue(v.get!bool);
   } else if (v.type == typeid(JSONObject)) {
     JSONValue result;
 

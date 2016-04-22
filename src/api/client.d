@@ -105,42 +105,28 @@ class APIClient {
     return new APIResponse(res);
   }
 
-  T spawn(T)(JSONObject obj) {
-    T v = new T(obj);
-    v.client = this;
-    return v;
-  }
-
-  User me() {
+  JSONObject me() {
     auto res = this.requestJSON(HTTPMethod.GET, URL("users")("@me"));
     res.ok();
-    return this.spawn!User(res.json);
+    return res.json;
   }
 
-  GuildMap meGuilds() {
+  JSONObject[] meGuilds() {
     auto res = this.requestJSON(HTTPMethod.GET, URL("users")("@me")("guilds"));
     res.ok();
-
-    GuildMap map;
-
-    foreach (JSONObject guildObj; res.jsonArray) {
-      auto g = this.spawn!Guild(guildObj);
-      map[g.id] = g;
-    }
-
-    return map;
+    return res.jsonArray;
   }
 
-  User user(Snowflake id) {
+  JSONObject user(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, URL("users")(id));
     res.ok();
-    return this.spawn!User(res.json);
+    return res.json;
   }
 
-  Guild guild(Snowflake id) {
+  JSONObject guild(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, URL("guilds")(id));
     res.ok();
-    return this.spawn!Guild(res.json);
+    return res.json;
   }
 
   string gateway() {

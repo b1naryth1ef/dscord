@@ -1,13 +1,13 @@
 module main;
 
-import std.stdio;
+import std.stdio,
+       std.functional;
 
 import vibe.core.core;
 import vibe.http.client;
 
-import api.client,
-       gateway.client,
-       types.base;
+import client,
+       gateway.events;
 
 import etc.linux.memoryerror;
 
@@ -20,22 +20,13 @@ void main(string[] args) {
     return;
   }
 
-  writeln(args[1]);
+  // Get a new APIClient with our token
+  auto client = new Client(args[1]);
+  auto me = client.state.me;
 
-  auto client = new APIClient(args[1]);
-  auto me = client.me();
-  writefln("id: %s", me.id);
-  writefln("username: %s", me.username);
-
-  foreach (ref guild; me.guilds) {
-    writefln("guild: %s", guild.id);
-  }
-
-  writefln("guild: %s", me.guildCache.get());
-  writefln("guild: %s", me.guild(Snowflake(157733188964188160)));
-  writefln("guild: %s", me.getGuild(Snowflake(157733188964188160)));
-
-  auto gw = new GatewayClient(client.gateway(), args[1]);
+  client.gw.onEvent!Ready((Ready r) {
+    writeln("READY");
+  });
 
   runEventLoop();
   return;
