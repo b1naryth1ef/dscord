@@ -7,6 +7,7 @@ import std.stdio,
 import client,
        types.base,
        types.channel,
+       types.user,
        util.json;
 
 alias GuildMap = ModelMap!(Snowflake, Guild);
@@ -30,6 +31,30 @@ class Emoji {
   bool managed;
 }
 */
+
+class GuildMember : Model {
+  User    user;
+  string  joined_at;
+  bool    mute;
+  bool    deaf;
+
+  // Role[]  roles;
+
+  this(Client client, JSONObject obj) {
+    super(client, obj);
+  }
+
+  override void load(JSONObject obj) {
+    auto user = obj.get!JSONObject("user");
+    this.user = client.state.users.getOrSet(
+      user.get!Snowflake("id"), {
+        return new User(this.client, user);
+    });
+
+    this.mute = obj.get!bool("mute");
+    this.deaf = obj.get!bool("deaf");
+  }
+}
 
 class Guild : Model {
   Snowflake  id;

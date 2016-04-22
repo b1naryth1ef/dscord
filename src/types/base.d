@@ -85,6 +85,14 @@ class ModelMap(Ti, Tm) {
     return this.storage[id];
   }
 
+  Tm getOrSet(Ti key, Tm delegate() set) {
+    if (key in this.storage) {
+      return this.storage[key];
+    }
+    this.set(key, set());
+    return this.storage[key];
+  }
+
   Tm refresh(Ti id) {
     this.storage[id] = this.getter(id);
     if (this.setter) this.setter(id, this.storage[id]);

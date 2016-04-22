@@ -8,6 +8,7 @@ import std.variant,
 import client,
        gateway.client,
        gateway.packets,
+       types.base,
        types.guild,
        types.channel,
        types.user,
@@ -105,5 +106,36 @@ class GuildCreate : Event {
     } else {
       this.isNew = true;
     }
+  }
+}
+
+class GuildUpdate : Event {
+  Guild  guild;
+
+  this(Client c, Dispatch d) {
+    super(c);
+    this.guild = new Guild(this.c, d.data);
+  }
+}
+
+class GuildDelete : Event {
+  Snowflake  guild_id;
+  bool       unavailable;
+
+  this (Client c, Dispatch d) {
+    super(c);
+    this.guild_id = d.data.get!Snowflake("id");
+    if (d.data.has("unavailable")) {
+      this.unavailable = d.data.get!bool("unavailable");
+    }
+  }
+}
+
+class GuildMemberAdd : Event {
+  GuildMember  member;
+
+  this (Client c, Dispatch d) {
+    super(c);
+    this.member = new GuildMember(this.c, d.data);
   }
 }

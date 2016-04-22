@@ -23,6 +23,7 @@ class State {
   User        me;
   GuildMap    guilds;
   ChannelMap  channels;
+  UserMap     users;
 
   private {
     ushort onReadyGuildCount;
@@ -45,7 +46,10 @@ class State {
       return new Channel(this.client, new JSONObject);
     });
 
-    // this.channels = new ChannelMap();
+    this.users = new UserMap((id) {
+      // TODO
+      return new User(this.client, new JSONObject);
+    });
 
     this.bindEvents();
   }

@@ -28,7 +28,7 @@ void main(string[] args) {
     writefln("Startup Complete");
 
     auto guild = client.state.guild(157733188964188160);
-    guild.channels[171767883125358592].sendMessage("this is a test");
+    // guild.channels[171767883125358592].sendMessage("this is a test");
   };
 
   client.gw.onEvent!Ready((Ready r) {
