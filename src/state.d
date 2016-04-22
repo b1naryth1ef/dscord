@@ -3,7 +3,8 @@ module state;
 import std.functional,
        std.stdio;
 
-import api.client,
+import client,
+       api.client,
        gateway.client,
        gateway.events,
        gateway.packets,
@@ -14,6 +15,7 @@ import api.client,
 
 class State {
   // Client
+  Client         client;
   APIClient      api;
   GatewayClient  gw;
 
@@ -29,12 +31,18 @@ class State {
   // Callbacks
   void delegate()  onStartupComplete;
 
-  this(APIClient api, GatewayClient gw) {
-    this.api = api;
-    this.gw = gw;
+  this(Client client) {
+    this.client = client;
+    this.api = client.api;
+    this.gw = client.gw;
 
     this.guilds = new GuildMap((id) {
-      return new Guild(this.api.guild(id));
+      return new Guild(this.client, this.api.guild(id));
+    });
+
+    this.channels = new ChannelMap((id) {
+      // TODO
+      return new Channel(this.client, new JSONObject);
     });
 
     // this.channels = new ChannelMap();
@@ -49,11 +57,7 @@ class State {
 
   void onReady(Ready r) {
     this.me = r.me;
-
     this.onReadyGuildCount = cast(ushort)r.guilds.length;
-    foreach (g; r.guilds) {
-      this.guilds[g.id] = g;
-    }
   }
 
   void onGuildCreate(GuildCreate c) {

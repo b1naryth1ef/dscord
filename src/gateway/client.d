@@ -10,7 +10,8 @@ import vibe.core.core,
        vibe.inet.url,
        vibe.http.websockets;
 
-import gateway.packets,
+import client,
+       gateway.packets,
        gateway.events,
        util.json;
 
@@ -18,8 +19,8 @@ alias GatewayPacketHandler = void delegate (BasePacket);
 alias GatewayEventHandler = void delegate (Dispatch);
 
 class GatewayClient {
+  Client     client;
   WebSocket  sock;
-  string     token;
 
   private {
     uint seq;
@@ -29,9 +30,9 @@ class GatewayClient {
   GatewayPacketHandler[][OPCode] gatewayPacketHandlers;
   GatewayEventHandler[][string] gatewayEventHandlers;
 
-  this(string gatewayURL, string token) {
-    this.token = token;
-    this.sock = connectWebSocket(URL(gatewayURL));
+  this(Client client) {
+    this.client = client;
+    this.sock = connectWebSocket(URL(client.api.gateway()));
 
     // Handle DISPATCH events
     this.onPacket!Dispatch(OPCode.DISPATCH, toDelegate(&this.handleDispatchPacket));
@@ -58,7 +59,7 @@ class GatewayClient {
 
   void onEvent(T)(void delegate (T o) cb) {
     this.gatewayEventHandlers[eventName(T.stringof)] ~= (Dispatch d) {
-      cb(new T(this, d));
+      cb(new T(this.client, d));
     };
   }
 
@@ -104,7 +105,7 @@ class GatewayClient {
     string data;
 
     // On startup, send the identify payload
-    this.send(new Identify(this.token));
+    this.send(new Identify(this.client.token));
 
     while (this.sock.waitForData()) {
       try {
@@ -123,7 +124,7 @@ class GatewayClient {
       try {
         this.dispatch(new JSONObject(data));
       } catch (Exception e) {
-        writefln("failed to load: %s", data);
+        writefln("Failed to handle: %s (%s)", e, data);
       }
     }
   }

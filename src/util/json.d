@@ -54,7 +54,7 @@ class JSONObject {
 
   string dumps() {
     JSONValue v = this.asJSON();
-    return toJSON(&v, true);
+    return toJSON(v, true);
   }
 
   Variant getRaw(string key) {
@@ -71,6 +71,14 @@ class JSONObject {
     } else {
       return def;
     }
+  }
+
+  T maybeGet(T)(string key, T def) {
+    if (!this.has(key) || this.isNull(key)) {
+      return def;
+    }
+
+    return this.get!T(key);
   }
 
   JSONObject setRaw(string key, Variant value) {
@@ -90,6 +98,10 @@ class JSONObject {
 
   bool has(string key) {
     return (key in this.obj) != null;
+  }
+
+  bool isNull(string key) {
+    return (this.obj[key].type == typeid(null));
   }
 
   Variant opIndex(string key) {
@@ -124,6 +136,8 @@ JSONValue variantToJSON(Variant v) {
     return JSONValue(null);
   } else if (v.convertsTo!string) {
     return JSONValue(v.get!string);
+  } else if (v.convertsTo!wstring) {
+    return JSONValue(v.get!wstring);
   } else if (v.convertsTo!uint) {
     return JSONValue(v.get!uint);
   } else if (v.convertsTo!int) {
@@ -132,6 +146,8 @@ JSONValue variantToJSON(Variant v) {
     return JSONValue(v.get!float);
   } else if (v.convertsTo!bool) {
     return JSONValue(v.get!bool);
+  } else if (v.convertsTo!double) {
+    return JSONValue(v.get!double);
   } else if (v.type == typeid(JSONObject)) {
     JSONValue result;
 

@@ -100,6 +100,8 @@ class APIClient {
       (scope req) {
         req.method = method;
         req.headers["Authorization"] = this.token;
+        req.headers["Content-Type"] = "application/json";
+        req.bodyWriter.write(data);
       });
 
     return new APIResponse(res);
@@ -125,6 +127,17 @@ class APIClient {
 
   JSONObject guild(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, URL("guilds")(id));
+    res.ok();
+    return res.json;
+  }
+
+  JSONObject sendMessage(Snowflake chan, wstring content, string nonce, bool tts) {
+    auto payload = new JSONObject()
+      .set!wstring("content", content)
+      .set!string("nonce", nonce)
+      .set!bool("tts", tts);
+
+    auto res = this.requestJSON(HTTPMethod.POST, URL("channels")(chan)("messages"), payload);
     res.ok();
     return res.json;
   }

@@ -20,9 +20,7 @@ class Client {
     this.token = token;
 
     this.api = new APIClient(this.token);
-    this.gw = new GatewayClient(this.api.gateway(), this.token);
-    this.state = new State(this.api, this.gw);
-
-    this.gw.start();
+    this.gw = new GatewayClient(this);
+    this.state = new State(this);
   }
 }

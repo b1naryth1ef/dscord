@@ -1,6 +1,9 @@
 module types.user;
 
-import types.base,
+import std.stdio;
+
+import client,
+       types.base,
        types.guild,
        util.json;
 
@@ -14,8 +17,8 @@ class User : Model {
   bool       verified;
   string     email;
 
-  this(JSONObject obj) {
-    super(obj);
+  this(Client client, JSONObject obj) {
+    super(client, obj);
   }
 
   override void load(JSONObject obj) {

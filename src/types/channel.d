@@ -1,6 +1,9 @@
 module types.channel;
 
-import types.base,
+import std.stdio;
+
+import client,
+       types.base,
        types.guild,
        types.message,
        types.user,
@@ -18,8 +21,8 @@ enum ChannelType {
 };
 
 class PermissionOverwrite : Model {
-  this(JSONObject obj) {
-    super(obj);
+  this(Client client, JSONObject obj) {
+    super(client, obj);
   }
 
   override void load(JSONObject obj) {
@@ -41,20 +44,20 @@ class Channel : Model {
   // Overwrites
   PermissionOverwriteMap  overwrites;
 
-  this(JSONObject obj) {
-    super(obj);
+  this(Client client, JSONObject obj) {
+    super(client, obj);
   }
 
   override void load(JSONObject obj) {
     this.id = obj.get!Snowflake("id");
     this.name = obj.get!wstring("name");
-    this.topic = obj.get!wstring("topic");
-    this.guild_id = obj.get!Snowflake("guild_id");
-    this.last_message_id = obj.get!Snowflake("last_message_id");
+    this.topic = obj.maybeGet!wstring("topic", null);
+    this.guild_id = obj.maybeGet!Snowflake("guild_id", 0);
+    this.last_message_id = obj.maybeGet!Snowflake("last_message_id", 0);
     this.position = obj.get!ushort("position");
-    this.bitrate = obj.get!ushort("bitrate");
+    this.bitrate = obj.maybeGet!ushort("bitrate", 0);
 
-    if (obj.get!bool("is_private")) {
+    if (obj.has("is_private") && obj.get!bool("is_private")) {
       this.type |= ChannelType.PRIVATE;
     } else {
       this.type |= ChannelType.PUBLIC;
@@ -65,6 +68,10 @@ class Channel : Model {
     } else {
       this.type |= ChannelType.VOICE;
     }
+  }
+
+  void sendMessage(wstring content, string nonce=null, bool tts=false) {
+    this.client.api.sendMessage(this.id, content, nonce, tts);
   }
 
   Guild guild() {

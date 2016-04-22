@@ -3,21 +3,21 @@ D-scord is a Discord client library written in D-lang thats focused on performan
 
 ## Example
 ```d
+import dscord.client;
 
-import dscord.api.client;
+// First, setup an API client with our bot auth token
+auto client = new Client("MY_BOT_AUTH_TOKEN");
 
-// Setup an API client with our auth token
-APIClient client = new APIClient("my_auth_token");
+// Bind a state update, this will inform us when we've recieved all guilds
+client.state.onStartupComplete = {
+  writefln("Startup Complete");
+};
 
-// Get the current user (over the API)
-User me = client.me();
+// Bind a gateway event, this will tell us when we've gotten (and processed) the ready payload
+client.gw.onEvent!Ready((Ready r) {
+  writeln("Ready Complete");
+});
 
-// Get the users guilds, using the local cache
-GuildMap guilds = me.guilds;
-
-// But, if we want we can force a refresh from the API
-GuildMap fresherGuilds = me.getGuilds();
-
-// Or, maybe we should grab a specific guild and skip the cache
-Guild myFavoriteGuild = me.getGuild(Snowflake(1234567890));
+// Next, open up our gateway connection
+client.gw.start();
 ```

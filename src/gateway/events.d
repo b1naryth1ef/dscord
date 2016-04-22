@@ -5,7 +5,8 @@ import std.variant,
        std.algorithm,
        std.string;
 
-import gateway.client,
+import client,
+       gateway.client,
        gateway.packets,
        types.guild,
        types.channel,
@@ -13,10 +14,10 @@ import gateway.client,
        util.json;
 
 class Event {
-  GatewayClient gc;
+  Client c;
 
-  this(GatewayClient gc) {
-    this.gc = gc;
+  this(Client c) {
+    this.c = c;
   }
 }
 
@@ -47,16 +48,16 @@ class Ready : Event {
   Channel[]   dms;
   Guild[]     guilds;
 
-  this(GatewayClient gc, Dispatch d) {
-    super(gc);
+  this(Client c, Dispatch d) {
+    super(c);
 
     this.ver = d.data.get!ushort("v");
     this.heartbeat_interval = d.data.get!uint("heartbeat_interval");
     this.session_id = d.data.get!string("session_id");
-    this.me = new User(d.data.get!JSONObject("user"));
+    this.me = new User(this.c, d.data.get!JSONObject("user"));
 
     foreach (Variant gobj; d.data.getRaw("guilds")) {
-      this.guilds ~= new Guild(new JSONObject(variantToJSON(gobj)));
+      this.guilds ~= new Guild(this.c, new JSONObject(variantToJSON(gobj)));
     }
 
     // TODO: dms
@@ -66,27 +67,27 @@ class Ready : Event {
 class ChannelCreate : Event {
   Channel  chan;
 
-  this(GatewayClient gc, Dispatch d) {
-    super(gc);
-    this.chan = new Channel(d.data);
+  this(Client c, Dispatch d) {
+    super(c);
+    this.chan = new Channel(this.c, d.data);
   }
 }
 
 class ChannelUpdate : Event {
   Channel  chan;
 
-  this(GatewayClient gc, Dispatch d) {
-    super(gc);
-    this.chan = new Channel(d.data);
+  this(Client c, Dispatch d) {
+    super(c);
+    this.chan = new Channel(this.c, d.data);
   }
 }
 
 class ChannelDelete : Event {
   Channel  chan;
 
-  this(GatewayClient gc, Dispatch d) {
-    super(gc);
-    this.chan = new Channel(d.data);
+  this(Client c, Dispatch d) {
+    super(c);
+    this.chan = new Channel(this.c, d.data);
   }
 }
 
@@ -95,9 +96,9 @@ class GuildCreate : Event {
   bool   isNew;
   bool   unavailable;
 
-  this(GatewayClient gc, Dispatch d) {
-    super(gc);
-    this.guild = new Guild(d.data);
+  this(Client c, Dispatch d) {
+    super(c);
+    this.guild = new Guild(this.c, d.data);
 
     if (d.data.has("unavailable")) {
       this.unavailable = d.data.get!bool("unavailable");

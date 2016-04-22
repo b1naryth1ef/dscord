@@ -41,7 +41,8 @@ class Cache(T) {
 class Model {
   Client client;
 
-  this(JSONObject obj) {
+  this(Client client, JSONObject obj) {
+    this.client = client;
     this.load(obj);
   }
 
@@ -50,14 +51,30 @@ class Model {
 
 class ModelMap(Ti, Tm) {
   alias _getter = Tm delegate(Ti);
+  alias _setter = void delegate(Ti, Tm);
 
   _getter  getter;
+  _setter  setter;
   Tm[Ti]   storage;
 
   this() {}
 
   this(_getter getter) {
     this.getter = getter;
+  }
+
+  this(_getter getter, _setter setter) {
+    this.getter = getter;
+    this.setter = setter;
+  }
+
+  void set(Ti key, Tm value) {
+    if (value is null) {
+      this.del(key);
+      return;
+    }
+
+    this.storage[key] = value;
   }
 
   Tm get(Ti id) {
@@ -70,11 +87,13 @@ class ModelMap(Ti, Tm) {
 
   Tm refresh(Ti id) {
     this.storage[id] = this.getter(id);
+    if (this.setter) this.setter(id, this.storage[id]);
     return this.storage[id];
   }
 
   void del(Ti id) {
     this.storage.remove(id);
+    if (this.setter) this.setter(id, null);
   }
 
   Tm opIndex(Ti key) {
@@ -83,5 +102,6 @@ class ModelMap(Ti, Tm) {
 
   void opIndexAssign(Tm value, Ti key) {
     this.storage[key] = value;
+    if (this.setter) this.setter(key, value);
   }
 }

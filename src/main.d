@@ -22,10 +22,13 @@ void main(string[] args) {
 
   // Get a new APIClient with our token
   auto client = new Client(args[1]);
-  auto me = client.state.me;
+  client.gw.start();
 
   client.state.onStartupComplete = {
     writefln("Startup Complete");
+
+    auto guild = client.state.guild(157733188964188160);
+    guild.channels[171767883125358592].sendMessage("this is a test");
   };
 
   client.gw.onEvent!Ready((Ready r) {
