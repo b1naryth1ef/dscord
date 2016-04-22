@@ -88,6 +88,10 @@ class JSONObject {
     return this;
   }
 
+  bool has(string key) {
+    return (key in this.obj) != null;
+  }
+
   Variant opIndex(string key) {
     return this.obj[key];
   }

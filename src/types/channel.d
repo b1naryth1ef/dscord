@@ -3,6 +3,7 @@ module types.channel;
 import types.base,
        types.guild,
        types.message,
+       types.user,
        util.json;
 
 alias ChannelMap = ModelMap!(Snowflake, Channel);
@@ -35,6 +36,7 @@ class Channel : Model {
   ChannelType  type;
   ushort       position;
   uint         bitrate;
+  User*        recipient;
 
   // Overwrites
   PermissionOverwriteMap  overwrites;

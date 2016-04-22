@@ -24,8 +24,12 @@ void main(string[] args) {
   auto client = new Client(args[1]);
   auto me = client.state.me;
 
+  client.state.onStartupComplete = {
+    writefln("Startup Complete");
+  };
+
   client.gw.onEvent!Ready((Ready r) {
-    writeln("READY");
+    writeln("Ready Complete");
   });
 
   runEventLoop();

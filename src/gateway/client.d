@@ -57,7 +57,7 @@ class GatewayClient {
   }
 
   void onEvent(T)(void delegate (T o) cb) {
-    this.gatewayEventHandlers[T.stringof.toUpper] ~= (Dispatch d) {
+    this.gatewayEventHandlers[eventName(T.stringof)] ~= (Dispatch d) {
       cb(new T(this, d));
     };
   }
