@@ -38,7 +38,7 @@ void main(string[] args) {
     client.gw.onEvent!MessageCreate((MessageCreate c) {
       writefln("[%s] (%s | %s)\n    %s: %s\n",
         c.message.timestamp,
-        c.message.channel.id,
+        c.message.channel_id,
         c.message.author.id,
         c.message.author.username,
         c.message.content);

@@ -1,5 +1,6 @@
 {
   "name": "dscord-examples",
+  "targetType": "executable",
   "dependencies": {
     "dscord": {"path": "../"}
   }
