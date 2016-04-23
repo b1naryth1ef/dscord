@@ -49,7 +49,16 @@ class State {
 
   void bindEvents() {
     this.gw.onEvent!Ready(toDelegate(&this.onReady));
+
+    // Guilds
     this.gw.onEvent!GuildCreate(toDelegate(&this.onGuildCreate));
+    this.gw.onEvent!GuildUpdate(toDelegate(&this.onGuildUpdate));
+    this.gw.onEvent!GuildDelete(toDelegate(&this.onGuildDelete));
+
+    // Channels
+    this.gw.onEvent!ChannelCreate(toDelegate(&this.onChannelCreate));
+    this.gw.onEvent!ChannelUpdate(toDelegate(&this.onChannelUpdate));
+    this.gw.onEvent!ChannelDelete(toDelegate(&this.onChannelDelete));
   }
 
   void onReady(Ready r) {
@@ -66,6 +75,30 @@ class State {
         this.onStartupComplete();
       }
     }
+  }
+
+  void onGuildUpdate(GuildUpdate c) {
+    this.guilds[c.guild.id].load(c.payload);
+  }
+
+  void onGuildDelete(GuildDelete c) {
+    if (!this.guilds.has(c.guild_id)) return;
+
+    destroy(this.guilds[c.guild_id]);
+    this.guilds.del(c.guild_id);
+  }
+
+  void onChannelCreate(ChannelCreate c) {
+    this.channels[c.channel.id] = c.channel;
+  }
+
+  void onChannelUpdate(ChannelUpdate c) {
+    this.channels[c.channel.id] = c.channel;
+  }
+
+  void onChannelDelete(ChannelDelete c) {
+    destroy(this.channels[c.channel.id]);
+    this.channels.del(c.channel.id);
   }
 
   Guild guild(Snowflake id) {

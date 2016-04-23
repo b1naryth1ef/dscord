@@ -130,16 +130,20 @@ class Guild : Model {
     this.splash = obj.maybeGet!string("splash", null);
     this.afk_timeout = obj.maybeGet!uint("afk_timeout", 0);
 
-    foreach (Variant obj; obj.getRaw("channels")) {
-      auto channel = new Channel(this.client, new JSONObject(variantToJSON(obj)));
-      channel.guild_id = this.id;
-      this.channels[channel.id] = channel;
+    if (obj.has("channels")) {
+      foreach (Variant obj; obj.getRaw("channels")) {
+        auto channel = new Channel(this.client, new JSONObject(variantToJSON(obj)));
+        channel.guild_id = this.id;
+        this.channels[channel.id] = channel;
+      }
     }
 
-    foreach (Variant obj; obj.getRaw("roles")) {
-      auto role = new Role(this.client, new JSONObject(variantToJSON(obj)));
-      role.guild = this;
-      this.roles[role.id] = role;
+    if (obj.has("roles")) {
+      foreach (Variant obj; obj.getRaw("roles")) {
+        auto role = new Role(this.client, new JSONObject(variantToJSON(obj)));
+        role.guild = this;
+        this.roles[role.id] = role;
+      }
     }
 
     // this.features = obj.get!string[]("features");

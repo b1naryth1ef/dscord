@@ -6,8 +6,8 @@ import std.stdio,
 import vibe.core.core;
 import vibe.http.client;
 
-import client,
-       gateway.events;
+import dscord.client,
+       dscord.gateway.events;
 
 import core.sys.posix.signal;
 import etc.linux.memoryerror;

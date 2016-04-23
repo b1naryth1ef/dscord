@@ -58,10 +58,16 @@ class JSONObject {
   }
 
   Variant getRaw(string key) {
+    debug {
+      assert(this.has(key), "Key missing:" ~ key);
+    }
     return this.obj[key];
   }
 
   T get(T)(string key) {
+    debug {
+      assert(this.has(key), "Key missing:" ~ key);
+    }
     return this.obj[key].coerce!(T);
   }
 

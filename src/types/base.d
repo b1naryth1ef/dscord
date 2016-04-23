@@ -64,6 +64,10 @@ class ModelMap(Ti, Tm) {
     this.setter = setter;
   }
 
+  bool has(Ti key) {
+    return (key in this.storage) != null;
+  }
+
   void set(Ti key, Tm value) {
     if (value is null) {
       this.del(key);

@@ -1,0 +1,6 @@
+{
+  "name": "dscord-examples",
+  "dependencies": {
+    "dscord": {"path": "../"}
+  }
+}
