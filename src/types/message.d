@@ -1,5 +1,7 @@
 module types.message;
 
+import std.stdio;
+
 import client,
        types.base,
        types.user;
@@ -36,6 +38,10 @@ class Message : Model {
     this.mention_everyone = obj.get!bool("mention_everyone");
     this.nonce = obj.get!string("nonce");
 
-    // TODO: author
+    auto auth = obj.get!JSONObject("author");
+    this.author = this.client.state.users.getOrSet(
+      auth.get!Snowflake("id"),
+      { return new User(this.client, auth); }
+    );
   }
 }

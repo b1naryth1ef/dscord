@@ -8,21 +8,47 @@ import client,
        types.base,
        types.channel,
        types.user,
+       types.permission,
        util.json;
 
 alias GuildMap = ModelMap!(Snowflake, Guild);
+alias RoleMap = ModelMap!(Snowflake, Role);
 
-/*
-class Role {
-  Snowflake id;
-  string name;
-  uint color;
-  bool hoist;
-  uint position;
-  Permission permission;
-  bool managed;
+class Role : Model {
+  Snowflake   id;
+  wstring     name;
+  uint        color;
+  bool        hoist;
+  short       position;
+  Permission  permission;
+  bool        managed;
+
+  Guild  guild;
+
+  this(Client client, JSONObject obj) {
+    super(client, obj);
+  }
+
+  override void load(JSONObject obj) {
+    // writeln(obj.dumps);
+    this.id = obj.get!Snowflake("id");
+    this.name = obj.get!wstring("name");
+    this.hoist = obj.get!bool("hoist");
+    this.position = obj.get!short("position");
+    this.permission = obj.get!Permission("permissions");
+    this.managed = obj.get!bool("managed");
+
+    // Lets guard shitty data
+    if (obj.get!int("color") < 0) {
+      this.color = 0;
+    } else {
+      this.color = obj.get!uint("color");
+    }
+
+  }
 }
 
+/*
 class Emoji {
   Snowflake id;
   string name;
@@ -72,6 +98,7 @@ class Guild : Model {
 
   // Mappings
   ChannelMap  channels;
+  RoleMap     roles;
 
   // Role[] roles;
   // Emoji[] emoji;
@@ -81,6 +108,8 @@ class Guild : Model {
     this.channels = new ChannelMap(
       &client.state.channels.get,
       &client.state.channels.set);
+
+    this.roles = new RoleMap();
 
     super(client, obj);
   }
@@ -105,6 +134,12 @@ class Guild : Model {
       auto channel = new Channel(this.client, new JSONObject(variantToJSON(obj)));
       channel.guild_id = this.id;
       this.channels[channel.id] = channel;
+    }
+
+    foreach (Variant obj; obj.getRaw("roles")) {
+      auto role = new Role(this.client, new JSONObject(variantToJSON(obj)));
+      role.guild = this;
+      this.roles[role.id] = role;
     }
 
     // this.features = obj.get!string[]("features");

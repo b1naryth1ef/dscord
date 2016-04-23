@@ -41,15 +41,8 @@ class State {
       return new Guild(this.client, this.api.guild(id));
     });
 
-    this.channels = new ChannelMap((id) {
-      // TODO
-      return new Channel(this.client, new JSONObject);
-    });
-
-    this.users = new UserMap((id) {
-      // TODO
-      return new User(this.client, new JSONObject);
-    });
+    this.channels = new ChannelMap;
+    this.users = new UserMap;
 
     this.bindEvents();
   }

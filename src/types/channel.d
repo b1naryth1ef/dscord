@@ -1,32 +1,56 @@
 module types.channel;
 
-import std.stdio;
+import std.stdio,
+       std.variant,
+       core.vararg;
 
 import client,
        types.base,
        types.guild,
        types.message,
        types.user,
+       types.permission,
        util.json;
 
 alias ChannelMap = ModelMap!(Snowflake, Channel);
 alias PermissionOverwriteMap = ModelMap!(Snowflake, PermissionOverwrite);
 
 enum ChannelType {
-  None,
+  NONE,
   TEXT = 1 << 0,
   VOICE = 1 << 1,
   PUBLIC = 1 << 2,
   PRIVATE = 1 << 3,
 };
 
+enum PermissionOverwriteType {
+	ROLE = 1 << 0,
+	MEMBER = 1 << 1,
+}
+
 class PermissionOverwrite : Model {
+	Snowflake  id;
+  Channel    channel;
+
+  // Overwrite type
+	PermissionOverwriteType  type;
+
+	// Permissions
+	Permission  allow;
+	Permission  deny;
+
   this(Client client, JSONObject obj) {
     super(client, obj);
   }
 
   override void load(JSONObject obj) {
+    this.id = obj.get!Snowflake("id");
+    this.allow = obj.get!Permission("allow");
+    this.deny = obj.get!Permission("deny");
 
+    this.type = obj.get!string("type") == "role" ?
+      PermissionOverwriteType.ROLE :
+      PermissionOverwriteType.MEMBER;
   }
 }
 
@@ -37,7 +61,7 @@ class Channel : Model {
   Snowflake    guild_id;
   Snowflake    last_message_id;
   ChannelType  type;
-  ushort       position;
+  short        position;
   uint         bitrate;
   User*        recipient;
 
@@ -45,6 +69,8 @@ class Channel : Model {
   PermissionOverwriteMap  overwrites;
 
   this(Client client, JSONObject obj) {
+    this.overwrites = new PermissionOverwriteMap;
+
     super(client, obj);
   }
 
@@ -54,8 +80,8 @@ class Channel : Model {
     this.topic = obj.maybeGet!wstring("topic", null);
     this.guild_id = obj.maybeGet!Snowflake("guild_id", 0);
     this.last_message_id = obj.maybeGet!Snowflake("last_message_id", 0);
-    this.position = obj.get!ushort("position");
-    this.bitrate = obj.maybeGet!ushort("bitrate", 0);
+    this.position = obj.get!short("position");
+    this.bitrate = obj.maybeGet!uint("bitrate", 0);
 
     if (obj.has("is_private") && obj.get!bool("is_private")) {
       this.type |= ChannelType.PRIVATE;
@@ -67,6 +93,12 @@ class Channel : Model {
       this.type |= ChannelType.TEXT;
     } else {
       this.type |= ChannelType.VOICE;
+    }
+
+    foreach (Variant obj; obj.getRaw("permission_overwrites")) {
+      auto overwrite = new PermissionOverwrite(this.client, new JSONObject(variantToJSON(obj)));
+      overwrite.channel = this;
+      this.overwrites[overwrite.id] = overwrite;
     }
   }
 

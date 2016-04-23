@@ -9,9 +9,17 @@ import vibe.http.client;
 import client,
        gateway.events;
 
+import core.sys.posix.signal;
 import etc.linux.memoryerror;
 
+extern (C) {
+  void handleSigInt(int value) {
+    exitEventLoop();
+  }
+}
+
 void main(string[] args) {
+  sigset(SIGINT, &handleSigInt);
   static if (is(typeof(registerMemoryErrorHandler)))
       registerMemoryErrorHandler();
 
@@ -28,11 +36,18 @@ void main(string[] args) {
     writefln("Startup Complete");
 
     auto guild = client.state.guild(157733188964188160);
-    // guild.channels[171767883125358592].sendMessage("this is a test");
+    auto chan = guild.channels[171767883125358592];
   };
 
   client.gw.onEvent!Ready((Ready r) {
     writeln("Ready Complete");
+  });
+
+  client.gw.onEvent!MessageCreate((MessageCreate c) {
+    writefln("[%s] %s: %s",
+      c.message.timestamp,
+      c.message.author.username,
+      c.message.content);
   });
 
   runEventLoop();

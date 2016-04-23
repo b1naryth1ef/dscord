@@ -12,6 +12,7 @@ import client,
        types.guild,
        types.channel,
        types.user,
+       types.message,
        util.json;
 
 class Event {
@@ -137,5 +138,34 @@ class GuildMemberAdd : Event {
   this (Client c, Dispatch d) {
     super(c);
     this.member = new GuildMember(this.c, d.data);
+  }
+}
+
+class MessageCreate : Event {
+  Message  message;
+
+  this (Client c, Dispatch d) {
+    super(c);
+    this.message = new Message(this.c, d.data);
+  }
+}
+
+class MessageUpdate : Event {
+  Message message;
+
+  this (Client c, Dispatch d) {
+    super(c);
+    this.message = new Message(this.c, d.data);
+  }
+}
+
+class MessageDelete : Event {
+  Snowflake  id;
+  Snowflake  channel_id;
+
+  this (Client c, Dispatch d) {
+    super(c);
+    this.id = d.data.get!Snowflake("id");
+    this.channel_id = d.data.get!Snowflake("channel_id");
   }
 }

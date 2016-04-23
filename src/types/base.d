@@ -14,10 +14,6 @@ string toString(Snowflake s) {
   return to!string(s);
 }
 
-struct Permission {
-  uint _value;
-}
-
 class Cache(T) {
   T data;
 
@@ -94,6 +90,7 @@ class ModelMap(Ti, Tm) {
   }
 
   Tm refresh(Ti id) {
+    assert(this.getter, "Must have getter to refresh");
     this.storage[id] = this.getter(id);
     if (this.setter) this.setter(id, this.storage[id]);
     return this.storage[id];
