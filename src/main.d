@@ -35,19 +35,18 @@ void main(string[] args) {
   client.state.onStartupComplete = {
     writefln("Startup Complete");
 
-    auto guild = client.state.guild(157733188964188160);
-    auto chan = guild.channels[171767883125358592];
+    client.gw.onEvent!MessageCreate((MessageCreate c) {
+      writefln("[%s] (%s | %s)\n    %s: %s\n",
+        c.message.timestamp,
+        c.message.channel.id,
+        c.message.author.id,
+        c.message.author.username,
+        c.message.content);
+    });
   };
 
   client.gw.onEvent!Ready((Ready r) {
     writeln("Ready Complete");
-  });
-
-  client.gw.onEvent!MessageCreate((MessageCreate c) {
-    writefln("[%s] %s: %s",
-      c.message.timestamp,
-      c.message.author.username,
-      c.message.content);
   });
 
   runEventLoop();

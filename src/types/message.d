@@ -4,7 +4,8 @@ import std.stdio;
 
 import client,
        types.base,
-       types.user;
+       types.user,
+       types.channel;
 
 
 class Message : Model {
@@ -43,5 +44,9 @@ class Message : Model {
       auth.get!Snowflake("id"),
       { return new User(this.client, auth); }
     );
+  }
+
+  @property Channel channel() {
+    return this.client.state.channels.get(this.channel_id);
   }
 }
