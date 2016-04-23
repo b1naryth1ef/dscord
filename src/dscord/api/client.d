@@ -16,7 +16,7 @@ class APIError : BaseError {
   }
 }
 
-struct URL {
+struct U {
   string url;
 
   this(string url) {
@@ -27,12 +27,12 @@ struct URL {
     this.url = url;
   }
 
-  URL opCall(string url) {
+  U opCall(string url) {
     this.url ~= "/" ~ url;
     return this;
   }
 
-  URL opCall(Snowflake s) {
+  U opCall(Snowflake s) {
     this.opCall(s.toString());
     return this;
   }
@@ -84,15 +84,15 @@ class APIClient {
     this.token = token;
   }
 
-  APIResponse requestJSON(HTTPMethod method, URL url) {
+  APIResponse requestJSON(HTTPMethod method, U url) {
     return requestJSON(method, url, "");
   }
 
-  APIResponse requestJSON(HTTPMethod method, URL url, JSONObject data) {
+  APIResponse requestJSON(HTTPMethod method, U url, JSONObject data) {
     return requestJSON(method, url, data.dumps());
   }
 
-  APIResponse requestJSON(HTTPMethod method, URL url, string data) {
+  APIResponse requestJSON(HTTPMethod method, U url, string data) {
     auto res = requestHTTP(this.baseURL ~ url.url,
       (scope req) {
         req.method = method;
@@ -105,25 +105,25 @@ class APIClient {
   }
 
   JSONObject me() {
-    auto res = this.requestJSON(HTTPMethod.GET, URL("users")("@me"));
+    auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me"));
     res.ok();
     return res.json;
   }
 
   JSONObject[] meGuilds() {
-    auto res = this.requestJSON(HTTPMethod.GET, URL("users")("@me")("guilds"));
+    auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me")("guilds"));
     res.ok();
     return res.jsonArray;
   }
 
   JSONObject user(Snowflake id) {
-    auto res = this.requestJSON(HTTPMethod.GET, URL("users")(id));
+    auto res = this.requestJSON(HTTPMethod.GET, U("users")(id));
     res.ok();
     return res.json;
   }
 
   JSONObject guild(Snowflake id) {
-    auto res = this.requestJSON(HTTPMethod.GET, URL("guilds")(id));
+    auto res = this.requestJSON(HTTPMethod.GET, U("guilds")(id));
     res.ok();
     return res.json;
   }
@@ -134,13 +134,13 @@ class APIClient {
       .set!string("nonce", nonce)
       .set!bool("tts", tts);
 
-    auto res = this.requestJSON(HTTPMethod.POST, URL("channels")(chan)("messages"), payload);
+    auto res = this.requestJSON(HTTPMethod.POST, U("channels")(chan)("messages"), payload);
     res.ok();
     return res.json;
   }
 
   string gateway() {
-    auto res = this.requestJSON(HTTPMethod.GET, URL("gateway"));
+    auto res = this.requestJSON(HTTPMethod.GET, U("gateway"));
     res.ok();
     return res.json.get!string("url");
   }
