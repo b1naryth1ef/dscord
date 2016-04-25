@@ -66,6 +66,10 @@ class Dispatch : BasePacket, Deserializable {
   int         seq;
   string      event;
 
+  this(JSONObject obj) {
+    this.deserialize(obj);
+  }
+
   override void deserialize(JSONObject obj) {
     super.deserialize(obj);
     this.seq = obj.get!int("s");

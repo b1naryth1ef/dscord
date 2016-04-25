@@ -8,13 +8,19 @@ import dscord.client,
        dscord.gateway.client,
        dscord.gateway.events,
        dscord.gateway.packets,
-       dscord.types.all;
+       dscord.types.all,
+       dscord.util.emitter;
+
+class StateStartupComplete {};
 
 class State {
   // Client
   Client         client;
   APIClient      api;
   GatewayClient  gw;
+
+  // Event Emitter
+  Emitter  events;
 
   // Storage
   User        me;
@@ -26,13 +32,11 @@ class State {
     ushort onReadyGuildCount;
   }
 
-  // Callbacks
-  void delegate()  onStartupComplete;
-
   this(Client client) {
     this.client = client;
     this.api = client.api;
     this.gw = client.gw;
+    this.events = new Emitter;
 
     this.guilds = new GuildMap((id) {
       return new Guild(this.client, this.api.guild(id));
@@ -45,6 +49,7 @@ class State {
   }
 
   void bindEvents() {
+    /*
     this.gw.onEvent!Ready(toDelegate(&this.onReady));
 
     // Guilds
@@ -56,6 +61,7 @@ class State {
     this.gw.onEvent!ChannelCreate(toDelegate(&this.onChannelCreate));
     this.gw.onEvent!ChannelUpdate(toDelegate(&this.onChannelUpdate));
     this.gw.onEvent!ChannelDelete(toDelegate(&this.onChannelDelete));
+    */
   }
 
   void onReady(Ready r) {
@@ -68,8 +74,8 @@ class State {
     if (!c.isNew) {
       this.onReadyGuildCount -= 1;
 
-      if (this.onReadyGuildCount == 0 && this.onStartupComplete) {
-        this.onStartupComplete();
+      if (this.onReadyGuildCount == 0) {
+        this.events.emit!StateStartupComplete(new StateStartupComplete);
       }
     }
   }

@@ -30,12 +30,12 @@ void main(string[] args) {
 
   // Get a new APIClient with our token
   auto client = new Client(args[1]);
-  client.gw.start();
+  // this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
 
-  client.state.onStartupComplete = {
+  client.state.events.on("StateStartupComplete", {
     writefln("Startup Complete");
 
-    client.gw.onEvent!MessageCreate((MessageCreate c) {
+    client.events.listen!MessageCreate((MessageCreate c) {
       writefln("[%s] (%s | %s)\n    %s: %s\n",
         c.message.timestamp,
         c.message.channel_id,
@@ -43,12 +43,13 @@ void main(string[] args) {
         c.message.author.username,
         c.message.content);
     });
-  };
+  });
 
-  client.gw.onEvent!Ready((Ready r) {
+  client.events.listen!Ready((Ready r) {
     writeln("Ready Complete");
   });
 
+  client.gw.start();
   runEventLoop();
   return;
 }

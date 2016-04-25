@@ -80,7 +80,7 @@ class Channel : Model {
     this.topic = obj.maybeGet!wstring("topic", null);
     this.guild_id = obj.maybeGet!Snowflake("guild_id", 0);
     this.last_message_id = obj.maybeGet!Snowflake("last_message_id", 0);
-    this.position = obj.get!short("position");
+    this.position = obj.maybeGet!short("position", 0);
     this.bitrate = obj.maybeGet!uint("bitrate", 0);
 
     if (obj.has("is_private") && obj.get!bool("is_private")) {

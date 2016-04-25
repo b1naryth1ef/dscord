@@ -4,7 +4,8 @@ import std.stdio,
        std.uni,
        std.functional,
        std.zlib,
-       std.datetime;
+       std.datetime,
+       std.variant;
 
 import vibe.core.core,
        vibe.inet.url,
@@ -13,10 +14,12 @@ import vibe.core.core,
 import dscord.client,
        dscord.gateway.packets,
        dscord.gateway.events,
-       dscord.util.json;
+       dscord.util.json,
+       dscord.util.emitter;
 
 alias GatewayPacketHandler = void delegate (BasePacket);
 alias GatewayEventHandler = void delegate (Dispatch);
+
 
 class GatewayClient {
   Client     client;
@@ -27,16 +30,22 @@ class GatewayClient {
     uint hb_interval;
   }
 
-  GatewayPacketHandler[][OPCode] gatewayPacketHandlers;
-  GatewayEventHandler[][string] gatewayEventHandlers;
+  Emitter  packetEmitter;
+  Emitter  eventEmitter;
 
   this(Client client) {
     this.client = client;
     this.sock = connectWebSocket(URL(client.api.gateway()));
 
-    // Handle DISPATCH events
-    this.onPacket!Dispatch(OPCode.DISPATCH, toDelegate(&this.handleDispatchPacket));
-    this.onEvent!Ready(toDelegate(&this.handleReadyEvent));
+
+    this.packetEmitter = new Emitter;
+    this.eventEmitter = new Emitter;
+    this.packetEmitter.listen!Dispatch(toDelegate(&this.handleDispatchPacket));
+    this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
+
+    // Copy emitters to client for easier API access
+    client.packets = this.packetEmitter;
+    client.events = this.eventEmitter;
   }
 
   void start() {
@@ -44,23 +53,9 @@ class GatewayClient {
     runTask(toDelegate(&this.run));
   }
 
-  void onPacket(T)(OPCode code, void delegate (T o) cb) {
-    this.gatewayPacketHandlers[code] ~= (BasePacket p) {
-      auto inner = new T;
-      inner.deserialize(p.raw);
-      cb(inner);
-    };
-  }
-
   void send(Serializable p) {
     JSONObject data = p.serialize();
     this.sock.send(data.dumps());
-  }
-
-  void onEvent(T)(void delegate (T o) cb) {
-    this.gatewayEventHandlers[eventName(T.stringof)] ~= (Dispatch d) {
-      cb(new T(this.client, d));
-    };
   }
 
   void handleReadyEvent(Ready r) {
@@ -74,22 +69,62 @@ class GatewayClient {
       this.seq = d.seq;
     }
 
-    if (!(d.event in this.gatewayEventHandlers)) {
-      return;
-    }
-
-    // Handle callbacks for the event
-    foreach (cb; this.gatewayEventHandlers[d.event]) {
-      cb(d);
+    switch (d.event) {
+      case "READY":
+        this.eventEmitter.emit!Ready(new Ready(this.client, d));
+        break;
+      case "CHANNEL_CREATE":
+        this.eventEmitter.emit!ChannelCreate(
+            new ChannelCreate(this.client, d));
+        break;
+      case "CHANNEL_UPDATE":
+        this.eventEmitter.emit!ChannelUpdate(
+            new ChannelUpdate(this.client, d));
+        break;
+      case "CHANNEL_DELETE":
+        this.eventEmitter.emit!ChannelDelete(
+            new ChannelDelete(this.client, d));
+        break;
+      case "GUILD_CREATE":
+        this.eventEmitter.emit!GuildCreate(
+            new GuildCreate(this.client, d));
+        break;
+      case "GUILD_UPDATE":
+        this.eventEmitter.emit!GuildUpdate(
+            new GuildUpdate(this.client, d));
+        break;
+      case "GUILD_DELETE":
+        this.eventEmitter.emit!GuildDelete(
+            new GuildDelete(this.client, d));
+        break;
+      case "GUILD_MEMBER_ADD":
+        this.eventEmitter.emit!GuildMemberAdd(
+            new GuildMemberAdd(this.client, d));
+        break;
+      case "MESSAGE_CREATE":
+        this.eventEmitter.emit!MessageCreate(
+            new MessageCreate(this.client, d));
+        break;
+      case "MESSAGE_UPDATE":
+        this.eventEmitter.emit!MessageUpdate(
+            new MessageUpdate(this.client, d));
+        break;
+      case "MESSAGE_DELETE":
+        this.eventEmitter.emit!MessageDelete(
+            new MessageDelete(this.client, d));
+        break;
+      default:
+        writefln("Unhandled gateway event %s", d.event);
     }
   }
 
   void dispatch(JSONObject obj) {
-    BasePacket base = new BasePacket();
-    base.deserialize(obj);
-
-    foreach (cb; this.gatewayPacketHandlers[base.op]) {
-      cb(base);
+    switch (obj.get!OPCode("op")) {
+      case OPCode.DISPATCH:
+        this.packetEmitter.emit!Dispatch(new Dispatch(obj));
+        break;
+      default:
+        break;
     }
   }
 
@@ -97,7 +132,6 @@ class GatewayClient {
     while (true) {
       this.send(new Heartbeat(this.seq));
       sleep(this.hb_interval.msecs);
-      writeln("HEARTBEAT");
     }
   }
 
@@ -118,8 +152,6 @@ class GatewayClient {
       if (data == "") {
         continue;
       }
-
-      // writefln("RECV: %s", data);
 
       try {
         this.dispatch(new JSONObject(data));

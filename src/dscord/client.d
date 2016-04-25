@@ -3,7 +3,8 @@ module dscord.client;
 import dscord.state,
        dscord.api.client,
        dscord.gateway.client,
-       dscord.types.user;
+       dscord.types.user,
+       dscord.util.emitter;
 
 class Client {
   // User auth token
@@ -15,6 +16,10 @@ class Client {
 
   // State
   State  state;
+
+  // Emitters
+  Emitter  events;
+  Emitter  packets;
 
   this(string token) {
     this.token = token;

@@ -19,6 +19,26 @@ class Event {
   }
 }
 
+/*
+Object eventToClass(string event) {
+  auto parts = event.split("_").map!(capitalize).join("");
+  auto name = "dscord.gateway.events." ~ parts;
+  writeln(name);
+  return Object.factory(parts);
+}
+*/
+
+Object eventToClass(string name) {
+  switch (name) {
+    case "READY":
+      return typeid(Ready);
+    case "GUILD_CREATE":
+      return typeid(GuildCreate);
+    default:
+      return null;
+  }
+}
+
 // authors note: pretty sure I'm high as fuck right now
 string eventName(string clsName) {
   string[] parts;
