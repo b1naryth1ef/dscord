@@ -68,11 +68,14 @@ class GuildMember : Model {
   }
 
   override void load(JSONObject obj) {
-    auto user = obj.get!JSONObject("user");
-    this.user = client.state.users.getOrSet(
-      user.get!Snowflake("id"), {
-        return new User(this.client, user);
-    });
+    auto uobj = obj.get!JSONObject("user");
+    if (this.client.state.users.has(uobj.get!Snowflake("id"))) {
+      this.user = this.client.state.users.get(uobj.get!Snowflake("id"));
+      this.user.load(uobj);
+    } else {
+      this.user = new User(this.client, uobj);
+      this.client.state.users.set(this.user.id, this.user);
+    }
 
     this.mute = obj.get!bool("mute");
     this.deaf = obj.get!bool("deaf");
@@ -102,12 +105,8 @@ class Guild : Model {
   // Channel[]  channels;
 
   this(Client client, JSONObject obj) {
-    this.channels = new ChannelMap(
-      &client.state.channels.get,
-      &client.state.channels.set);
-
-    this.roles = new RoleMap();
-
+    this.channels = new ChannelMap;
+    this.roles = new RoleMap;
     super(client, obj);
   }
 

@@ -85,6 +85,14 @@ class GatewayClient {
         this.eventEmitter.emit!ChannelDelete(
             new ChannelDelete(this.client, d));
         break;
+      case "GUILD_BAN_ADD":
+        this.eventEmitter.emit!GuildBanAdd(
+            new GuildBanAdd(this.client, d));
+        break;
+      case "GUILD_BAN_REMOVE":
+        this.eventEmitter.emit!GuildBanRemove(
+            new GuildBanRemove(this.client, d));
+        break;
       case "GUILD_CREATE":
         this.eventEmitter.emit!GuildCreate(
             new GuildCreate(this.client, d));
@@ -97,9 +105,37 @@ class GatewayClient {
         this.eventEmitter.emit!GuildDelete(
             new GuildDelete(this.client, d));
         break;
+      case "GUILD_EMOJIS_UPDATE":
+        this.eventEmitter.emit!GuildEmojisUpdate(
+            new GuildEmojisUpdate(this.client, d));
+        break;
+      case "GUILD_INTEGRATIONS_UPDATE":
+        this.eventEmitter.emit!GuildIntegrationsUpdate(
+            new GuildIntegrationsUpdate(this.client, d));
+        break;
       case "GUILD_MEMBER_ADD":
         this.eventEmitter.emit!GuildMemberAdd(
             new GuildMemberAdd(this.client, d));
+        break;
+      case "GUILD_MEMBER_UPDATE":
+        this.eventEmitter.emit!GuildMemberUpdate(
+            new GuildMemberUpdate(this.client, d));
+        break;
+      case "GUILD_MEMBER_REMOVE":
+        this.eventEmitter.emit!GuildMemberRemove(
+            new GuildMemberRemove(this.client, d));
+        break;
+      case "GUILD_ROLE_CREATE":
+        this.eventEmitter.emit!GuildRoleCreate(
+            new GuildRoleCreate(this.client, d));
+        break;
+      case "GUILD_ROLE_UPDATE":
+        this.eventEmitter.emit!GuildRoleUpdate(
+            new GuildRoleUpdate(this.client, d));
+        break;
+      case "GUILD_ROLE_DELETE":
+        this.eventEmitter.emit!GuildRoleDelete(
+            new GuildRoleDelete(this.client, d));
         break;
       case "MESSAGE_CREATE":
         this.eventEmitter.emit!MessageCreate(
@@ -113,6 +149,26 @@ class GatewayClient {
         this.eventEmitter.emit!MessageDelete(
             new MessageDelete(this.client, d));
         break;
+      case "PRESENCE_UPDATE":
+        this.eventEmitter.emit!PresenceUpdate(
+            new PresenceUpdate(this.client, d));
+        break;
+      case "TYPING_START":
+        this.eventEmitter.emit!TypingStart(
+            new TypingStart(this.client, d));
+        break;
+      case "USER_SETTINGS_UPDATE":
+        this.eventEmitter.emit!UserSettingsUpdate(
+            new UserSettingsUpdate(this.client, d));
+        break;
+      case "USER_UPDATE":
+        this.eventEmitter.emit!UserUpdate(
+            new UserUpdate(this.client, d));
+        break;
+      case "VOICE_STATE_UPDATE":
+        this.eventEmitter.emit!VoiceStateUpdate(
+            new VoiceStateUpdate(this.client, d));
+        break;
       default:
         writefln("Unhandled gateway event %s", d.event);
     }
@@ -121,7 +177,11 @@ class GatewayClient {
   void dispatch(JSONObject obj) {
     switch (obj.get!OPCode("op")) {
       case OPCode.DISPATCH:
-        this.packetEmitter.emit!Dispatch(new Dispatch(obj));
+        try {
+          this.packetEmitter.emit!Dispatch(new Dispatch(obj));
+        } catch (Exception e) {
+          writefln("Failed to load dispatch: %s\n%s", e, obj.dumps);
+        }
         break;
       default:
         break;

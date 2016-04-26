@@ -148,12 +148,101 @@ class GuildDelete : Event {
   }
 }
 
+class GuildBanAdd : Event {
+  User  user;
+
+  this(Client c, Dispatch d) {
+    super(c, d);
+    // this.user = new User(this.client, d.data);
+  }
+}
+
+class GuildBanRemove : Event {
+  User  user;
+
+  this(Client c, Dispatch d) {
+    super(c, d);
+    // this.user = new User(this.client, d.data);
+  }
+}
+
+class GuildEmojisUpdate : Event {
+  // TODO
+  this(Client c, Dispatch d) {
+    super(c, d);
+  }
+}
+
+class GuildIntegrationsUpdate : Event {
+  // TODO
+  this(Client c, Dispatch d) {
+    super(c, d);
+  }
+}
+
 class GuildMemberAdd : Event {
   GuildMember  member;
 
   this (Client c, Dispatch d) {
     super(c, d);
     this.member = new GuildMember(this.client, d.data);
+  }
+}
+
+class GuildMemberRemove : Event {
+  Snowflake  guild_id;
+  User       user;
+
+  this (Client c, Dispatch d) {
+    super(c, d);
+    this.guild_id = d.data.get!Snowflake("guild_id");
+    this.user = new User(this.client, d.data.get!JSONObject("user"));
+  }
+}
+
+class GuildMemberUpdate : Event {
+  Snowflake  guild_id;
+  User       user;
+  Role[]     roles;
+
+  this (Client c, Dispatch d) {
+    super(c, d);
+    this.guild_id = d.data.get!Snowflake("guild_id");
+    this.user = new User(this.client, d.data.get!JSONObject("user"));
+    // TODO: roles
+  }
+}
+
+class GuildRoleCreate : Event {
+  Snowflake  guild_id;
+  Role       role;
+
+  this (Client c, Dispatch d) {
+    super(c, d);
+    this.guild_id = d.data.get!Snowflake("guild_id");
+    this.role = new Role(this.client, d.data.get!JSONObject("role"));
+  }
+}
+
+class GuildRoleUpdate : Event {
+  Snowflake  guild_id;
+  Role       role;
+
+  this (Client c, Dispatch d) {
+    super(c, d);
+    this.guild_id = d.data.get!Snowflake("guild_id");
+    this.role = new Role(this.client, d.data.get!JSONObject("role"));
+  }
+}
+
+class GuildRoleDelete : Event {
+  Snowflake  guild_id;
+  Role       role;
+
+  this (Client c, Dispatch d) {
+    super(c, d);
+    this.guild_id = d.data.get!Snowflake("guild_id");
+    // this.role = new Role(this.client, d.data.get!JSONObject("role"));
   }
 }
 
@@ -183,5 +272,69 @@ class MessageDelete : Event {
     super(c, d);
     this.id = d.data.get!Snowflake("id");
     this.channel_id = d.data.get!Snowflake("channel_id");
+  }
+}
+
+class PresenceUpdate : Event {
+  User         user;
+  Snowflake    guild_id;
+  Snowflake[]  roles;
+  string       game;
+  string       status;
+
+  this (Client c, Dispatch d) {
+    super(c, d);
+    // TODO: this lol
+  }
+}
+
+class TypingStart : Event {
+  Snowflake  channel_id;
+  Snowflake  user_id;
+  string     timestamp;
+
+  this(Client c, Dispatch d) {
+    super(c, d);
+    this.channel_id = d.data.get!Snowflake("channel_id");
+    this.user_id = d.data.get!Snowflake("user_id");
+    this.timestamp = d.data.get!string("timestamp");
+  }
+}
+
+class UserSettingsUpdate : Event {
+  this(Client c, Dispatch d) {
+    // TODO
+    super(c, d);
+  }
+}
+
+class UserUpdate : Event {
+  this(Client c, Dispatch d) {
+    // TODO
+    super(c, d);
+  }
+}
+
+class VoiceStateUpdate : Event {
+  Snowflake  user_id;
+  Snowflake  guild_id;
+  Snowflake  channel_id;
+  string     session_id;
+  bool       self_mute;
+  bool       self_deaf;
+  bool       mute;
+  bool       deaf;
+
+  this(Client c, Dispatch d) {
+    super(c, d);
+
+    this.user_id = d.data.get!Snowflake("user_id");
+    this.guild_id = d.data.get!Snowflake("guild_id");
+    this.channel_id = d.data.maybeGet!Snowflake("channel_id", 0);
+    this.session_id = d.data.get!string("session_id");
+    this.self_mute = d.data.get!bool("self_mute");
+    this.self_deaf = d.data.get!bool("self_deaf");
+    this.mute = d.data.get!bool("mute");
+    this.deaf = d.data.get!bool("deaf");
   }
 }

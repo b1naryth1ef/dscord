@@ -1,6 +1,8 @@
 module dscord.util.json;
 
-import std.variant;
+import std.variant,
+       std.format;
+
 public import std.json;
 
 import dscord.util.errors;
@@ -59,14 +61,14 @@ class JSONObject {
 
   Variant getRaw(string key) {
     debug {
-      assert(this.has(key), "Key missing:" ~ key);
+      if (!this.has(key)) throw new Exception(format("Key missing: %s", key));
     }
     return this.obj[key];
   }
 
   T get(T)(string key) {
     debug {
-      assert(this.has(key), "Key missing:" ~ key);
+      if (!this.has(key)) throw new Exception(format("Key missing: %s", key));
     }
     return this.obj[key].coerce!(T);
   }

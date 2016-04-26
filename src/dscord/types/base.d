@@ -43,72 +43,40 @@ class Model {
   void load(JSONObject obj) {}
 }
 
-class ModelMap(Ti, Tm) {
-  alias _getter = Tm delegate(Ti);
-  alias _setter = void delegate(Ti, Tm);
+class ModelMap(TKey, TValue) {
+  TValue[TKey]  data;
 
-  _getter  getter;
-  _setter  setter;
-  Tm[Ti]   storage;
-
-  this() {}
-
-  this(_getter getter) {
-    this.getter = getter;
-  }
-
-  this(_getter getter, _setter setter) {
-    this.getter = getter;
-    this.setter = setter;
-  }
-
-  bool has(Ti key) {
-    return (key in this.storage) != null;
-  }
-
-  void set(Ti key, Tm value) {
+  TValue set(TKey key, TValue value) {
     if (value is null) {
-      this.del(key);
-      return;
+      this.remove(key);
+      return null;
     }
 
-    this.storage[key] = value;
+    this.data[key] = value;
+    return value;
   }
 
-  Tm get(Ti id) {
-    if (!(id in this.storage)) {
-      return this.refresh(id);
-    }
-
-    return this.storage[id];
+  TValue get(TKey key) {
+    return this.data[key];
   }
 
-  Tm getOrSet(Ti key, Tm delegate() set) {
-    if (key in this.storage) {
-      return this.storage[key];
-    }
-    this.set(key, set());
-    return this.storage[key];
+  void remove(TKey key) {
+    this.data.remove(key);
   }
 
-  Tm refresh(Ti id) {
-    assert(this.getter, "Must have getter to refresh");
-    this.storage[id] = this.getter(id);
-    if (this.setter) this.setter(id, this.storage[id]);
-    return this.storage[id];
+  bool has(TKey key) {
+    return (key in this.data) != null;
   }
 
-  void del(Ti id) {
-    this.storage.remove(id);
-    if (this.setter) this.setter(id, null);
-  }
-
-  Tm opIndex(Ti key) {
+  TValue opIndex(TKey key) {
     return this.get(key);
   }
 
-  void opIndexAssign(Tm value, Ti key) {
-    this.storage[key] = value;
-    if (this.setter) this.setter(key, value);
+  void opIndexAssign(TValue value, TKey key) {
+    this.set(key, value);
+  }
+
+  size_t length() {
+    return this.data.length;
   }
 }

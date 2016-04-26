@@ -13,14 +13,11 @@ import dscord.client,
 
 class StateStartupComplete {};
 
-class State {
+class State : Emitter {
   // Client
   Client         client;
   APIClient      api;
   GatewayClient  gw;
-
-  // Event Emitter
-  Emitter  events;
 
   // Storage
   User        me;
@@ -36,12 +33,8 @@ class State {
     this.client = client;
     this.api = client.api;
     this.gw = client.gw;
-    this.events = new Emitter;
 
-    this.guilds = new GuildMap((id) {
-      return new Guild(this.client, this.api.guild(id));
-    });
-
+    this.guilds = new GuildMap;
     this.channels = new ChannelMap;
     this.users = new UserMap;
 
@@ -49,19 +42,17 @@ class State {
   }
 
   void bindEvents() {
-    /*
-    this.gw.onEvent!Ready(toDelegate(&this.onReady));
+    this.client.events.listen!Ready(toDelegate(&this.onReady));
 
     // Guilds
-    this.gw.onEvent!GuildCreate(toDelegate(&this.onGuildCreate));
-    this.gw.onEvent!GuildUpdate(toDelegate(&this.onGuildUpdate));
-    this.gw.onEvent!GuildDelete(toDelegate(&this.onGuildDelete));
+    this.client.events.listen!GuildCreate(toDelegate(&this.onGuildCreate));
+    this.client.events.listen!GuildUpdate(toDelegate(&this.onGuildUpdate));
+    this.client.events.listen!GuildDelete(toDelegate(&this.onGuildDelete));
 
     // Channels
-    this.gw.onEvent!ChannelCreate(toDelegate(&this.onChannelCreate));
-    this.gw.onEvent!ChannelUpdate(toDelegate(&this.onChannelUpdate));
-    this.gw.onEvent!ChannelDelete(toDelegate(&this.onChannelDelete));
-    */
+    this.client.events.listen!ChannelCreate(toDelegate(&this.onChannelCreate));
+    this.client.events.listen!ChannelUpdate(toDelegate(&this.onChannelUpdate));
+    this.client.events.listen!ChannelDelete(toDelegate(&this.onChannelDelete));
   }
 
   void onReady(Ready r) {
@@ -75,7 +66,7 @@ class State {
       this.onReadyGuildCount -= 1;
 
       if (this.onReadyGuildCount == 0) {
-        this.events.emit!StateStartupComplete(new StateStartupComplete);
+        this.emit!StateStartupComplete(new StateStartupComplete);
       }
     }
   }
@@ -88,7 +79,7 @@ class State {
     if (!this.guilds.has(c.guild_id)) return;
 
     destroy(this.guilds[c.guild_id]);
-    this.guilds.del(c.guild_id);
+    this.guilds.remove(c.guild_id);
   }
 
   void onChannelCreate(ChannelCreate c) {
@@ -100,8 +91,10 @@ class State {
   }
 
   void onChannelDelete(ChannelDelete c) {
-    destroy(this.channels[c.channel.id]);
-    this.channels.del(c.channel.id);
+    if (this.channels.has(c.channel.id)) {
+      destroy(this.channels[c.channel.id]);
+      this.channels.remove(c.channel.id);
+    }
   }
 
   Guild guild(Snowflake id) {
