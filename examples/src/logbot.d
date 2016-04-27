@@ -5,12 +5,14 @@ import std.stdio,
        std.algorithm,
        std.string,
        std.format,
-       std.conv;
+       std.conv,
+       std.array;
 
 import vibe.core.core;
 import vibe.http.client;
 
 import dscord.client,
+       dscord.types.all,
        dscord.gateway.events,
        dscord.util.counter;
 
@@ -21,6 +23,12 @@ extern (C) {
   void handleSigInt(int value) {
     exitEventLoop();
   }
+}
+
+Channel userVoiceChannel(Guild guild, User user) {
+  auto states = guild.voiceStates.filter(s => s.user_id == user.id).array;
+  if (!states.length) return null;
+  return states[0].channel;
 }
 
 
@@ -56,13 +64,20 @@ void main(string[] args) {
           foreach (e; counter.mostCommon(5)) {
             parts ~= format("%s: %s", e, counter.storage[e]);
           }
-          event.message.reply(format("```%s```", parts.join("\n")).to!wstring);
+          event.message.reply(format("```%s```", parts.join("\n")));
         } else if (event.message.content.endsWith(".stats")) {
           string[] parts;
 
           parts ~= format("Users: %s", client.state.users.length);
           parts ~= format("Guilds: %s", client.state.guilds.length);
-          event.message.reply(format("```%s```", parts.join("\n")).to!wstring);
+          event.message.reply(format("```%s```", parts.join("\n")));
+        } else if (event.message.content.endsWith(".voice")) {
+          auto channel = userVoiceChannel(event.message.guild, event.message.author);
+          if (channel) {
+            event.message.reply(format("You are in '%s' (%s)", channel.name, channel.id));
+          } else {
+            event.message.reply("You are not in a voice channel for this guild");
+          }
         }
       }
     }

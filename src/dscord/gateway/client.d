@@ -69,6 +69,7 @@ class GatewayClient {
       this.seq = d.seq;
     }
 
+    debug writefln("Dispatching event %s", d.event);
     switch (d.event) {
       case "READY":
         this.eventEmitter.emit!Ready(new Ready(this.client, d));
@@ -175,6 +176,7 @@ class GatewayClient {
   }
 
   void dispatch(JSONObject obj) {
+    debug writefln("Dispatching packet %s", obj.get!OPCode("op"));
     switch (obj.get!OPCode("op")) {
       case OPCode.DISPATCH:
         try {

@@ -1,7 +1,9 @@
 module dscord.types.base;
 
 import std.conv,
-       std.typecons;
+       std.typecons,
+       std.stdio,
+       std.algorithm;
 
 import dscord.client,
        dscord.util.json;
@@ -37,6 +39,7 @@ class Model {
 
   this(Client client, JSONObject obj) {
     this.client = client;
+    debug writefln("Creating Model %s with data: %s", this.toString, obj.dumps());
     this.load(obj);
   }
 
@@ -78,5 +81,17 @@ class ModelMap(TKey, TValue) {
 
   size_t length() {
     return this.data.length;
+  }
+
+  auto filter(bool delegate(TValue) f) {
+    return this.data.values.filter!(f);
+  }
+
+  auto each(void delegate(TValue) f) {
+    return this.data.values.each!(f);
+  }
+ 
+  auto each(TValue delegate(TValue) f) {
+    return this.data.values.each!(f);
   }
 }

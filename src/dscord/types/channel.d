@@ -10,6 +10,7 @@ import dscord.client,
        dscord.types.message,
        dscord.types.user,
        dscord.types.permission,
+       dscord.types.voice,
        dscord.util.json;
 
 alias ChannelMap = ModelMap!(Snowflake, Channel);
@@ -63,7 +64,7 @@ class Channel : Model {
   ChannelType  type;
   short        position;
   uint         bitrate;
-  User*        recipient;
+  User         recipient;
 
   // Overwrites
   PermissionOverwriteMap  overwrites;
@@ -124,5 +125,9 @@ class Channel : Model {
 
   @property bool text() {
     return cast(bool)(this.type & ChannelType.TEXT);
+  }
+
+  @property auto voiceStates() {
+    return this.guild.voiceStates.filter(c => c.channel_id == this.id);
   }
 }

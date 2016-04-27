@@ -146,14 +146,14 @@ JSONValue variantToJSON(Variant v) {
     return JSONValue(v.get!string);
   } else if (v.convertsTo!wstring) {
     return JSONValue(v.get!wstring);
+  } else if (v.type == typeid(bool)) {
+    return JSONValue(v.get!bool);
   } else if (v.convertsTo!uint) {
     return JSONValue(v.get!uint);
   } else if (v.convertsTo!int) {
     return JSONValue(v.get!int);
   } else if(v.convertsTo!float) {
     return JSONValue(v.get!float);
-  } else if (v.convertsTo!bool) {
-    return JSONValue(v.get!bool);
   } else if (v.convertsTo!double) {
     return JSONValue(v.get!double);
   } else if (v.type == typeid(JSONObject)) {

@@ -1,11 +1,13 @@
 module dscord.types.message;
 
 import std.stdio,
-       std.variant;
+       std.variant,
+       std.conv;
 
 import dscord.client,
        dscord.types.base,
        dscord.types.user,
+       dscord.types.guild,
        dscord.types.channel,
        dscord.util.json;
 
@@ -62,9 +64,17 @@ class Message : Model {
     }
   }
 
+  void reply(string content, string nonce=null, bool tts=false, bool mention=false) {
+    this.reply(content.to!wstring, nonce, tts, mention);
+  }
+
   void reply(wstring content, string nonce=null, bool tts=false, bool mention=false) {
     // TODO: mention
     this.client.api.sendMessage(this.channel_id, content, nonce, tts);
+  }
+
+  @property Guild guild() {
+    return this.channel.guild;
   }
 
   @property Channel channel() {

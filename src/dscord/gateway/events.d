@@ -3,7 +3,8 @@ module dscord.gateway.events;
 import std.variant,
        std.stdio,
        std.algorithm,
-       std.string;
+       std.string,
+       std.stdio;
 
 import dscord.gateway.client,
        dscord.gateway.packets,
@@ -16,6 +17,7 @@ class Event {
   this(Client c, Dispatch d) {
     this.client = c;
     this.payload = d.data;
+    debug writefln("Creating event %s with data: %s", this.toString, this.payload.dumps());
   }
 }
 
@@ -316,25 +318,10 @@ class UserUpdate : Event {
 }
 
 class VoiceStateUpdate : Event {
-  Snowflake  user_id;
-  Snowflake  guild_id;
-  Snowflake  channel_id;
-  string     session_id;
-  bool       self_mute;
-  bool       self_deaf;
-  bool       mute;
-  bool       deaf;
+  VoiceState  state;
 
   this(Client c, Dispatch d) {
     super(c, d);
-
-    this.user_id = d.data.get!Snowflake("user_id");
-    this.guild_id = d.data.get!Snowflake("guild_id");
-    this.channel_id = d.data.maybeGet!Snowflake("channel_id", 0);
-    this.session_id = d.data.get!string("session_id");
-    this.self_mute = d.data.get!bool("self_mute");
-    this.self_deaf = d.data.get!bool("self_deaf");
-    this.mute = d.data.get!bool("mute");
-    this.deaf = d.data.get!bool("deaf");
+    this.state = new VoiceState(c, d.data);
   }
 }

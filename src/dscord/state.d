@@ -53,6 +53,9 @@ class State : Emitter {
     this.client.events.listen!ChannelCreate(toDelegate(&this.onChannelCreate));
     this.client.events.listen!ChannelUpdate(toDelegate(&this.onChannelUpdate));
     this.client.events.listen!ChannelDelete(toDelegate(&this.onChannelDelete));
+
+    // Voice State
+    this.client.events.listen!VoiceStateUpdate(toDelegate(&this.onVoiceStateUpdate));
   }
 
   void onReady(Ready r) {
@@ -62,6 +65,12 @@ class State : Emitter {
 
   void onGuildCreate(GuildCreate c) {
     this.guilds[c.guild.id] = c.guild;
+
+    // Add channels
+    c.guild.channels.each((c) {
+      this.channels[c.id] = c;
+    });
+
     if (!c.isNew) {
       this.onReadyGuildCount -= 1;
 
@@ -94,6 +103,16 @@ class State : Emitter {
     if (this.channels.has(c.channel.id)) {
       destroy(this.channels[c.channel.id]);
       this.channels.remove(c.channel.id);
+    }
+  }
+
+  void onVoiceStateUpdate(VoiceStateUpdate u) {
+    auto guild = this.guilds.get(u.state.guild_id);
+
+    if (!u.state.channel_id) {
+      guild.voiceStates.remove(u.state.session_id);
+    } else {
+      guild.voiceStates[u.state.session_id] = u.state;
     }
   }
 

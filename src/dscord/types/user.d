@@ -15,6 +15,8 @@ class User : Model {
   bool       verified;
   string     email;
 
+  // Helpful storage items
+
   this(Client client, JSONObject obj) {
     super(client, obj);
   }

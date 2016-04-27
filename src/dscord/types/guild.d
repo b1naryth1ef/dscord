@@ -97,14 +97,16 @@ class Guild : Model {
   string[]   features;
 
   // Mappings
-  ChannelMap  channels;
-  RoleMap     roles;
+  VoiceStateMap  voiceStates;
+  ChannelMap     channels;
+  RoleMap        roles;
 
   // Role[] roles;
   // Emoji[] emoji;
   // Channel[]  channels;
 
   this(Client client, JSONObject obj) {
+    this.voiceStates = new VoiceStateMap;
     this.channels = new ChannelMap;
     this.roles = new RoleMap;
     super(client, obj);
@@ -139,6 +141,15 @@ class Guild : Model {
         auto role = new Role(this.client, new JSONObject(variantToJSON(obj)));
         role.guild = this;
         this.roles[role.id] = role;
+      }
+    }
+
+    if (obj.has("voice_states")) {
+      foreach (Variant obj; obj.getRaw("voice_states")) {
+        auto state = new VoiceState(this.client, new JSONObject(variantToJSON(obj)));
+        state.guild_id = this.id;
+        this.voiceStates[state.session_id] = state;
+        // TODO: update the users/channels state?
       }
     }
 
