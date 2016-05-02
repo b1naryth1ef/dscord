@@ -14,50 +14,11 @@ class Event {
   Client client;
   JSONObject payload;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     this.client = c;
     this.payload = d.data;
     debug writefln("Creating event %s with data: %s", this.toString, this.payload.dumps());
   }
-}
-
-/*
-Object eventToClass(string event) {
-  auto parts = event.split("_").map!(capitalize).join("");
-  auto name = "dscord.gateway.events." ~ parts;
-  writeln(name);
-  return Object.factory(parts);
-}
-*/
-
-Object eventToClass(string name) {
-  switch (name) {
-    case "READY":
-      return typeid(Ready);
-    case "GUILD_CREATE":
-      return typeid(GuildCreate);
-    default:
-      return null;
-  }
-}
-
-// authors note: pretty sure I'm high as fuck right now
-string eventName(string clsName) {
-  string[] parts;
-
-  string piece = "";
-  foreach (chr; clsName) {
-    if (chr == chr.toUpper && piece.length > 0) {
-      parts ~= piece;
-      piece = "";
-      piece ~= chr;
-    } else {
-      piece ~= chr;
-    }
-  }
-
-  parts ~= piece;
-  return join(parts, "_").toUpper;
 }
 
 class Ready : Event {
@@ -68,7 +29,7 @@ class Ready : Event {
   Channel[]   dms;
   Guild[]     guilds;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
 
     this.ver = d.data.get!ushort("v");
@@ -84,10 +45,16 @@ class Ready : Event {
   }
 }
 
+class Resumed : Event {
+  this(Client c, DispatchPacket d) {
+    super(c, d);
+  }
+}
+
 class ChannelCreate : Event {
   Channel  channel;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     this.channel = new Channel(this.client, d.data);
   }
@@ -96,7 +63,7 @@ class ChannelCreate : Event {
 class ChannelUpdate : Event {
   Channel  channel;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     this.channel = new Channel(this.client, d.data);
   }
@@ -105,7 +72,7 @@ class ChannelUpdate : Event {
 class ChannelDelete : Event {
   Channel  channel;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     this.channel = new Channel(this.client, d.data);
   }
@@ -116,7 +83,7 @@ class GuildCreate : Event {
   bool   isNew;
   bool   unavailable;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     this.guild = new Guild(this.client, d.data);
 
@@ -131,7 +98,7 @@ class GuildCreate : Event {
 class GuildUpdate : Event {
   Guild  guild;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     this.guild = new Guild(this.client, d.data);
   }
@@ -141,7 +108,7 @@ class GuildDelete : Event {
   Snowflake  guild_id;
   bool       unavailable;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.guild_id = d.data.get!Snowflake("id");
     if (d.data.has("unavailable")) {
@@ -153,7 +120,7 @@ class GuildDelete : Event {
 class GuildBanAdd : Event {
   User  user;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     // this.user = new User(this.client, d.data);
   }
@@ -162,7 +129,7 @@ class GuildBanAdd : Event {
 class GuildBanRemove : Event {
   User  user;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     // this.user = new User(this.client, d.data);
   }
@@ -170,14 +137,14 @@ class GuildBanRemove : Event {
 
 class GuildEmojisUpdate : Event {
   // TODO
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
   }
 }
 
 class GuildIntegrationsUpdate : Event {
   // TODO
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
   }
 }
@@ -185,7 +152,7 @@ class GuildIntegrationsUpdate : Event {
 class GuildMemberAdd : Event {
   GuildMember  member;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.member = new GuildMember(this.client, d.data);
   }
@@ -195,7 +162,7 @@ class GuildMemberRemove : Event {
   Snowflake  guild_id;
   User       user;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.guild_id = d.data.get!Snowflake("guild_id");
     this.user = new User(this.client, d.data.get!JSONObject("user"));
@@ -207,7 +174,7 @@ class GuildMemberUpdate : Event {
   User       user;
   Role[]     roles;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.guild_id = d.data.get!Snowflake("guild_id");
     this.user = new User(this.client, d.data.get!JSONObject("user"));
@@ -219,7 +186,7 @@ class GuildRoleCreate : Event {
   Snowflake  guild_id;
   Role       role;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.guild_id = d.data.get!Snowflake("guild_id");
     this.role = new Role(this.client, d.data.get!JSONObject("role"));
@@ -230,7 +197,7 @@ class GuildRoleUpdate : Event {
   Snowflake  guild_id;
   Role       role;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.guild_id = d.data.get!Snowflake("guild_id");
     this.role = new Role(this.client, d.data.get!JSONObject("role"));
@@ -241,7 +208,7 @@ class GuildRoleDelete : Event {
   Snowflake  guild_id;
   Role       role;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.guild_id = d.data.get!Snowflake("guild_id");
     // this.role = new Role(this.client, d.data.get!JSONObject("role"));
@@ -251,7 +218,7 @@ class GuildRoleDelete : Event {
 class MessageCreate : Event {
   Message  message;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.message = new Message(this.client, d.data);
   }
@@ -260,7 +227,7 @@ class MessageCreate : Event {
 class MessageUpdate : Event {
   Message message;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.message = new Message(this.client, d.data);
   }
@@ -270,7 +237,7 @@ class MessageDelete : Event {
   Snowflake  id;
   Snowflake  channel_id;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     this.id = d.data.get!Snowflake("id");
     this.channel_id = d.data.get!Snowflake("channel_id");
@@ -284,7 +251,7 @@ class PresenceUpdate : Event {
   string       game;
   string       status;
 
-  this (Client c, Dispatch d) {
+  this (Client c, DispatchPacket d) {
     super(c, d);
     // TODO: this lol
   }
@@ -295,7 +262,7 @@ class TypingStart : Event {
   Snowflake  user_id;
   string     timestamp;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     this.channel_id = d.data.get!Snowflake("channel_id");
     this.user_id = d.data.get!Snowflake("user_id");
@@ -304,14 +271,14 @@ class TypingStart : Event {
 }
 
 class UserSettingsUpdate : Event {
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     // TODO
     super(c, d);
   }
 }
 
 class UserUpdate : Event {
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     // TODO
     super(c, d);
   }
@@ -320,8 +287,21 @@ class UserUpdate : Event {
 class VoiceStateUpdate : Event {
   VoiceState  state;
 
-  this(Client c, Dispatch d) {
+  this(Client c, DispatchPacket d) {
     super(c, d);
     this.state = new VoiceState(c, d.data);
+  }
+}
+
+class VoiceServerUpdate : Event {
+  string     token;
+  string     endpoint;
+  Snowflake  guild_id;
+
+  this(Client c, DispatchPacket d) {
+    super(c, d);
+    this.token = d.data.get!string("token");
+    this.endpoint = d.data.get!string("endpoint");
+    this.guild_id = d.data.get!Snowflake("guild_id");
   }
 }

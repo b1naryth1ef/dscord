@@ -18,30 +18,33 @@ import dscord.client,
        dscord.util.emitter;
 
 alias GatewayPacketHandler = void delegate (BasePacket);
-alias GatewayEventHandler = void delegate (Dispatch);
+alias GatewayEventHandler = void delegate (DispatchPacket);
 
 
 class GatewayClient {
   Client     client;
   WebSocket  sock;
 
-  private {
-    uint seq;
-    uint hb_interval;
-  }
+  //private {
+    string  session_id;
+    uint    seq;
+    uint    hb_interval;
+    bool    connected;
+    Task    heartbeater;
+  // }
 
   Emitter  packetEmitter;
   Emitter  eventEmitter;
 
+
   this(Client client) {
     this.client = client;
-    this.sock = connectWebSocket(URL(client.api.gateway()));
-
 
     this.packetEmitter = new Emitter;
     this.eventEmitter = new Emitter;
-    this.packetEmitter.listen!Dispatch(toDelegate(&this.handleDispatchPacket));
+    this.packetEmitter.listen!DispatchPacket(toDelegate(&this.handleDispatchPacket));
     this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
+    this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
 
     // Copy emitters to client for easier API access
     client.packets = this.packetEmitter;
@@ -49,21 +52,30 @@ class GatewayClient {
   }
 
   void start() {
+    if (this.sock && this.sock.connected) this.sock.close();
+
     // Start the main task
+    this.sock = connectWebSocket(URL(client.api.gateway()));
     runTask(toDelegate(&this.run));
   }
 
   void send(Serializable p) {
     JSONObject data = p.serialize();
+    debug writefln("Gateway Send: %s", data.dumps());
     this.sock.send(data.dumps());
   }
 
   void handleReadyEvent(Ready r) {
     this.hb_interval = r.heartbeat_interval;
-    runTask(toDelegate(&this.heartbeat));
+    this.session_id = r.session_id;
+    this.heartbeater = runTask(toDelegate(&this.heartbeat));
   }
 
-  void handleDispatchPacket(Dispatch d) {
+  void handleResumedEvent(Resumed r) {
+    this.heartbeater = runTask(toDelegate(&this.heartbeat));
+  }
+
+  void handleDispatchPacket(DispatchPacket d) {
     // Update sequence number if it's larger than what we have
     if (d.seq > this.seq) {
       this.seq = d.seq;
@@ -73,6 +85,9 @@ class GatewayClient {
     switch (d.event) {
       case "READY":
         this.eventEmitter.emit!Ready(new Ready(this.client, d));
+        break;
+      case "RESUMED":
+        this.eventEmitter.emit!Resumed(new Resumed(this.client, d));
         break;
       case "CHANNEL_CREATE":
         this.eventEmitter.emit!ChannelCreate(
@@ -170,6 +185,10 @@ class GatewayClient {
         this.eventEmitter.emit!VoiceStateUpdate(
             new VoiceStateUpdate(this.client, d));
         break;
+      case "VOICE_SERVER_UPDATE":
+        this.eventEmitter.emit!VoiceServerUpdate(
+            new VoiceServerUpdate(this.client, d));
+        break;
       default:
         writefln("Unhandled gateway event %s", d.event);
     }
@@ -180,7 +199,7 @@ class GatewayClient {
     switch (obj.get!OPCode("op")) {
       case OPCode.DISPATCH:
         try {
-          this.packetEmitter.emit!Dispatch(new Dispatch(obj));
+          this.packetEmitter.emit!DispatchPacket(new DispatchPacket(obj));
         } catch (Exception e) {
           writefln("Failed to load dispatch: %s\n%s", e, obj.dumps);
         }
@@ -191,8 +210,8 @@ class GatewayClient {
   }
 
   void heartbeat() {
-    while (true) {
-      this.send(new Heartbeat(this.seq));
+    while (this.connected) {
+      this.send(new HeartbeatPacket(this.seq));
       sleep(this.hb_interval.msecs);
     }
   }
@@ -200,10 +219,19 @@ class GatewayClient {
   void run() {
     string data;
 
-    // On startup, send the identify payload
-    this.send(new Identify(this.client.token));
+    // If we already have a sequence number, attempt to resume
+    if (this.session_id && this.seq) {
+      this.send(new ResumePacket(this.client.token, this.session_id, this.seq));
+    } else {
+      // On startup, send the identify payload
+      this.send(new IdentifyPacket(this.client.token));
+    }
+
+    this.connected = true;
 
     while (this.sock.waitForData()) {
+      if (!this.connected) break;
+
       try {
         ubyte[] rawdata = this.sock.receiveBinary();
         data = cast(string)uncompress(rawdata);
@@ -221,5 +249,9 @@ class GatewayClient {
         writefln("Failed to handle: %s (%s)", e, data);
       }
     }
+
+    this.connected = false;
+    writefln("Gateway websocket closed, attempting reconnect");
+    return this.start();
   }
 }

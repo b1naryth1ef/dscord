@@ -6,7 +6,8 @@ import std.stdio,
        std.string,
        std.format,
        std.conv,
-       std.array;
+       std.array,
+       core.time;
 
 import vibe.core.core;
 import vibe.http.client;
@@ -14,6 +15,7 @@ import vibe.http.client;
 import dscord.client,
        dscord.types.all,
        dscord.gateway.events,
+       dscord.gateway.packets,
        dscord.util.counter;
 
 import core.sys.posix.signal;
@@ -48,10 +50,10 @@ void main(string[] args) {
   auto client = new Client(args[1]);
   // this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
 
-  client.events.listenAll((name, value) {
-    counter.tick(name);
-    // writefln("EVENT %s", name);
-  });
+  /* client.events.listenAll((name, value) { */
+  /*   counter.tick(name); */
+  /*   // writefln("EVENT %s", name); */
+  /* }); */
 
   client.events.listen!MessageCreate((event) {
     if (event.message.mentions.length) {
@@ -73,11 +75,17 @@ void main(string[] args) {
           event.message.reply(format("```%s```", parts.join("\n")));
         } else if (event.message.content.endsWith(".voice")) {
           auto channel = userVoiceChannel(event.message.guild, event.message.author);
-          if (channel) {
-            event.message.reply(format("You are in '%s' (%s)", channel.name, channel.id));
-          } else {
-            event.message.reply("You are not in a voice channel for this guild");
+          if (!channel) {
+            event.message.reply("Your not in a voice channe silly!");
+            return;
           }
+          auto vc = channel.joinVoice();
+          vc.connect();
+          // vc.setSpeaking(true);
+          // sleep(1.seconds);
+          // vc.setSpeaking(false);
+          // sleep(1.seconds);
+          // vc.close();
         }
       }
     }

@@ -8,6 +8,7 @@ import vibe.core.core;
 
 /*
 TODO: Rewrite this.
+TODO: this does not work (rofl)
 
 Ideally the RateLimiter can be quite a bit more smart than it currently is, namely:
   1. RateLimiter should flush requests slowly, vs spamming all the requests after

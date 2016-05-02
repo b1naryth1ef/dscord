@@ -19,6 +19,7 @@ class APIError : BaseError {
   }
 }
 
+// Simple URL constructor to help building routes
 struct U {
   string  _bucket;
   string  value;
@@ -47,6 +48,7 @@ struct U {
   }
 }
 
+// Wrapper for HTTP API Responses
 class APIResponse {
   private {
     HTTPClientResponse res;
@@ -93,6 +95,7 @@ class APIResponse {
   }
 }
 
+// Actual API client used for making requests
 class APIClient {
   string       baseURL = "https://discordapp.com/api/";
   string       token;
@@ -119,6 +122,7 @@ class APIClient {
       throw new APIError(-1, "Request expired before rate-limit");
     }
 
+    debug writefln("R: %s %s %s", method, this.baseURL ~ url.value, data);
     auto res = new APIResponse(requestHTTP(this.baseURL ~ url.value,
       (scope req) {
         req.method = method;
@@ -174,7 +178,7 @@ class APIClient {
   }
 
   string gateway() {
-    auto res = this.requestJSON(HTTPMethod.GET, U("gateway"));
+    auto res = this.requestJSON(HTTPMethod.GET, U("gateway?v=4"));
     res.ok();
     return res.json.get!string("url");
   }

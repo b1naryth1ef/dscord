@@ -5,6 +5,7 @@ import std.stdio,
        core.vararg;
 
 import dscord.client,
+       dscord.voice.client,
        dscord.types.base,
        dscord.types.guild,
        dscord.types.message,
@@ -69,6 +70,9 @@ class Channel : Model {
   // Overwrites
   PermissionOverwriteMap  overwrites;
 
+  // Voice Connection
+  VoiceClient  vc;
+
   this(Client client, JSONObject obj) {
     this.overwrites = new PermissionOverwriteMap;
 
@@ -129,5 +133,10 @@ class Channel : Model {
 
   @property auto voiceStates() {
     return this.guild.voiceStates.filter(c => c.channel_id == this.id);
+  }
+
+  VoiceClient joinVoice() {
+    this.vc = new VoiceClient(this);
+    return this.vc;
   }
 }

@@ -1,7 +1,8 @@
 module dscord.util.json;
 
 import std.variant,
-       std.format;
+       std.format,
+       std.conv;
 
 public import std.json;
 
@@ -139,6 +140,7 @@ JSONValue convertVariantArray(Variant v) {
 }
 
 // Converts a Variant type to a JSONValue type
+// TODO: refactor this
 JSONValue variantToJSON(Variant v) {
   if (v.type == typeid(null)) {
     return JSONValue(null);
@@ -152,9 +154,13 @@ JSONValue variantToJSON(Variant v) {
     return JSONValue(v.get!uint);
   } else if (v.convertsTo!int) {
     return JSONValue(v.get!int);
-  } else if(v.convertsTo!float) {
+  } else if (v.type == typeid(ulong)) {
+    return JSONValue(format("%d", v.get!ulong));
+  } else if (v.type == typeid(long)) {
+    return JSONValue(format("%d", v.get!long));
+  } else if (v.type == typeid(float)) {
     return JSONValue(v.get!float);
-  } else if (v.convertsTo!double) {
+  } else if (v.type == typeid(double)) {
     return JSONValue(v.get!double);
   } else if (v.type == typeid(JSONObject)) {
     JSONValue result;

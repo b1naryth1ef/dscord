@@ -3,7 +3,8 @@ module dscord.client;
 import dscord.state,
        dscord.api.client,
        dscord.gateway.client,
-       dscord.types.user,
+       dscord.voice.client,
+       dscord.types.all,
        dscord.util.emitter;
 
 class Client {
@@ -13,6 +14,9 @@ class Client {
   // Clients
   APIClient      api;
   GatewayClient  gw;
+
+  // Voice connections
+  VoiceClient[Snowflake]  voiceConns;
 
   // State
   State  state;

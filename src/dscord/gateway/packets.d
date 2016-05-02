@@ -1,6 +1,6 @@
 module dscord.gateway.packets;
 
-import dscord.types.user,
+import dscord.types.all,
        dscord.util.json;
 
 enum OPCode {
@@ -29,7 +29,7 @@ class BasePacket : Deserializable {
   JSONObject  data;
   JSONObject  raw;
 
-  JSONObject serialize(OPCode op, JSONValue data) {
+  JSONObject serialize(ushort op, JSONValue data) {
     return new JSONObject()
       .set!ushort("op", cast(ushort)op)
       .setRaw("d", data);
@@ -42,7 +42,7 @@ class BasePacket : Deserializable {
   }
 }
 
-class Heartbeat : BasePacket, Serializable {
+class HeartbeatPacket : BasePacket, Serializable {
   uint seq;
 
   this(uint seq) {
@@ -54,15 +54,58 @@ class Heartbeat : BasePacket, Serializable {
   }
 }
 
+class ResumePacket : BasePacket, Serializable {
+  string  token;
+  string  session_id;
+  uint    seq;
+
+  this(string token, string session_id, uint seq) {
+    this.token = token;
+    this.session_id = session_id;
+    this.seq = seq;
+  }
+
+  override JSONObject serialize() {
+    return super.serialize(OPCode.RESUME, new JSONObject()
+      .set!string("token", token)
+      .set!string("session_id", session_id)
+      .set!uint("seq", seq).asJSON());
+  }
+}
+
 /* class StatusUpdate : BasePacket, Deserializable {} */
-/* class VoiceStateUpdate : BasePacket, Deserializable {} */
 /* class VoiceServerPing : BasePacket, Deserializable {} */
 /* class Resume : BasePacket, Deserializable {} */
 /* class Reconnect : BasePacket, Deserializable {} */
 /* class RequestGuildMembers : BasePacket, Deserializable {} */
 /* class InvalidSession : BasePacket, Deserializable {} */
 
-class Dispatch : BasePacket, Deserializable {
+class VoiceStateUpdatePacket : BasePacket, Serializable {
+  Snowflake  guild_id;
+  Snowflake  channel_id;
+  bool       self_mute;
+  bool       self_deaf;
+
+  this(Snowflake guild_id, Snowflake channel_id, bool self_mute, bool self_deaf) {
+    this.guild_id = guild_id;
+    this.channel_id = channel_id;
+    this.self_mute = self_mute;
+    this.self_deaf = self_deaf;
+  }
+
+  override JSONObject serialize() {
+    auto payload = new JSONObject()
+      .set!bool("self_mute", this.self_mute)
+      .set!bool("self_deaf", this.self_deaf);
+
+    if (this.guild_id) payload.set!Snowflake("guild_id", this.guild_id);
+    if (this.channel_id) payload.set!Snowflake("channel_id", this.channel_id);
+
+    return super.serialize(OPCode.VOICE_STATE_UPDATE, payload.asJSON());
+  }
+}
+
+class DispatchPacket : BasePacket, Deserializable {
   int         seq;
   string      event;
 
@@ -81,7 +124,7 @@ class Dispatch : BasePacket, Deserializable {
   }
 }
 
-class Identify : BasePacket, Serializable {
+class IdentifyPacket : BasePacket, Serializable {
   string token;
   bool compress = true;
   ushort large_threshold = 250;
