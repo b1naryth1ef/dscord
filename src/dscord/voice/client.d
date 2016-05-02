@@ -32,6 +32,8 @@ class VoiceClient {
   Emitter  packetEmitter;
 
   private {
+    Logger  log;
+
     // Voice websocket
     WebSocket  sock;
 
@@ -55,6 +57,7 @@ class VoiceClient {
   this(Channel c, bool mute=false, bool deaf=false) {
     this.channel = c;
     this.client = c.client;
+    this.log = this.client.log;
     this.mute = mute;
     this.deaf = deaf;
 
@@ -63,7 +66,7 @@ class VoiceClient {
   }
 
   void handleVoiceReadyPacket(VoiceReadyPacket p) {
-    debug writefln("[VOICE] got ready");
+    this.log.trace("Got VoiceReadyPacket");
     this.ssrc = p.ssrc;
     this.port = p.port;
     this.heartbeat_interval = p.heartbeat_interval;
@@ -80,7 +83,7 @@ class VoiceClient {
   }
 
   void dispatch(JSONObject obj) {
-    debug writefln("[VOICE] Dispatch: %s", obj.get!VoiceOPCode("op"));
+    this.log.trace("voice-dispatch: %s", obj.get!VoiceOPCode("op"));
 
     switch (obj.get!VoiceOPCode("op")) {
       case VoiceOPCode.VOICE_READY:
@@ -93,7 +96,7 @@ class VoiceClient {
 
   void send(Serializable p) {
     JSONObject data = p.serialize();
-    debug writefln("[VOICE] Send: %s", data.dumps());
+    this.log.trace("voice-send: %s", data.dumps());
     this.sock.send(data.dumps());
   }
 
@@ -116,7 +119,7 @@ class VoiceClient {
       try {
         this.dispatch(new JSONObject(data));
       } catch (Exception e) {
-        writefln("Failed to handle: %s (%s)", e, data);
+        this.log.warning("failed to handle voice dispatch: %s (%s)", e, data);
       }
     }
   }

@@ -1,7 +1,8 @@
 module dscord.state;
 
 import std.functional,
-       std.stdio;
+       std.stdio,
+       std.experimental.logger;
 
 import dscord.client,
        dscord.api.client,
@@ -26,10 +27,13 @@ class State : Emitter {
   UserMap     users;
 
   private {
-    ushort onReadyGuildCount;
+    Logger  log;
+    ushort  onReadyGuildCount;
   }
 
   this(Client client) {
+    this.log = client.log;
+
     this.client = client;
     this.api = client.api;
     this.gw = client.gw;

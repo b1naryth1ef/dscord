@@ -39,7 +39,7 @@ class Model {
 
   this(Client client, JSONObject obj) {
     this.client = client;
-    debug writefln("Creating Model %s with data: %s", this.toString, obj.dumps());
+    this.client.log.trace("creating model %s with data %s", this.toString, obj.dumps());
     this.load(obj);
   }
 
@@ -90,7 +90,7 @@ class ModelMap(TKey, TValue) {
   auto each(void delegate(TValue) f) {
     return this.data.values.each!(f);
   }
- 
+
   auto each(TValue delegate(TValue) f) {
     return this.data.values.each!(f);
   }

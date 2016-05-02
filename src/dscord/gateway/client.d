@@ -22,16 +22,15 @@ alias GatewayEventHandler = void delegate (DispatchPacket);
 
 
 class GatewayClient {
+  Logger     log;
   Client     client;
   WebSocket  sock;
 
-  //private {
-    string  session_id;
-    uint    seq;
-    uint    hb_interval;
-    bool    connected;
-    Task    heartbeater;
-  // }
+  string  session_id;
+  uint    seq;
+  uint    hb_interval;
+  bool    connected;
+  Task    heartbeater;
 
   Emitter  packetEmitter;
   Emitter  eventEmitter;
@@ -39,6 +38,7 @@ class GatewayClient {
 
   this(Client client) {
     this.client = client;
+    this.log = this.client.log;
 
     this.packetEmitter = new Emitter;
     this.eventEmitter = new Emitter;
@@ -61,7 +61,7 @@ class GatewayClient {
 
   void send(Serializable p) {
     JSONObject data = p.serialize();
-    debug writefln("Gateway Send: %s", data.dumps());
+    this.log.trace("gateway-send: %s", data.dumps()); 
     this.sock.send(data.dumps());
   }
 
@@ -81,7 +81,7 @@ class GatewayClient {
       this.seq = d.seq;
     }
 
-    debug writefln("Dispatching event %s", d.event);
+    this.log.trace("gateway-packet: %s", d.event);
     switch (d.event) {
       case "READY":
         this.eventEmitter.emit!Ready(new Ready(this.client, d));
@@ -190,18 +190,18 @@ class GatewayClient {
             new VoiceServerUpdate(this.client, d));
         break;
       default:
-        writefln("Unhandled gateway event %s", d.event);
+        this.log.warning("unhandled gateway event: %s", d.event);
     }
   }
 
   void dispatch(JSONObject obj) {
-    debug writefln("Dispatching packet %s", obj.get!OPCode("op"));
+    this.log.trace("gateway-dispatch: %s", obj.get!OPCode("op"));
     switch (obj.get!OPCode("op")) {
       case OPCode.DISPATCH:
         try {
           this.packetEmitter.emit!DispatchPacket(new DispatchPacket(obj));
         } catch (Exception e) {
-          writefln("Failed to load dispatch: %s\n%s", e, obj.dumps);
+          this.log.warning("failed to load dispatch: %s\n%s", e, obj.dumps);
         }
         break;
       default:
@@ -246,12 +246,12 @@ class GatewayClient {
       try {
         this.dispatch(new JSONObject(data));
       } catch (Exception e) {
-        writefln("Failed to handle: %s (%s)", e, data);
+        this.log.warning("failed to handle %s (%s)", e, data);
       }
     }
 
     this.connected = false;
-    writefln("Gateway websocket closed, attempting reconnect");
+    this.log.trace("gateway websocket closed, attempting reconnect");
     return this.start();
   }
 }

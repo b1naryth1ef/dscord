@@ -1,5 +1,9 @@
 module dscord.client;
 
+import std.stdio;
+
+public import std.experimental.logger;
+
 import dscord.state,
        dscord.api.client,
        dscord.gateway.client,
@@ -8,6 +12,9 @@ import dscord.state,
        dscord.util.emitter;
 
 class Client {
+  // Log
+  Logger  log;
+
   // User auth token
   string  token;
 
@@ -25,7 +32,8 @@ class Client {
   Emitter  events;
   Emitter  packets;
 
-  this(string token) {
+  this(string token, LogLevel lvl=LogLevel.all) {
+    this.log = new FileLogger(stdout, lvl);
     this.token = token;
 
     this.api = new APIClient(this.token);
