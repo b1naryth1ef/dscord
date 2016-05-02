@@ -12,32 +12,14 @@ import std.stdio,
 class Listener {
   string     name;
   Emitter    e;
-  Variant    value;
 
   // Function
   void delegate(Variant arg)  f;
 
-  // Async
-  TaskCondition  await;
-
-  this(Emitter e, string name, void delegate(Variant arg) f, bool async=false) {
+  this(Emitter e, string name, void delegate(Variant arg) f) {
     this.name = name;
     this.e = e;
-    if (async) {
-      this.await = new TaskCondition(new TaskMutex);
-    } else {
-      this.f = f;
-    }
-  }
-
-  Variant wait(Duration timeout = 1.seconds) {
-    assert(!this.f, "wait is only available on async listeners");
-    // synchronized (this.await.mutex) {
-      if (!this.await.wait(timeout)) {
-        this.value = new Variant(null);
-      }
-   // }
-    return this.value;
+    this.f = f;
   }
 
   void unbind() {
@@ -46,13 +28,7 @@ class Listener {
   }
 
   void opCall(Variant arg) {
-    if (this.f) {
-      this.f(arg);
-    } else {
-      this.value = arg;
-      this.unbind();
-      this.await.notifyAll();
-    }
+    this.f(arg);
   }
 }
 
@@ -72,11 +48,10 @@ class Emitter {
     return li;
   }
 
-  Listener listen(T)(void delegate(T) f, bool async=false) {
+  Listener listen(T)(void delegate(T) f) {
     auto li = new Listener(this, T.stringof, (arg) {
-      writefln("calling %s", f);
       f(arg.get!T);
-    }, async);
+    });
 
     this.listeners[T.stringof] ~= li;
     return li;
@@ -97,17 +72,4 @@ class Emitter {
       f(v);
     }
   }
-
-  T waitFor(T)(Duration timeout=1.seconds) {
-    auto handler = this.listen!T(null, true);
-    auto value = handler.wait(timeout);
-
-    writefln("%s", value);
-    if (value.convertsTo!T) {
-      return value.coerce!T;
-    } else {
-      return null;
-    }
-  }
 }
-
