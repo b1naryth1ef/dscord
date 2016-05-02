@@ -32,7 +32,9 @@ class VoiceClient {
   Emitter  packetEmitter;
 
   private {
-    Logger  log;
+    Logger     log;
+    TaskMutex      waitForConnectedMutex;
+    TaskCondition  waitForConnected;
 
     // Voice websocket
     WebSocket  sock;
@@ -66,7 +68,7 @@ class VoiceClient {
   }
 
   void handleVoiceReadyPacket(VoiceReadyPacket p) {
-    this.log.trace("Got VoiceReadyPacket");
+    this.log.tracef("Got VoiceReadyPacket");
     this.ssrc = p.ssrc;
     this.port = p.port;
     this.heartbeat_interval = p.heartbeat_interval;
@@ -83,7 +85,7 @@ class VoiceClient {
   }
 
   void dispatch(JSONObject obj) {
-    this.log.trace("voice-dispatch: %s", obj.get!VoiceOPCode("op"));
+    this.log.tracef("voice-dispatch: %s", obj.get!VoiceOPCode("op"));
 
     switch (obj.get!VoiceOPCode("op")) {
       case VoiceOPCode.VOICE_READY:
@@ -96,7 +98,7 @@ class VoiceClient {
 
   void send(Serializable p) {
     JSONObject data = p.serialize();
-    this.log.trace("voice-send: %s", data.dumps());
+    this.log.tracef("voice-send: %s", data.dumps());
     this.sock.send(data.dumps());
   }
 
@@ -133,6 +135,9 @@ class VoiceClient {
     this.token = event.token;
     this.connected = true;
 
+    // Notify the waitForConnected condition
+    this.waitForConnected.notifyAll();
+
     // Grab endpoint and create a proper URL out of it
     this.endpoint = URL("wss", event.endpoint.split(":")[0], 0, Path());
     this.sock = connectWebSocket(this.endpoint);
@@ -147,7 +152,10 @@ class VoiceClient {
     ));
   }
 
-  void connect() {
+  bool connect(Duration timeout=5.seconds) {
+    this.waitForConnectedMutex = new TaskMutex;
+    this.waitForConnected = new TaskCondition(this.waitForConnectedMutex);
+
     this.l = this.client.gw.eventEmitter.listen!VoiceServerUpdate(toDelegate(
       &this.onVoiceServerUpdate));
 
@@ -157,6 +165,16 @@ class VoiceClient {
       this.mute,
       this.deaf
    ));
+
+    // Wait for connection
+    synchronized (this.waitForConnectedMutex) {
+      if (this.waitForConnected.wait(timeout)) {
+        return true;
+      } else {
+        this.disconnect();
+        return false;
+      }
+    }
   }
 
   void disconnect() {

@@ -98,8 +98,17 @@ class VoiceStateUpdatePacket : BasePacket, Serializable {
       .set!bool("self_mute", this.self_mute)
       .set!bool("self_deaf", this.self_deaf);
 
-    if (this.guild_id) payload.set!Snowflake("guild_id", this.guild_id);
-    if (this.channel_id) payload.set!Snowflake("channel_id", this.channel_id);
+    if (this.guild_id) {
+      payload.set!Snowflake("guild_id", this.guild_id);
+    } else {
+      payload.setRaw("guild_id", JSONValue(null));
+    }
+
+    if (this.channel_id) {
+      payload.set!Snowflake("channel_id", this.channel_id);
+    } else {
+      payload.setRaw("channel_id", JSONValue(null));
+    }
 
     return super.serialize(OPCode.VOICE_STATE_UPDATE, payload.asJSON());
   }

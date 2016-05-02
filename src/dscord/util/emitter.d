@@ -57,11 +57,11 @@ class Emitter {
     return li;
   }
 
-  void emitTask(T)(T obj) {
-    runTask(this.emit, obj);
+  void emit(T)(T obj) {
+    runTask(&this._emit!T, obj);
   }
 
-  void emit(T)(T obj) {
+  void _emit(T)(T obj) {
     auto v = Variant(obj);
 
     if (!(T.stringof in this.listeners)) {

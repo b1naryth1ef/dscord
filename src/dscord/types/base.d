@@ -39,7 +39,7 @@ class Model {
 
   this(Client client, JSONObject obj) {
     this.client = client;
-    this.client.log.trace("creating model %s with data %s", this.toString, obj.dumps());
+    this.client.log.tracef("creating model %s with data %s", this.toString, obj.dumps());
     this.load(obj);
   }
 

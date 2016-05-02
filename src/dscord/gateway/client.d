@@ -61,7 +61,7 @@ class GatewayClient {
 
   void send(Serializable p) {
     JSONObject data = p.serialize();
-    this.log.trace("gateway-send: %s", data.dumps()); 
+    this.log.tracef("gateway-send: %s", data.dumps());
     this.sock.send(data.dumps());
   }
 
@@ -81,7 +81,7 @@ class GatewayClient {
       this.seq = d.seq;
     }
 
-    this.log.trace("gateway-packet: %s", d.event);
+    this.log.tracef("gateway-packet: %s", d.event);
     switch (d.event) {
       case "READY":
         this.eventEmitter.emit!Ready(new Ready(this.client, d));
@@ -195,7 +195,7 @@ class GatewayClient {
   }
 
   void dispatch(JSONObject obj) {
-    this.log.trace("gateway-dispatch: %s", obj.get!OPCode("op"));
+    this.log.tracef("gateway-dispatch: %s", obj.get!OPCode("op"));
     switch (obj.get!OPCode("op")) {
       case OPCode.DISPATCH:
         try {
@@ -251,7 +251,7 @@ class GatewayClient {
     }
 
     this.connected = false;
-    this.log.trace("gateway websocket closed, attempting reconnect");
+    this.log.tracef("gateway websocket closed, attempting reconnect");
     return this.start();
   }
 }
