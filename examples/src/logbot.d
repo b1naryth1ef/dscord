@@ -81,11 +81,11 @@ void main(string[] args) {
           }
           auto vc = channel.joinVoice();
           vc.connect();
-          // vc.setSpeaking(true);
-          // sleep(1.seconds);
-          // vc.setSpeaking(false);
-          // sleep(1.seconds);
-          // vc.close();
+          vc.setSpeaking(true);
+          sleep(10.seconds);
+          vc.setSpeaking(false);
+          sleep(1.seconds);
+          vc.disconnect();
         }
       }
     }

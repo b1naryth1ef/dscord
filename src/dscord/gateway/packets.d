@@ -35,6 +35,12 @@ class BasePacket : Deserializable {
       .setRaw("d", data);
   }
 
+  JSONObject serialize(ushort op, JSONObject data) {
+    return new JSONObject()
+      .set!ushort("op", cast(ushort)op)
+      .set!JSONObject("d", data);
+  }
+
   void deserialize(JSONObject obj) {
     this.raw = obj;
     this.op = obj.get!OPCode("op");
@@ -69,7 +75,7 @@ class ResumePacket : BasePacket, Serializable {
     return super.serialize(OPCode.RESUME, new JSONObject()
       .set!string("token", token)
       .set!string("session_id", session_id)
-      .set!uint("seq", seq).asJSON());
+      .set!uint("seq", seq));
   }
 }
 
@@ -110,7 +116,7 @@ class VoiceStateUpdatePacket : BasePacket, Serializable {
       payload.setRaw("channel_id", JSONValue(null));
     }
 
-    return super.serialize(OPCode.VOICE_STATE_UPDATE, payload.asJSON());
+    return super.serialize(OPCode.VOICE_STATE_UPDATE, payload);
   }
 }
 
@@ -157,7 +163,7 @@ class IdentifyPacket : BasePacket, Serializable {
       .set!JSONObject("properties", this.properties)
       .set!bool("compress", this.compress)
       .set!ushort("large_threshold", this.large_threshold);
-    return super.serialize(OPCode.IDENTIFY, result.asJSON);
+    return super.serialize(OPCode.IDENTIFY, result);
   }
 }
 

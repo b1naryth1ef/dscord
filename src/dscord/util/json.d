@@ -144,15 +144,19 @@ JSONValue convertVariantArray(Variant v) {
 JSONValue variantToJSON(Variant v) {
   if (v.type == typeid(null)) {
     return JSONValue(null);
-  } else if (v.convertsTo!string) {
+  } else if (v.type == typeid(string)) {
     return JSONValue(v.get!string);
-  } else if (v.convertsTo!wstring) {
+  } else if (v.type == typeid(wstring)) {
     return JSONValue(v.get!wstring);
   } else if (v.type == typeid(bool)) {
     return JSONValue(v.get!bool);
-  } else if (v.convertsTo!uint) {
+  } else if (v.type == typeid(uint)) {
     return JSONValue(v.get!uint);
-  } else if (v.convertsTo!int) {
+  } else if (v.type == typeid(int)) {
+    return JSONValue(v.get!int);
+  } else if (v.type == typeid(short)) {
+    return JSONValue(v.get!int);
+  } else if (v.type == typeid(ushort)) {
     return JSONValue(v.get!int);
   } else if (v.type == typeid(ulong)) {
     return JSONValue(format("%d", v.get!ulong));

@@ -5,9 +5,14 @@ import core.time,
        std.stdio,
        std.zlib,
        std.functional,
-       std.array;
+       std.array,
+       std.stdio,
+       std.bitmanip,
+       std.outbuffer,
+       std.string;
 
 import vibe.core.core,
+       vibe.core.net,
        vibe.inet.url,
        vibe.http.websockets;
 
@@ -19,7 +24,76 @@ import dscord.client,
        dscord.util.emitter,
        dscord.util.json;
 
-// TODO: timeout if we didn't get a VOICE_SERVER_UPDATE
+struct RTPHeader {
+  ushort  seq;
+  uint    ts;
+  uint    ssrc;
+
+  this(ushort seq, uint ts, uint ssrc) {
+    this.seq = seq;
+    this.ts = ts;
+    this.ssrc = ssrc;
+  }
+
+  ubyte[] pack() {
+    OutBuffer b = new OutBuffer();
+    b.write(0x80);
+    b.write(0x78);
+    b.write(nativeToBigEndian(this.seq));
+    b.write(nativeToBigEndian(this.ts));
+    b.write(nativeToBigEndian(this.ssrc));
+    return b.toBytes;
+  }
+}
+
+class UDPVoiceClient {
+  VoiceClient    vc;
+  UDPConnection  conn;
+
+  // Local connection info
+  string  ip;
+  ushort  port;
+
+  this(VoiceClient vc) {
+    this.vc = vc;
+  }
+
+  void run() {
+    while (true) {
+      auto data = this.conn.recv();
+      // this.vc.log.infof("got data %s", cast(string)data);
+    }
+  }
+
+  bool connect(string hostname, ushort port, Duration timeout=5.seconds) {
+    this.conn = listenUDP(0);
+    this.conn.connect(hostname, port);
+
+    // Send IP discovery payload
+    OutBuffer b = new OutBuffer();
+    b.write(nativeToBigEndian(this.vc.ssrc));
+    b.fill0(70 - b.toBytes.length);
+    this.conn.send(b.toBytes);
+
+    // Wait for the IP discovery response, maybe timeout after a bit
+    string data;
+    try {
+      data = cast(string)this.conn.recv(timeout);
+    } catch (Exception e) {
+      return false;
+    }
+
+    // Parse the IP discovery response
+    this.ip = data[4..(data[4..data.length].indexOf(0x00) + 4)];
+    ubyte[2] portBytes = cast(ubyte[])(data)[data.length - 2..data.length];
+    this.port = littleEndianToNative!(ushort, 2)(portBytes);
+    this.vc.log.tracef("voice hoststring is %s:%s", ip, port);
+
+    // Finally actually start running the task
+    runTask(toDelegate(&this.run));
+    return true;
+  }
+}
 
 class VoiceClient {
   // Global client
@@ -30,6 +104,9 @@ class VoiceClient {
 
   // Packet emitter
   Emitter  packetEmitter;
+
+  // UDP Client
+  UDPVoiceClient  udp;
 
   private {
     Logger     log;
@@ -44,17 +121,18 @@ class VoiceClient {
 
     // Listener for VOICE_SERVER_UPDATE events
     Listener  l;
-
-    // Various connection attributes
-    string  token;
-    URL     endpoint;
-    bool    connected = false;
-    ushort  ssrc;
-    ushort  port;
-    ushort  heartbeat_interval;
-    bool    mute;
-    bool    deaf;
   }
+
+  // Various connection attributes
+  string  token;
+  URL     endpoint;
+  bool    connected = false;
+  ushort  ssrc;
+  ushort  port;
+  ushort  heartbeat_interval;
+  bool    mute;
+  bool    deaf;
+  bool    speaking = false;
 
   this(Channel c, bool mute=false, bool deaf=false) {
     this.channel = c;
@@ -67,19 +145,36 @@ class VoiceClient {
     this.packetEmitter.listen!VoiceReadyPacket(toDelegate(&this.handleVoiceReadyPacket));
   }
 
+  void setSpeaking(bool value) {
+    if (this.speaking == value) return;
+
+    this.speaking = value;
+    this.send(new VoiceSpeakingPacket(value, 0));
+  }
+
   void handleVoiceReadyPacket(VoiceReadyPacket p) {
     this.log.tracef("Got VoiceReadyPacket");
     this.ssrc = p.ssrc;
     this.port = p.port;
     this.heartbeat_interval = p.heartbeat_interval;
+
+    // Spawn the heartbeater
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
-    // TODO: udp connect
+
+    // Open up the UDP Connection and perform IP discovery
+    this.udp = new UDPVoiceClient(this);
+    assert(this.udp.connect(this.endpoint.host, this.port), "Failed to UDPVoiceClient connect/discover");
+
+    // Select the protocol
+    this.send(new VoiceSelectProtocolPacket("udp", "plain", this.udp.ip, this.udp.port));
+
+    // we're connected :)
   }
 
   void heartbeat() {
     while (this.connected) {
-      time_t unixTime = core.stdc.time.time(null);
-      this.send(new VoiceHeartbeatPacket(cast(uint)(unixTime * 1000)));
+      uint unixTime = cast(uint)core.stdc.time.time(null);
+      this.send(new VoiceHeartbeatPacket(unixTime * 1000));
       sleep(this.heartbeat_interval.msecs);
     }
   }
@@ -124,6 +219,8 @@ class VoiceClient {
         this.log.warning("failed to handle voice dispatch: %s (%s)", e, data);
       }
     }
+
+    this.log.warning("voice websocket closed");
   }
 
   void onVoiceServerUpdate(VoiceServerUpdate event) {
@@ -135,11 +232,8 @@ class VoiceClient {
     this.token = event.token;
     this.connected = true;
 
-    // Notify the waitForConnected condition
-    this.waitForConnected.notifyAll();
-
     // Grab endpoint and create a proper URL out of it
-    this.endpoint = URL("wss", event.endpoint.split(":")[0], 0, Path());
+    this.endpoint = URL("ws", event.endpoint.split(":")[0], 0, Path());
     this.sock = connectWebSocket(this.endpoint);
     runTask(toDelegate(&this.run));
 
@@ -150,6 +244,9 @@ class VoiceClient {
       this.client.gw.session_id,
       this.token
     ));
+
+    // Notify the waitForConnected condition
+    this.waitForConnected.notifyAll();
   }
 
   bool connect(Duration timeout=5.seconds) {

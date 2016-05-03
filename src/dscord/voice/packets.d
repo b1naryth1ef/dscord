@@ -1,5 +1,7 @@
 module dscord.voice.packets;
 
+import std.stdio;
+
 import dscord.types.all,
        dscord.gateway.packets;
 
@@ -30,7 +32,7 @@ class VoiceIdentifyPacket : BasePacket, Serializable {
       .set!Snowflake("server_id", server_id)
       .set!Snowflake("user_id", user_id)
       .set!string("session_id", session_id)
-      .set!string("token", token).asJSON());
+      .set!string("token", token));
   }
 }
 
@@ -53,6 +55,30 @@ class VoiceReadyPacket : BasePacket, Deserializable {
   }
 }
 
+class VoiceSelectProtocolPacket : BasePacket, Serializable {
+  string  protocol;
+  string  mode;
+  string  ip;
+  ushort  port;
+
+  this(string protocol, string mode, string ip, ushort port) {
+    this.protocol = protocol;
+    this.mode = mode;
+    this.ip = ip;
+    this.port = port;
+  }
+
+  override JSONObject serialize() {
+    auto data = new JSONObject()
+      .set!ushort("port", this.port)
+      .set!string("address", this.ip)
+      .set!string("mode", this.mode);
+
+    return super.serialize(VoiceOPCode.VOICE_SELECT_PROTOCOL, new JSONObject()
+      .set!string("protocol", protocol)
+      .set!JSONObject("data", data));
+  }
+}
 
 class VoiceHeartbeatPacket : BasePacket, Serializable {
   uint  ts;
@@ -65,3 +91,20 @@ class VoiceHeartbeatPacket : BasePacket, Serializable {
     return super.serialize(VoiceOPCode.VOICE_HEARTBEAT, JSONValue(this.ts));
   }
 }
+
+class VoiceSpeakingPacket : BasePacket, Serializable {
+  bool  speaking;
+  uint  delay;
+
+  this(bool speaking, uint delay) {
+    this.speaking = speaking;
+    this.delay = delay;
+  }
+
+  override JSONObject serialize() {
+    return super.serialize(VoiceOPCode.VOICE_SPEAKING, new JSONObject()
+      .set!bool("speaking", this.speaking)
+      .set!uint("delay", this.delay));
+  }
+}
+
