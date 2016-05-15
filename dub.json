@@ -8,7 +8,8 @@
   "dependencies": {
     "libasync": "~>0.7.9",
     "shaker": "~>0.0.7",
-    "vibe-d": "~>0.7.28"
+    "vibe-d": "~>0.7.28",
+    "dcad": "~>0.0.1"
   }
 }
 

@@ -16,6 +16,8 @@ import vibe.core.core,
        vibe.inet.url,
        vibe.http.websockets;
 
+import dcad.types : DCAFile;
+
 import dscord.client,
        dscord.gateway.packets,
        dscord.gateway.events,
@@ -37,8 +39,8 @@ struct RTPHeader {
 
   ubyte[] pack() {
     OutBuffer b = new OutBuffer();
-    b.write(0x80);
-    b.write(0x78);
+    b.write('\x80');
+    b.write('\x78');
     b.write(nativeToBigEndian(this.seq));
     b.write(nativeToBigEndian(this.ts));
     b.write(nativeToBigEndian(this.ssrc));
@@ -53,6 +55,10 @@ class UDPVoiceClient {
   // Local connection info
   string  ip;
   ushort  port;
+
+  // Voice audio info
+  ushort  seq;
+  uint    ts;
 
   this(VoiceClient vc) {
     this.vc = vc;
@@ -92,6 +98,20 @@ class UDPVoiceClient {
     // Finally actually start running the task
     runTask(toDelegate(&this.run));
     return true;
+  }
+
+  void playDCA(DCAFile obj) {
+    foreach (frame; obj.frames) {
+      RTPHeader header;
+      header.seq = this.seq++;
+      header.ts = (this.ts += frame.size);
+      header.ssrc = this.vc.ssrc;
+      this.vc.log.tracef("s %s, t %s, ss %s", header.seq, header.ts, header.ssrc);
+      ubyte[] raw = header.pack() ~ frame.data;
+      this.vc.log.tracef("sending frame (%s + %s)", header.pack().length, frame.data.length);
+      this.conn.send(raw);
+      sleep((1.seconds / 1000) * 30);
+    }
   }
 }
 
@@ -143,6 +163,8 @@ class VoiceClient {
 
     this.packetEmitter = new Emitter;
     this.packetEmitter.listen!VoiceReadyPacket(toDelegate(&this.handleVoiceReadyPacket));
+    this.packetEmitter.listen!VoiceSessionDescriptionPacket(
+        toDelegate(&this.handleVoiceSessionDescription));
   }
 
   void setSpeaking(bool value) {
@@ -168,7 +190,15 @@ class VoiceClient {
     // Select the protocol
     this.send(new VoiceSelectProtocolPacket("udp", "plain", this.udp.ip, this.udp.port));
 
-    // we're connected :)
+  }
+
+  void handleVoiceSessionDescription(VoiceSessionDescriptionPacket p) {
+    // Notify the waitForConnected condition
+    this.waitForConnected.notifyAll();
+  }
+
+  void playDCAFile(DCAFile f) {
+    this.udp.playDCA(f);
   }
 
   void heartbeat() {
@@ -180,11 +210,15 @@ class VoiceClient {
   }
 
   void dispatch(JSONObject obj) {
-    this.log.tracef("voice-dispatch: %s", obj.get!VoiceOPCode("op"));
+    this.log.tracef("voice-dispatch: %s %s", obj.get!VoiceOPCode("op"), obj.dumps);
 
     switch (obj.get!VoiceOPCode("op")) {
       case VoiceOPCode.VOICE_READY:
         this.packetEmitter.emit!VoiceReadyPacket(new VoiceReadyPacket(obj));
+        break;
+      case VoiceOPCode.VOICE_SESSION_DESCRIPTION:
+        this.packetEmitter.emit!VoiceSessionDescriptionPacket(
+            new VoiceSessionDescriptionPacket(obj));
         break;
       default:
         break;
@@ -244,9 +278,6 @@ class VoiceClient {
       this.client.gw.session_id,
       this.token
     ));
-
-    // Notify the waitForConnected condition
-    this.waitForConnected.notifyAll();
   }
 
   bool connect(Duration timeout=5.seconds) {
@@ -275,6 +306,8 @@ class VoiceClient {
   }
 
   void disconnect() {
+    this.connected = false;
+    this.sock.close();
     this.l.unbind();
     this.client.gw.send(new VoiceStateUpdatePacket(
       this.channel.guild_id,

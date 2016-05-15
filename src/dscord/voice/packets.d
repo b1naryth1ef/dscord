@@ -108,3 +108,16 @@ class VoiceSpeakingPacket : BasePacket, Serializable {
   }
 }
 
+class VoiceSessionDescriptionPacket : BasePacket, Deserializable {
+  string  secretKey;
+
+  this(JSONObject obj) {
+    this.deserialize(obj);
+  }
+
+  override void deserialize(JSONObject obj) {
+    super.deserialize(obj);
+    this.secretKey = this.data.maybeGet!string("secretKey", "");
+  }
+}
+

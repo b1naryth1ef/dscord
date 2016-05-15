@@ -11,6 +11,8 @@ import std.stdio,
 
 import vibe.core.core;
 import vibe.http.client;
+import dcad.types : DCAFile;
+
 
 import dscord.client,
        dscord.types.all,
@@ -79,12 +81,12 @@ void main(string[] args) {
             event.message.reply("Your not in a voice channe silly!");
             return;
           }
+          auto df = new DCAFile(File("/tmp/airhorn_default.dca", "r"));
+
           auto vc = channel.joinVoice();
           vc.connect();
-          vc.setSpeaking(true);
+          vc.playDCAFile(df);
           sleep(10.seconds);
-          vc.setSpeaking(false);
-          sleep(1.seconds);
           vc.disconnect();
         }
       }
