@@ -74,12 +74,12 @@ class Message : Model, Identifiable {
 
   // Returns a version of the message contents, without any mentions
   string withoutMentions() {
-    return this.replaceMentionsWith((m, u) => "");
+    return this.replaceMentions((m, u) => "");
   }
 
   // Returns a version of the message contents, with proper usernames instead of mentions
   string withProperMentions(bool nicks=true) {
-    return this.replaceMentionsWith((msg, user) {
+    return this.replaceMentions((msg, user) {
       GuildMember m;
       if (nicks) {
         m = msg.guild.members.get(user.id);
@@ -91,7 +91,7 @@ class Message : Model, Identifiable {
   /*
     Replaces all mentions with the specified delegates result
   */
-  string replaceMentionsWith(string delegate(Message, User) f) {
+  string replaceMentions(string delegate(Message, User) f) {
     if (!this.mentions.length) {
       return this.content;
     }
