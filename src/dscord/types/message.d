@@ -2,7 +2,9 @@ module dscord.types.message;
 
 import std.stdio,
        std.variant,
-       std.conv;
+       std.conv,
+       std.format,
+       std.regex;
 
 import dscord.client,
        dscord.types.base,
@@ -12,11 +14,11 @@ import dscord.client,
        dscord.util.json;
 
 
-class Message : Model {
+class Message : Model, Identifiable {
   Snowflake  id;
   Snowflake  channel_id;
   User       author;
-  wstring    content;
+  string    content;
   string     timestamp; // TODO: timestamps lol
   string     edited_timestamp; // TODO: timestamps lol
   bool       tts;
@@ -37,7 +39,9 @@ class Message : Model {
   override void load(JSONObject obj) {
     this.id = obj.get!Snowflake("id");
     this.channel_id = obj.get!Snowflake("channel_id");
-    this.content = obj.maybeGet!wstring("content", "");
+    this.content = obj.maybeGet!(string)("content", "");
+    this.client.log.tracef("WTF: %s\n\n", this.content);
+
     this.timestamp = obj.maybeGet!string("timestamp", "");
     this.edited_timestamp = obj.maybeGet!string("edited_timestamp", "");
     this.tts = obj.maybeGet!bool("tts", false);
@@ -64,11 +68,43 @@ class Message : Model {
     }
   }
 
-  void reply(string content, string nonce=null, bool tts=false, bool mention=false) {
-    this.reply(content.to!wstring, nonce, tts, mention);
+  Snowflake getID() {
+    return this.id;
   }
 
-  void reply(wstring content, string nonce=null, bool tts=false, bool mention=false) {
+  // Returns a version of the message contents, without any mentions
+  string withoutMentions() {
+    return this.replaceMentionsWith((m, u) => "");
+  }
+
+  // Returns a version of the message contents, with proper usernames instead of mentions
+  string withProperMentions(bool nicks=true) {
+    return this.replaceMentionsWith((msg, user) {
+      GuildMember m;
+      if (nicks) {
+        m = msg.guild.members.get(user.id);
+      }
+      return "@" ~ ((m && m.nick != "") ? m.nick : user.username);
+    });
+  }
+
+  /*
+    Replaces all mentions with the specified delegates result
+  */
+  string replaceMentionsWith(string delegate(Message, User) f) {
+    if (!this.mentions.length) {
+      return this.content;
+    }
+
+    string result = this.content;
+    foreach (ref User user; this.mentions.values) {
+      result = replaceAll(result, regex(format("<@!?(%s)>", user.id)), f(this, user));
+    }
+
+    return result;
+  }
+
+  void reply(string content, string nonce=null, bool tts=false, bool mention=false) {
     // TODO: mention
     this.client.api.sendMessage(this.channel_id, content, nonce, tts);
   }

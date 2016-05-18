@@ -14,8 +14,8 @@ import dscord.client,
        dscord.types.voice,
        dscord.util.json;
 
-alias ChannelMap = ModelMap!(Snowflake, Channel);
-alias PermissionOverwriteMap = ModelMap!(Snowflake, PermissionOverwrite);
+alias ChannelMap = IdentifiedModelMap!(Channel);
+alias PermissionOverwriteMap = IdentifiedModelMap!(PermissionOverwrite);
 
 enum ChannelType {
   NONE,
@@ -30,7 +30,7 @@ enum PermissionOverwriteType {
 	MEMBER = 1 << 1,
 }
 
-class PermissionOverwrite : Model {
+class PermissionOverwrite : Model, Identifiable {
 	Snowflake  id;
   Channel    channel;
 
@@ -54,12 +54,16 @@ class PermissionOverwrite : Model {
       PermissionOverwriteType.ROLE :
       PermissionOverwriteType.MEMBER;
   }
+
+  Snowflake getID() {
+    return this.id;
+  }
 }
 
-class Channel : Model {
+class Channel : Model, Identifiable {
   Snowflake    id;
-  wstring      name;
-  wstring      topic;
+  string      name;
+  string      topic;
   Snowflake    guild_id;
   Snowflake    last_message_id;
   ChannelType  type;
@@ -81,8 +85,8 @@ class Channel : Model {
 
   override void load(JSONObject obj) {
     this.id = obj.get!Snowflake("id");
-    this.name = obj.maybeGet!wstring("name", "");
-    this.topic = obj.maybeGet!wstring("topic", null);
+    this.name = obj.maybeGet!string("name", "");
+    this.topic = obj.maybeGet!string("topic", null);
     this.guild_id = obj.maybeGet!Snowflake("guild_id", 0);
     this.last_message_id = obj.maybeGet!Snowflake("last_message_id", 0);
     this.position = obj.maybeGet!short("position", 0);
@@ -107,7 +111,11 @@ class Channel : Model {
     }
   }
 
-  void sendMessage(wstring content, string nonce=null, bool tts=false) {
+  Snowflake getID() {
+    return this.id;
+  }
+
+  void sendMessage(string content, string nonce=null, bool tts=false) {
     this.client.api.sendMessage(this.id, content, nonce, tts);
   }
 

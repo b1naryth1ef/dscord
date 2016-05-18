@@ -5,9 +5,9 @@ import std.stdio;
 import dscord.client,
        dscord.types.all;
 
-alias UserMap = ModelMap!(Snowflake, User);
+alias UserMap = IdentifiedModelMap!(User);
 
-class User : Model {
+class User : Model, Identifiable {
   Snowflake  id;
   string     username;
   string     discriminator;
@@ -19,6 +19,10 @@ class User : Model {
 
   this(Client client, JSONObject obj) {
     super(client, obj);
+  }
+
+  Snowflake getID() {
+    return this.id;
   }
 
   override void load(JSONObject obj) {

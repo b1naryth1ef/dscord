@@ -8,12 +8,13 @@ import dscord.client,
        dscord.types.all,
        dscord.util.json;
 
-alias GuildMap = ModelMap!(Snowflake, Guild);
-alias RoleMap = ModelMap!(Snowflake, Role);
+alias GuildMap = IdentifiedModelMap!(Guild);
+alias RoleMap = IdentifiedModelMap!(Role);
+alias GuildMemberMap = IdentifiedModelMap!(GuildMember);
 
-class Role : Model {
+class Role : Model, Identifiable {
   Snowflake   id;
-  wstring     name;
+  string     name;
   uint        color;
   bool        hoist;
   short       position;
@@ -29,7 +30,7 @@ class Role : Model {
   override void load(JSONObject obj) {
     // writeln(obj.dumps);
     this.id = obj.get!Snowflake("id");
-    this.name = obj.get!wstring("name");
+    this.name = obj.get!string("name");
     this.hoist = obj.get!bool("hoist");
     this.position = obj.get!short("position");
     this.permission = obj.get!Permission("permissions");
@@ -41,7 +42,10 @@ class Role : Model {
     } else {
       this.color = obj.get!uint("color");
     }
+  }
 
+  Snowflake getID() {
+    return this.id;
   }
 }
 
@@ -55,8 +59,9 @@ class Emoji {
 }
 */
 
-class GuildMember : Model {
+class GuildMember : Model, Identifiable {
   User    user;
+  string  nick;
   string  joined_at;
   bool    mute;
   bool    deaf;
@@ -77,17 +82,22 @@ class GuildMember : Model {
       this.client.state.users.set(this.user.id, this.user);
     }
 
+    this.nick = obj.maybeGet!string("nick", "");
     this.mute = obj.get!bool("mute");
     this.deaf = obj.get!bool("deaf");
   }
+
+  Snowflake getID() {
+    return this.user.id;
+  }
 }
 
-class Guild : Model {
+class Guild : Model, Identifiable {
   Snowflake  id;
   Snowflake  owner_id;
   Snowflake  afk_channel_id;
   Snowflake  embed_channel_id;
-  wstring    name;
+  string    name;
   string     icon;
   string     splash;
   string     region;
@@ -97,15 +107,17 @@ class Guild : Model {
   string[]   features;
 
   // Mappings
-  VoiceStateMap  voiceStates;
-  ChannelMap     channels;
-  RoleMap        roles;
+  GuildMemberMap  members;
+  VoiceStateMap   voiceStates;
+  ChannelMap      channels;
+  RoleMap         roles;
 
   // Role[] roles;
   // Emoji[] emoji;
   // Channel[]  channels;
 
   this(Client client, JSONObject obj) {
+    this.members = new GuildMemberMap;
     this.voiceStates = new VoiceStateMap;
     this.channels = new ChannelMap;
     this.roles = new RoleMap;
@@ -120,7 +132,7 @@ class Guild : Model {
     }
 
     this.owner_id = obj.get!string("owner_id").to!Snowflake;
-    this.name = obj.get!wstring("name");
+    this.name = obj.get!string("name");
     this.icon = obj.get!string("icon");
     this.region = obj.get!string("region");
     this.verification_level = obj.get!ushort("verification_level");
@@ -133,6 +145,13 @@ class Guild : Model {
         auto channel = new Channel(this.client, new JSONObject(variantToJSON(obj)));
         channel.guild_id = this.id;
         this.channels[channel.id] = channel;
+      }
+    }
+
+    if (obj.has("members")) {
+      foreach (Variant obj; obj.getRaw("members")) {
+        auto member = new GuildMember(this.client, new JSONObject(variantToJSON(obj)));
+        this.members[member.user.id] = member;
       }
     }
 
@@ -154,5 +173,9 @@ class Guild : Model {
     }
 
     // this.features = obj.get!string[]("features");
+  }
+
+  Snowflake getID() {
+    return this.id;
   }
 }

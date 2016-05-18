@@ -165,9 +165,9 @@ class APIClient {
     return res.json;
   }
 
-  JSONObject sendMessage(Snowflake chan, wstring content, string nonce, bool tts) {
+  JSONObject sendMessage(Snowflake chan, string content, string nonce, bool tts) {
     auto payload = new JSONObject()
-      .set!wstring("content", content)
+      .set!string("content", content)
       .set!string("nonce", nonce)
       .set!bool("tts", tts);
 

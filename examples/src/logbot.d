@@ -14,6 +14,8 @@ import vibe.http.client;
 import dcad.types : DCAFile;
 
 
+import dscord.bot;
+
 import dscord.client,
        dscord.types.all,
        dscord.gateway.events,
@@ -49,7 +51,7 @@ void main(string[] args) {
   Counter!string counter = new Counter!string();
 
   // Get a new APIClient with our token
-  auto client = new Client(args[1]);
+  // auto client = new Client(args[1]);
   // this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
 
   /* client.events.listenAll((name, value) { */
@@ -57,6 +59,7 @@ void main(string[] args) {
   /*   // writefln("EVENT %s", name); */
   /* }); */
 
+  /*
   client.events.listen!MessageCreate((event) {
     if (event.message.mentions.length) {
       if (event.message.mentions.has(client.state.me.id)) {
@@ -96,7 +99,6 @@ void main(string[] args) {
   client.state.on("StateStartupComplete", {
     writefln("Startup Complete");
 
-    /*
     client.events.listen!MessageCreate((MessageCreate c) {
       writefln("[%s] (%s | %s)\n    %s: %s\n",
         c.message.timestamp,
@@ -105,7 +107,6 @@ void main(string[] args) {
         c.message.author.username,
         c.message.content);
     });
-    */
   });
 
   client.events.listen!Ready((Ready r) {
@@ -113,6 +114,15 @@ void main(string[] args) {
   });
 
   client.gw.start();
+  runEventLoop();
+  return;
+  */
+
+  BotConfig bc;
+  bc.token = args[1];
+
+  Bot bot = new Bot(bc);
+  bot.run();
   runEventLoop();
   return;
 }

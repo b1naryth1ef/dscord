@@ -90,6 +90,22 @@ class JSONObject {
     return this.get!T(key);
   }
 
+  T getSafe(T)(string key, T def=cast(T)null) {
+    if (key in this.obj) {
+      return this.obj[key].to!T;
+    } else {
+      return def;
+    }
+  }
+
+  T maybeGetSafe(T)(string key, T def) {
+    if (!this.has(key) || this.isNull(key)) {
+      return def;
+    }
+
+    return this.getSafe!T(key);
+  }
+
   JSONObject setRaw(string key, Variant value) {
     this.obj[key] = value;
     return this;
