@@ -3,7 +3,7 @@
   "description": "discord client library",
   "authors": ["Andrei Zbikowski"],
   "homepage": "http://github.com/b1naryth1ef/dscord",
-  "license": "GPL-2.0",
+  "license": "zlib",
   "targetType": "library",
   "dependencies": {
     "libasync": "~>0.7.9",
