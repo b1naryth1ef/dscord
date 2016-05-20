@@ -105,7 +105,7 @@ class Message : Model, Identifiable {
   }
 
   void reply(string content, string nonce=null, bool tts=false, bool mention=false) {
-    // TODO: mention
+    // TODO: support mentioning
     this.client.api.sendMessage(this.channel_id, content, nonce, tts);
   }
 

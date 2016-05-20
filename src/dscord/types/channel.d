@@ -65,7 +65,7 @@ class Channel : Model, Identifiable {
   string      name;
   string      topic;
   Snowflake    guild_id;
-  Snowflake    last_message_id;
+  Snowflake    lastMessageID;
   ChannelType  type;
   short        position;
   uint         bitrate;
@@ -88,7 +88,7 @@ class Channel : Model, Identifiable {
     this.name = obj.maybeGet!string("name", "");
     this.topic = obj.maybeGet!string("topic", null);
     this.guild_id = obj.maybeGet!Snowflake("guild_id", 0);
-    this.last_message_id = obj.maybeGet!Snowflake("last_message_id", 0);
+    this.lastMessageID = obj.maybeGet!Snowflake("lastMessageID", 0);
     this.position = obj.maybeGet!short("position", 0);
     this.bitrate = obj.maybeGet!uint("bitrate", 0);
 
@@ -120,12 +120,8 @@ class Channel : Model, Identifiable {
   }
 
   Guild guild() {
-    return this.client.state.guild(this.guild_id);
+    return this.client.state.guilds(this.guild_id);
   }
-
-  /*Message lastMessage() {
-    return this.client.state.message(this.last_message_id);
-  }*/
 
   @property bool DM() {
     return cast(bool)(this.type & ChannelType.PRIVATE);

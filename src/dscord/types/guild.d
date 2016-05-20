@@ -28,7 +28,6 @@ class Role : Model, Identifiable {
   }
 
   override void load(JSONObject obj) {
-    // writeln(obj.dumps);
     this.id = obj.get!Snowflake("id");
     this.name = obj.get!string("name");
     this.hoist = obj.get!bool("hoist");

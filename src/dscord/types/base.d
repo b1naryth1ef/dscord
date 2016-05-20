@@ -67,6 +67,10 @@ class ModelMap(TKey, TValue) {
     return this.data[key];
   }
 
+  TValue opCall(TKey key) {
+    return this.data[key];
+  }
+
   void remove(TKey key) {
     this.data.remove(key);
   }

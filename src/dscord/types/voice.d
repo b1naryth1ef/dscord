@@ -40,10 +40,10 @@ class VoiceState : Model {
   }
 
   @property Guild guild() {
-    return this.client.state.guilds.get(this.guild_id);
+    return this.client.state.guilds(this.guild_id);
   }
 
   @property Channel channel() {
-    return this.client.state.channels.get(this.channel_id);
+    return this.client.state.channels(this.channel_id);
   }
 }

@@ -28,7 +28,7 @@ class State : Emitter {
 
   private {
     Logger  log;
-    ushort  onReadyGuildCount;
+    ulong  onReadyGuildCount;
   }
 
   this(Client client) {
@@ -46,25 +46,25 @@ class State : Emitter {
   }
 
   void bindEvents() {
-    this.client.events.listen!Ready(toDelegate(&this.onReady));
+    this.client.events.listen!Ready(&this.onReady);
 
     // Guilds
-    this.client.events.listen!GuildCreate(toDelegate(&this.onGuildCreate));
-    this.client.events.listen!GuildUpdate(toDelegate(&this.onGuildUpdate));
-    this.client.events.listen!GuildDelete(toDelegate(&this.onGuildDelete));
+    this.client.events.listen!GuildCreate(&this.onGuildCreate);
+    this.client.events.listen!GuildUpdate(&this.onGuildUpdate);
+    this.client.events.listen!GuildDelete(&this.onGuildDelete);
 
     // Channels
-    this.client.events.listen!ChannelCreate(toDelegate(&this.onChannelCreate));
-    this.client.events.listen!ChannelUpdate(toDelegate(&this.onChannelUpdate));
-    this.client.events.listen!ChannelDelete(toDelegate(&this.onChannelDelete));
+    this.client.events.listen!ChannelCreate(&this.onChannelCreate);
+    this.client.events.listen!ChannelUpdate(&this.onChannelUpdate);
+    this.client.events.listen!ChannelDelete(&this.onChannelDelete);
 
     // Voice State
-    this.client.events.listen!VoiceStateUpdate(toDelegate(&this.onVoiceStateUpdate));
+    this.client.events.listen!VoiceStateUpdate(&this.onVoiceStateUpdate);
   }
 
   void onReady(Ready r) {
     this.me = r.me;
-    this.onReadyGuildCount = cast(ushort)r.guilds.length;
+    this.onReadyGuildCount = r.guilds.length;
   }
 
   void onGuildCreate(GuildCreate c) {
@@ -118,10 +118,6 @@ class State : Emitter {
     } else {
       guild.voiceStates[u.state.session_id] = u.state;
     }
-  }
-
-  Guild guild(Snowflake id) {
-    return this.guilds[id];
   }
 }
 
