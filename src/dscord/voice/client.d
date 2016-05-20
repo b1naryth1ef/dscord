@@ -140,7 +140,7 @@ class VoiceClient {
     Task  heartbeater;
 
     // Listener for VOICE_SERVER_UPDATE events
-    Listener  l;
+    EventListener  l;
   }
 
   // Various connection attributes

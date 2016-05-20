@@ -31,7 +31,6 @@ extern (C) {
   }
 }
 
-
 class LogBot : Bot {
   mixin Plugin!(LogBot);
 

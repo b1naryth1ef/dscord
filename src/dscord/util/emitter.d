@@ -9,7 +9,7 @@ import std.stdio,
        std.variant,
        core.time;
 
-class Listener {
+class EventListener {
   string     name;
   Emitter    e;
 
@@ -36,11 +36,11 @@ class Listener {
 // TODO: add all listener
 
 class Emitter {
-  Listener[][string]  listeners;
+  EventListener[][string]  listeners;
   // Listener[]          all;
 
-  Listener on(string event, void delegate() f) {
-    auto li = new Listener(this, event, (arg) {
+  EventListener on(string event, void delegate() f) {
+    auto li = new EventListener(this, event, (arg) {
       f();
     });
 
@@ -48,8 +48,8 @@ class Emitter {
     return li;
   }
 
-  Listener listen(T)(void delegate(T) f) {
-    auto li = new Listener(this, T.stringof, (arg) {
+  EventListener listen(T)(void delegate(T) f) {
+    auto li = new EventListener(this, T.stringof, (arg) {
       f(arg.get!T);
     });
 
