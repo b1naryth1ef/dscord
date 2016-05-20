@@ -57,7 +57,7 @@ class JSONObject {
 
   string dumps() {
     JSONValue v = this.asJSON();
-    return toJSON(v, true);
+    return toJSON(&v, true);
   }
 
   Variant getRaw(string key) {

@@ -1,8 +1,8 @@
-# D-scord
-D-scord is a Discord client library written in D-lang thats focused on performance at high user and guild counts.
+# dscord
+dscord is a Discord client library written in D-lang thats focused on performance at high user and guild counts.
 
 ## Compiling
-Because of [this](https://github.com/dlang/phobos/commit/1f1ed031a3215b3fa6585ccca189d68c1ad5b154) lovely bug, you need to run a nightly version of the D compiler for now. Right now the only version that both D-scord and vibe.d support (with proper JSON support) is dmd-2016-04-22. To install simply run: `curl -fsS https://dlang.org/install.sh | bash -s dmd-2016-04-22`
+To compile dscord, you need any modern D-lang compiler (I recommend the latest stable version of dmd).
 
 ## Example
 ```d
