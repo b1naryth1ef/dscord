@@ -14,8 +14,8 @@ import dscord.client,
        dscord.types.voice,
        dscord.util.json;
 
-alias ChannelMap = IdentifiedModelMap!(Channel);
-alias PermissionOverwriteMap = IdentifiedModelMap!(PermissionOverwrite);
+alias ChannelMap = ModelMap!(Snowflake, Channel);
+alias PermissionOverwriteMap = ModelMap!(Snowflake, PermissionOverwrite);
 
 enum ChannelType {
   NONE,
@@ -30,7 +30,7 @@ enum PermissionOverwriteType {
 	MEMBER = 1 << 1,
 }
 
-class PermissionOverwrite : Model, Identifiable {
+class PermissionOverwrite : Model {
 	Snowflake  id;
   Channel    channel;
 
@@ -60,7 +60,7 @@ class PermissionOverwrite : Model, Identifiable {
   }
 }
 
-class Channel : Model, Identifiable {
+class Channel : Model {
   Snowflake    id;
   string      name;
   string      topic;

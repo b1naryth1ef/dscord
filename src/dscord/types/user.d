@@ -5,9 +5,9 @@ import std.stdio;
 import dscord.client,
        dscord.types.all;
 
-alias UserMap = IdentifiedModelMap!(User);
+alias UserMap = ModelMap!(Snowflake, User);
 
-class User : Model, Identifiable {
+class User : Model {
   Snowflake  id;
   string     username;
   string     discriminator;

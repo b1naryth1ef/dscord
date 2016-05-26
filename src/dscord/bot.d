@@ -74,7 +74,7 @@ class Bot {
     if (this.config.cmdRequireMention) {
       if (!msg.mentions.length) {
         return;
-      } else if (!msg.mentions.has(this.client.state.me)) {
+      } else if (!msg.mentions.has(this.client.state.me.id)) {
         return;
       }
     }

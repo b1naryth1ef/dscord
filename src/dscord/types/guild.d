@@ -8,11 +8,11 @@ import dscord.client,
        dscord.types.all,
        dscord.util.json;
 
-alias GuildMap = IdentifiedModelMap!(Guild);
-alias RoleMap = IdentifiedModelMap!(Role);
-alias GuildMemberMap = IdentifiedModelMap!(GuildMember);
+alias GuildMap = ModelMap!(Snowflake, Guild);
+alias RoleMap = ModelMap!(Snowflake, Role);
+alias GuildMemberMap = ModelMap!(Snowflake, GuildMember);
 
-class Role : Model, Identifiable {
+class Role : Model {
   Snowflake   id;
   string     name;
   uint        color;
@@ -58,7 +58,7 @@ class Emoji {
 }
 */
 
-class GuildMember : Model, Identifiable {
+class GuildMember : Model {
   User    user;
   string  nick;
   string  joined_at;
@@ -91,7 +91,7 @@ class GuildMember : Model, Identifiable {
   }
 }
 
-class Guild : Model, Identifiable {
+class Guild : Model {
   Snowflake  id;
   Snowflake  owner_id;
   Snowflake  afk_channel_id;

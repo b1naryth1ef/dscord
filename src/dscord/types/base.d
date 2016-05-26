@@ -46,10 +46,6 @@ class Model {
   void load(JSONObject obj) {}
 }
 
-interface Identifiable {
-  Snowflake getID();
-}
-
 class ModelMap(TKey, TValue) {
   TValue[TKey]  data;
 
@@ -109,17 +105,5 @@ class ModelMap(TKey, TValue) {
 
   auto values() {
     return this.data.values;
-  }
-}
-
-
-// This pattern fucking sucks, I have no clue what I wanted :(
-class IdentifiedModelMap(TValue) : ModelMap!(Snowflake, TValue) {
-  override bool has(Snowflake key) {
-    return (key in this.data) != null;
-  }
-
-  bool has(Identifiable i) {
-    return this.has(i.getID());
   }
 }

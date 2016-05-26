@@ -32,7 +32,6 @@ class EventListener {
   }
 }
 
-// TODO: move cast to Listener
 // TODO: add all listener
 
 class Emitter {
