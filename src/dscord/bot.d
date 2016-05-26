@@ -11,9 +11,19 @@ enum BotFeatures {
   COMMANDS = 1 << 1,
 }
 
-struct Command {
+CommandObj Command(string trigger, string desc = "", uint level = 0) {
+  return CommandObj(trigger, desc, level);
+}
+
+CommandObj Command(string trigger, uint level) {
+  return CommandObj(trigger, "", level);
+}
+
+struct CommandObj {
   string  trigger;
   string  description = "";
+  uint    level = 0;
+
   void delegate(MessageCreate) f;
 }
 
@@ -23,13 +33,21 @@ struct BotConfig {
 
   string  cmdPrefix = "!";
   bool    cmdRequireMention = true;
+
+  // Used to grab the level for a user
+  uint delegate(User)  lvlGetter;
+
+  // Props and stuff
+  @property lvlEnabled() {
+    return this.lvlGetter != null;
+  }
 }
 
 template Plugin(T) {
   override void loadCommands() {
     foreach (mem; __traits(allMembers, T)) {
       foreach(attr; __traits(getAttributes, __traits(getMember, T, mem))) {
-        static if (is(typeof(attr) == Command)) {
+        static if (is(typeof(attr) == CommandObj)) {
           this.log.tracef("Adding command %s", attr.trigger);
           this.registerCommand(attr, mixin("&" ~ mem));
         }
@@ -43,7 +61,7 @@ class Bot {
   BotConfig  config;
   Logger  log;
 
-  Command[string]  commands;
+  CommandObj[string]  commands;
 
   this(BotConfig bc) {
     this.config = bc;
@@ -57,7 +75,7 @@ class Bot {
 
   }
 
-  void registerCommand(Command c, void delegate(MessageCreate) f) {
+  void registerCommand(CommandObj c, void delegate(MessageCreate) f) {
     c.f = f;
     this.commands[c.trigger] = c;
   }
@@ -70,6 +88,7 @@ class Bot {
 
   void tryHandleCommand(MessageCreate event) {
     auto msg = event.message;
+
     // If we require a mention, make sure we got it
     if (this.config.cmdRequireMention) {
       if (!msg.mentions.length) {
@@ -85,13 +104,19 @@ class Bot {
       return;
     }
 
-    string cmd = contents[this.config.cmdPrefix.length..contents.length];
-    this.log.tracef("Command: '%s'", cmd);
-
-    if ((cmd in this.commands) != null) {
-      this.log.tracef("calling %s", this.commands[cmd].f);
-      this.commands[cmd].f(event);
+    string cmdName = contents[this.config.cmdPrefix.length..contents.length];
+    if ((cmdName in this.commands) == null) {
+      return;
     }
+
+    auto cmdObj = this.commands[cmdName];
+    if (this.config.lvlEnabled) {
+      if (this.config.lvlGetter(msg.author) < cmdObj.level) {
+        return;
+      }
+    }
+
+    cmdObj.f(event);
   }
 
   void onMessageCreate(MessageCreate event) {

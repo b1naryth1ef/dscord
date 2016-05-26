@@ -17,6 +17,8 @@ import dscord.client,
        dscord.util.json,
        dscord.util.emitter;
 
+const ubyte MAX_RECONNECTS = 6;
+
 alias GatewayPacketHandler = void delegate (BasePacket);
 alias GatewayEventHandler = void delegate (DispatchPacket);
 
@@ -30,6 +32,7 @@ class GatewayClient {
   uint    seq;
   uint    hb_interval;
   bool    connected;
+  ubyte   reconnects;
   Task    heartbeater;
 
   Emitter  packetEmitter;
@@ -69,6 +72,7 @@ class GatewayClient {
     this.hb_interval = r.heartbeat_interval;
     this.session_id = r.session_id;
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
+    this.reconnects = 0;
   }
 
   void handleResumedEvent(Resumed r) {
@@ -250,8 +254,21 @@ class GatewayClient {
       }
     }
 
+    this.log.critical("Gateway websocket closed");
     this.connected = false;
-    this.log.tracef("gateway websocket closed, attempting reconnect");
+    this.reconnects++;
+
+    if (this.reconnects > MAX_RECONNECTS) {
+      this.log.errorf("Max Gateway WS reconnects (%s) hit, aborting...", this.reconnects);
+      return;
+    }
+
+    if (this.reconnects > 1) {
+      this.log.warning("Waiting 5 seconds before reconnecting...");
+      sleep(5.seconds);
+    }
+
+    this.log.info("Attempting reconnection...");
     return this.start();
   }
 }
