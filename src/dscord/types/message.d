@@ -59,7 +59,7 @@ class MessageAttachment : Model {
 
 class Message : Model {
   Snowflake  id;
-  Snowflake  channel_id;
+  Snowflake  channelID;
   User       author;
   string    content;
   string     timestamp; // TODO: timestamps lol
@@ -83,7 +83,7 @@ class Message : Model {
 
   override void load(JSONObject obj) {
     this.id = obj.get!Snowflake("id");
-    this.channel_id = obj.get!Snowflake("channel_id");
+    this.channelID = obj.get!Snowflake("channel_id");
     this.content = obj.maybeGet!(string)("content", "");
     this.timestamp = obj.maybeGet!string("timestamp", "");
     this.edited_timestamp = obj.maybeGet!string("edited_timestamp", "");
@@ -168,7 +168,7 @@ class Message : Model {
 
   void reply(string content, string nonce=null, bool tts=false, bool mention=false) {
     // TODO: support mentioning
-    this.client.api.sendMessage(this.channel_id, content, nonce, tts);
+    this.client.api.sendMessage(this.channelID, content, nonce, tts);
   }
 
   @property Guild guild() {
@@ -176,6 +176,6 @@ class Message : Model {
   }
 
   @property Channel channel() {
-    return this.client.state.channels.get(this.channel_id);
+    return this.client.state.channels.get(this.channelID);
   }
 }

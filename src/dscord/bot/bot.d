@@ -45,7 +45,7 @@ class Bot : CommandHandler {
       this.client.events.listen!MessageCreate(&this.onMessageCreate);
     }
 
-    this.loadCommands!T();
+    this.loadCommands!T([]);
   }
 
   void addPlugin(Plugin p) {

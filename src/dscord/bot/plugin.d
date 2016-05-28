@@ -2,9 +2,16 @@ module dscord.bot.plugin;
 
 import dscord.bot.command;
 
+struct PluginConfig {
+  string[]  cmdPrefixes = [];
+}
+
 class Plugin : CommandHandler {
-  this(this T)() {
-    this.loadCommands!T();
+  PluginConfig cfg;
+
+  this(this T)(PluginConfig cfg) {
+    this.cfg = cfg;
+    this.loadCommands!T(cfg.cmdPrefixes);
   }
 }
 

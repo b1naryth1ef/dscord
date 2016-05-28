@@ -136,6 +136,9 @@ class APIClient {
       this.ratelimit.cooldown(url._bucket,
           dur!"seconds"(res.header("Retry-After", "1").to!int));
       return this.requestJSON(method, url, data, timeout);
+    // If we got a 502, just retry immedietly
+    } else if (res.statusCode == 502) {
+      return this.requestJSON(method, url, data, timeout);
     }
 
     return res;
