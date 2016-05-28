@@ -1,30 +1,16 @@
-module dscord.bot;
+module dscord.bot.bot;
 
 import std.algorithm,
        std.string : strip;
 
 import dscord.client,
+       dscord.bot.command,
+       dscord.bot.plugin,
        dscord.types.all,
        dscord.gateway.events;
 
 enum BotFeatures {
   COMMANDS = 1 << 1,
-}
-
-CommandObj Command(string trigger, string desc = "", uint level = 0) {
-  return CommandObj(trigger, desc, level);
-}
-
-CommandObj Command(string trigger, uint level) {
-  return CommandObj(trigger, "", level);
-}
-
-struct CommandObj {
-  string  trigger;
-  string  description = "";
-  uint    level = 0;
-
-  void delegate(MessageCreate) f;
 }
 
 struct BotConfig {
@@ -43,44 +29,29 @@ struct BotConfig {
   }
 }
 
-template Plugin(T) {
-  override void loadCommands() {
-    foreach (mem; __traits(allMembers, T)) {
-      foreach(attr; __traits(getAttributes, __traits(getMember, T, mem))) {
-        static if (is(typeof(attr) == CommandObj)) {
-          this.log.tracef("Adding command %s", attr.trigger);
-          this.registerCommand(attr, mixin("&" ~ mem));
-        }
-      }
-    }
-  }
-}
-
-class Bot {
+class Bot : CommandHandler {
   Client     client;
   BotConfig  config;
   Logger  log;
 
-  CommandObj[string]  commands;
+  Plugin[]  plugins;
 
-  this(BotConfig bc) {
+  this(this T)(BotConfig bc) {
     this.config = bc;
     this.client = new Client(this.config.token);
     this.log = this.client.log;
 
     if (this.feature(BotFeatures.COMMANDS)) {
       this.client.events.listen!MessageCreate(&this.onMessageCreate);
-      this.loadCommands();
     }
 
+    this.loadCommands!T();
   }
 
-  void registerCommand(CommandObj c, void delegate(MessageCreate) f) {
-    c.f = f;
-    this.commands[c.trigger] = c;
+  void addPlugin(Plugin p) {
+    this.plugins ~= p;
+    this.inheritCommands(p);
   }
-
-  void loadCommands() {}
 
   bool feature(BotFeatures[] features...) {
     return (this.config.features & reduce!((a, b) => a & b)(features)) > 0;

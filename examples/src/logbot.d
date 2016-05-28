@@ -14,13 +14,7 @@ import vibe.http.client;
 import dcad.types : DCAFile;
 
 
-import dscord.bot;
-
-import dscord.client,
-       dscord.types.all,
-       dscord.gateway.events,
-       dscord.gateway.packets,
-       dscord.util.counter;
+import dscord.core;
 
 import core.sys.posix.signal;
 import etc.linux.memoryerror;
@@ -32,8 +26,6 @@ extern (C) {
 }
 
 class LogBot : Bot {
-  mixin Plugin!(LogBot);
-
   this(string token) {
     BotConfig bc;
     bc.token = token;
