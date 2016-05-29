@@ -1,7 +1,6 @@
 module dscord.gateway.events;
 
 import std.variant,
-       std.stdio,
        std.algorithm,
        std.string,
        std.stdio;
@@ -17,7 +16,7 @@ class Event {
   this(Client c, DispatchPacket d) {
     this.client = c;
     this.payload = d.data;
-    debug writefln("Creating event %s with data: %s", this.toString, this.payload.dumps());
+    this.client.log.tracef("Creating event %s with data: %s", this.toString, this.payload.dumps());
   }
 }
 

@@ -231,6 +231,7 @@ class GatewayClient {
       this.send(new IdentifyPacket(this.client.token));
     }
 
+    this.log.info("Connected to Gateway");
     this.connected = true;
 
     while (this.sock.waitForData()) {

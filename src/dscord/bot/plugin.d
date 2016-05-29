@@ -1,5 +1,7 @@
 module dscord.bot.plugin;
 
+import std.experimental.logger;
+
 import dscord.bot.command;
 
 struct PluginConfig {
@@ -8,6 +10,7 @@ struct PluginConfig {
 
 class Plugin : CommandHandler {
   PluginConfig cfg;
+  Logger  log;
 
   this(this T)(PluginConfig cfg) {
     this.cfg = cfg;

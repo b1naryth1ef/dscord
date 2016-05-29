@@ -1,6 +1,8 @@
 module dscord.bot.bot;
 
 import std.algorithm,
+       std.array,
+       std.experimental.logger,
        std.string : strip;
 
 import dscord.client,
@@ -36,9 +38,9 @@ class Bot : CommandHandler {
 
   Plugin[]  plugins;
 
-  this(this T)(BotConfig bc) {
+  this(this T)(BotConfig bc, LogLevel lvl=LogLevel.all) {
     this.config = bc;
-    this.client = new Client(this.config.token);
+    this.client = new Client(this.config.token, lvl);
     this.log = this.client.log;
 
     if (this.feature(BotFeatures.COMMANDS)) {
@@ -50,6 +52,7 @@ class Bot : CommandHandler {
 
   void addPlugin(Plugin p) {
     this.plugins ~= p;
+    p.log = this.log;
     this.inheritCommands(p);
   }
 
@@ -57,42 +60,60 @@ class Bot : CommandHandler {
     return (this.config.features & reduce!((a, b) => a & b)(features)) > 0;
   }
 
-  void tryHandleCommand(MessageCreate event) {
-    auto msg = event.message;
-
+  void tryHandleCommand(CommandEvent event) {
     // If we require a mention, make sure we got it
     if (this.config.cmdRequireMention) {
-      if (!msg.mentions.length) {
+      if (!event.msg.mentions.length) {
         return;
-      } else if (!msg.mentions.has(this.client.state.me.id)) {
+      } else if (!event.msg.mentions.has(this.client.state.me.id)) {
         return;
       }
     }
 
-    string contents = strip(msg.withoutMentions);
+    string contents = strip(event.msg.withoutMentions);
 
     if (!contents.startsWith(this.config.cmdPrefix)) {
       return;
     }
 
-    string cmdName = contents[this.config.cmdPrefix.length..contents.length];
-    if ((cmdName in this.commands) == null) {
+    // Iterate over commands and find a matcher
+    // TODO: in the future this could be a btree
+    CommandObj *obj;
+    string cmdPrefix;
+    foreach (ref k, v; this.commands) {
+      if (contents.startsWith(k)) {
+        cmdPrefix = k;
+        obj = v;
+        break;
+      }
+    }
+
+    // If no command was found, skip
+    if (!obj) {
       return;
     }
 
-    auto cmdObj = this.commands[cmdName];
+    // Extract some stuff for the CommandEvent
+    event.contents = contents[(this.config.cmdPrefix.length + cmdPrefix.length)..contents.length];
+    event.args = event.contents.split(" ");
+
+    if (event.args.length && event.args[0] == "") {
+      event.args = event.args[1..event.args.length];
+    }
+
+    // Check permissions
     if (this.config.lvlEnabled) {
-      if (this.config.lvlGetter(msg.author) < cmdObj.level) {
+      if (this.config.lvlGetter(event.msg.author) < obj.level) {
         return;
       }
     }
 
-    cmdObj.f(event);
+    obj.f(event);
   }
 
   void onMessageCreate(MessageCreate event) {
     if (this.feature(BotFeatures.COMMANDS)) {
-      this.tryHandleCommand(event);
+      this.tryHandleCommand(new CommandEvent(event));
     }
   }
 
