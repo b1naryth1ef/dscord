@@ -106,6 +106,8 @@ class Bot {
     CommandObject obj;
     foreach (ref plugin; this.plugins.values) {
       foreach (ref command; plugin.commands) {
+        if (!command.enabled) continue;
+
         auto c = command.match(contents);
         if (c.length) {
           obj = command;
@@ -121,7 +123,7 @@ class Bot {
     }
 
     // Extract some stuff for the CommandEvent
-    event.contents = capture.post();
+    event.contents = strip(capture.post());
     event.args = event.contents.split(" ");
 
     if (event.args.length && event.args[0] == "") {

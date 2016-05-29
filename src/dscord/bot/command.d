@@ -25,6 +25,9 @@ class CommandObject {
   string  group;
   uint    level;
 
+  // Hidden stuff
+  bool  enabled = true;
+
   CommandHandler  func;
 
   // Compiled regex match
