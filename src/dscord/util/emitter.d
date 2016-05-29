@@ -9,34 +9,53 @@ import std.stdio,
        std.variant,
        core.time;
 
-class EventListener {
+interface BoundEmitter {
+  void call(string, Variant);
+}
+
+class BaseEventListener : BoundEmitter {
   string     name;
   Emitter    e;
-
-  // Function
-  void delegate(Variant arg)  f;
-
-  this(Emitter e, string name, void delegate(Variant arg) f) {
-    this.name = name;
-    this.e = e;
-    this.f = f;
-  }
 
   void unbind() {
     this.e.listeners[this.name] = this.e.listeners[this.name].filter!(
       (li) => li != this).array;
   }
 
-  void opCall(Variant arg) {
-    this.f(arg);
+  void call(string name, Variant arg) {
+
   }
 }
 
-// TODO: add all listener
+class EventListener : BaseEventListener {
+  void delegate(Variant arg)  func;
+
+  this(Emitter e, string name, void delegate(Variant) f) {
+    this.e = e;
+    this.name = name;
+    this.func = f;
+  }
+
+  override void call(string name, Variant arg) {
+    this.func(arg);
+  }
+}
+
+class AllEventListener : BaseEventListener {
+  void delegate(string, Variant)  func;
+
+  this(Emitter e, void delegate(string, Variant) f) {
+    this.e = e;
+    this.func = f;
+  }
+
+  override void call(string name, Variant arg) {
+    this.func(name, arg);
+  }
+}
 
 class Emitter {
-  EventListener[][string]  listeners;
-  // Listener[]          all;
+  BoundEmitter[][string]  listeners;
 
   EventListener on(string event, void delegate() f) {
     auto li = new EventListener(this, event, (arg) {
@@ -62,19 +81,26 @@ class Emitter {
     return li;
   }
 
-  void emit(T)(T obj) {
-    runTask(&this._emit!T, obj);
+  AllEventListener listenAll(void delegate(string, Variant) f) {
+    auto li = new AllEventListener(this, f);
+    this.listeners[""] ~= li;
+    return li;
   }
 
-  void _emit(T)(T obj) {
-    auto v = Variant(obj);
+  void emit(T)(T obj) {
+    runTask(&this.emitByName!T, T.stringof, obj, false);
+    runTask(&this.emitByName!T, T.stringof, obj, true);
+  }
 
-    if (!(T.stringof in this.listeners)) {
+  void emitByName(T)(string name, T obj, bool all) {
+    if (!((all ? "" : name) in this.listeners)) {
       return;
     }
 
-    foreach (f; this.listeners[T.stringof]) {
-      f(v);
+    auto v = Variant(obj);
+
+    foreach (func; this.listeners[all ? "" : name]) {
+      func.call(name, v);
     }
   }
 }
