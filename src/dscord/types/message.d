@@ -176,6 +176,11 @@ class Message : Model {
   }
 
   @property Channel channel() {
-    return this.client.state.channels.get(this.channelID);
+    // TODO: properly handle PM's
+    if (this.client.state.channels.has(this.channelID)) {
+      return this.client.state.channels.get(this.channelID);
+    } else {
+      return null;
+    }
   }
 }

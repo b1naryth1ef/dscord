@@ -265,6 +265,8 @@ class GatewayClient {
     }
 
     if (this.reconnects > 1) {
+      this.session_id = null;
+      this.seq = 0;
       this.log.warning("Waiting 5 seconds before reconnecting...");
       sleep(5.seconds);
     }
