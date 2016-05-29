@@ -3,6 +3,7 @@ module dscord.bot.bot;
 import std.algorithm,
        std.array,
        std.experimental.logger,
+       std.regex,
        std.string : strip;
 
 import dscord.client,
@@ -31,12 +32,12 @@ struct BotConfig {
   }
 }
 
-class Bot : CommandHandler {
+class Bot {
   Client     client;
   BotConfig  config;
   Logger  log;
 
-  Plugin[]  plugins;
+  Plugin[string]  plugins;
 
   this(this T)(BotConfig bc, LogLevel lvl=LogLevel.all) {
     this.config = bc;
@@ -46,14 +47,20 @@ class Bot : CommandHandler {
     if (this.feature(BotFeatures.COMMANDS)) {
       this.client.events.listen!MessageCreate(&this.onMessageCreate);
     }
-
-    this.loadCommands!T([]);
   }
 
-  void addPlugin(Plugin p) {
-    this.plugins ~= p;
-    p.log = this.log;
-    this.inheritCommands(p);
+  void loadPlugin(Plugin p) {
+    p.load(this);
+    this.plugins[p.name] = p;
+  }
+
+  void unloadPlugin(Plugin p) {
+    this.unloadPlugin(p.name);
+    this.plugins.remove(p.name);
+  }
+
+  void unloadPlugin(string name) {
+    this.unloadPlugin(this.plugins[name]);
   }
 
   bool feature(BotFeatures[] features...) {
@@ -70,31 +77,35 @@ class Bot : CommandHandler {
       }
     }
 
+    // Strip all mentions and spaces from the message
     string contents = strip(event.msg.withoutMentions);
 
+    // If the message doesn't start with the command prefix, break
     if (!contents.startsWith(this.config.cmdPrefix)) {
       return;
     }
 
-    // Iterate over commands and find a matcher
-    // TODO: in the future this could be a btree
-    CommandObj *obj;
-    string cmdPrefix;
-    foreach (ref k, v; this.commands) {
-      if (contents.startsWith(k)) {
-        cmdPrefix = k;
-        obj = v;
-        break;
+    // Iterate over all plugins and check for command matches
+    Captures!string capture;
+    CommandObject obj;
+    foreach (ref plugin; this.plugins.values) {
+      foreach (ref command; plugin.commands) {
+        auto c = command.match(contents);
+        if (c.length) {
+          obj = command;
+          capture = c;
+          break;
+        }
       }
     }
 
-    // If no command was found, skip
-    if (!obj) {
+    // If we didn't match any CommandObject, carry on our merry way
+    if (!capture) {
       return;
     }
 
     // Extract some stuff for the CommandEvent
-    event.contents = contents[(this.config.cmdPrefix.length + cmdPrefix.length)..contents.length];
+    event.contents = capture.post();
     event.args = event.contents.split(" ");
 
     if (event.args.length && event.args[0] == "") {
@@ -108,7 +119,7 @@ class Bot : CommandHandler {
       }
     }
 
-    obj.f(event);
+    obj.func(event);
   }
 
   void onMessageCreate(MessageCreate event) {
