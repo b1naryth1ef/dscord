@@ -75,7 +75,7 @@ class CommandEvent {
 /*
   The CommandHandler class is a base-class virtual implementation of UDA-constructed command handlers.
 */
-class Commandable {
+mixin template Commandable() {
   CommandObject[string]  commands;
 
   void loadCommands(T)() {

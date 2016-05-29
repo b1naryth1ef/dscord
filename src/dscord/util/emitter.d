@@ -56,6 +56,12 @@ class Emitter {
     return li;
   }
 
+  EventListener listenRaw(string event, void delegate(Variant) f) {
+    auto li = new EventListener(this, event, f);
+    this.listeners[event] ~= li;
+    return li;
+  }
+
   void emit(T)(T obj) {
     runTask(&this._emit!T, obj);
   }

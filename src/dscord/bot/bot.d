@@ -4,6 +4,7 @@ import std.algorithm,
        std.array,
        std.experimental.logger,
        std.regex,
+       std.functional,
        std.string : strip;
 
 import dscord.client,
@@ -52,11 +53,21 @@ class Bot {
   void loadPlugin(Plugin p) {
     p.load(this);
     this.plugins[p.name] = p;
+
+    // Bind listeners
+    foreach (ref listener; p.listeners) {
+      this.log.infof("Registering listener for event %s", listener.clsName);
+      listener.listener = this.client.events.listenRaw(listener.clsName, toDelegate(listener.func));
+    }
   }
 
   void unloadPlugin(Plugin p) {
     this.unloadPlugin(p.name);
     this.plugins.remove(p.name);
+
+    foreach (ref listener; p.listeners) {
+      listener.listener.unbind();
+    }
   }
 
   void unloadPlugin(string name) {
@@ -81,8 +92,13 @@ class Bot {
     string contents = strip(event.msg.withoutMentions);
 
     // If the message doesn't start with the command prefix, break
-    if (!contents.startsWith(this.config.cmdPrefix)) {
-      return;
+    if (this.config.cmdPrefix.length) {
+      if (!contents.startsWith(this.config.cmdPrefix)) {
+        return;
+      }
+
+      // Replace the command prefix from the string
+      contents = contents[this.config.cmdPrefix.length..contents.length];
     }
 
     // Iterate over all plugins and check for command matches

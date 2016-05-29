@@ -1,13 +1,14 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"libevent": "2.0.1+2.0.16",
-		"libev": "5.0.0+4.04",
 		"dcad": "0.0.1",
-		"openssl": "1.1.4+1.0.1g",
-		"memutils": "0.4.5",
-		"vibe-d": "0.7.30-alpha.1",
+		"dscord": {"path":"../"},
 		"libasync": "0.7.9",
-		"shaker": "0.0.7"
+		"libev": "5.0.0+4.04",
+		"libevent": "2.0.1+2.0.16",
+		"memutils": "0.4.5",
+		"openssl": "1.1.4+1.0.1g",
+		"shaker": "0.0.7",
+		"vibe-d": "0.7.30-alpha.1"
 	}
 }
