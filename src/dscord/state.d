@@ -75,7 +75,7 @@ class State : Emitter {
       this.channels[c.id] = c;
     });
 
-    if (!c.isNew) {
+    if (!c.created) {
       this.onReadyGuildCount -= 1;
 
       if (this.onReadyGuildCount == 0) {
@@ -85,7 +85,8 @@ class State : Emitter {
   }
 
   void onGuildUpdate(GuildUpdate c) {
-    this.guilds[c.guild.id].load(c.payload);
+    // TODO
+    // this.guilds[c.guild.id].load(c.payload);
   }
 
   void onGuildDelete(GuildDelete c) {

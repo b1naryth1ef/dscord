@@ -124,6 +124,11 @@ class DispatchPacket : BasePacket, Deserializable {
   int         seq;
   string      event;
 
+  // Default constructor, used just for alloc
+  this() {
+
+  }
+
   this(JSONObject obj) {
     this.deserialize(obj);
   }

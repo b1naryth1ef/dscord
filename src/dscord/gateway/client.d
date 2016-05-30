@@ -38,6 +38,9 @@ class GatewayClient {
   Emitter  packetEmitter;
   Emitter  eventEmitter;
 
+  private {
+    DispatchPacket dispatchPacket;
+  }
 
   this(Client client) {
     this.client = client;
@@ -52,6 +55,9 @@ class GatewayClient {
     // Copy emitters to client for easier API access
     client.packets = this.packetEmitter;
     client.events = this.eventEmitter;
+
+    // Create a single DispatchPacket that can be used for all dispatches (PERF)
+    this.dispatchPacket = new DispatchPacket;
   }
 
   void start() {
@@ -194,7 +200,7 @@ class GatewayClient {
             new VoiceServerUpdate(this.client, d));
         break;
       default:
-        this.log.warning("unhandled gateway event: %s", d.event);
+        this.log.warningf("unhandled gateway event: %s", d.event);
     }
   }
 
@@ -203,7 +209,9 @@ class GatewayClient {
     switch (obj.get!OPCode("op")) {
       case OPCode.DISPATCH:
         try {
-          this.packetEmitter.emit!DispatchPacket(new DispatchPacket(obj));
+          this.dispatchPacket.deserialize(obj);
+          this.packetEmitter.emit!DispatchPacket(this.dispatchPacket);
+          // this.packetEmitter.emit!DispatchPacket(new DispatchPacket(obj));
         } catch (Exception e) {
           this.log.warning("failed to load dispatch: %s\n%s", e, obj.dumps);
         }
