@@ -3,7 +3,8 @@ module dscord.gateway.events;
 import std.variant,
        std.algorithm,
        std.string,
-       std.stdio;
+       std.stdio,
+       std.datetime;
 
 import dscord.gateway.client,
        dscord.gateway.packets,
@@ -17,9 +18,16 @@ mixin template NewEvent() {
   Client client;
 
   this(Client c, DispatchPacket d) {
+    debug {
+      auto sw = StopWatch(AutoStart.yes);
+    }
+
     this.client = c;
     this.load(d);
-    this.client.log.tracef("CREATE EVENT %s", this.toString);
+    debug {
+      this.client.log.tracef("Create event for %s took %sms", this.toString,
+        sw.peek().to!("msecs", real));
+    }
   }
 }
 

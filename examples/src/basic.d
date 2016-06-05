@@ -66,7 +66,7 @@ void main(string[] args) {
 
   BotConfig config;
   config.token = args[1];
-  Bot bot = new Bot(config, LogLevel.info);
+  Bot bot = new Bot(config, LogLevel.trace);
   bot.loadPlugin(new BasicPlugin);
   bot.run();
   runEventLoop();

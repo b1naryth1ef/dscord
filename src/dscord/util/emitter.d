@@ -7,6 +7,7 @@ import std.stdio,
        std.algorithm,
        std.array,
        std.variant,
+       std.datetime,
        core.time;
 
 interface BoundEmitter {
@@ -93,6 +94,10 @@ class Emitter {
   }
 
   void emitByName(T)(string name, T obj, bool all) {
+    debug {
+      auto sw = StopWatch(AutoStart.yes);
+    }
+
     if (!((all ? "" : name) in this.listeners)) {
       return;
     }
@@ -101,6 +106,10 @@ class Emitter {
 
     foreach (func; this.listeners[all ? "" : name]) {
       func.call(name, v);
+    }
+
+    debug {
+      writefln("event emit took %sms", sw.peek().to!("msecs", real));
     }
   }
 }

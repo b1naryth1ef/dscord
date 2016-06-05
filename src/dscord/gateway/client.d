@@ -35,7 +35,6 @@ class GatewayClient {
   ubyte   reconnects;
   Task    heartbeater;
 
-  Emitter  packetEmitter;
   Emitter  eventEmitter;
 
   private {
@@ -46,14 +45,12 @@ class GatewayClient {
     this.client = client;
     this.log = this.client.log;
 
-    this.packetEmitter = new Emitter;
     this.eventEmitter = new Emitter;
-    this.packetEmitter.listen!DispatchPacket(toDelegate(&this.handleDispatchPacket));
+    // this.packetEmitter.listen!DispatchPacket(toDelegate(&this.handleDispatchPacket));
     this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
     this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
 
     // Copy emitters to client for easier API access
-    client.packets = this.packetEmitter;
     client.events = this.eventEmitter;
 
     // Create a single DispatchPacket that can be used for all dispatches (PERF)
@@ -86,6 +83,10 @@ class GatewayClient {
   }
 
   void handleDispatchPacket(DispatchPacket d) {
+    debug {
+      auto sw = StopWatch(AutoStart.yes);
+    }
+
     // Update sequence number if it's larger than what we have
     if (d.seq > this.seq) {
       this.seq = d.seq;
@@ -202,15 +203,20 @@ class GatewayClient {
       default:
         this.log.warningf("unhandled gateway event: %s", d.event);
     }
+
+    debug {
+      this.log.tracef("gateway event parse took %sms", sw.peek().to!("msecs", real));
+    }
   }
 
-  void dispatch(JSONObject obj) {
+  void dispatch(JSONValue obj) {
     this.log.tracef("gateway-dispatch: %s", obj.get!OPCode("op"));
     switch (obj.get!OPCode("op")) {
       case OPCode.DISPATCH:
         try {
           this.dispatchPacket.deserialize(obj);
-          this.packetEmitter.emit!DispatchPacket(this.dispatchPacket);
+          this.handleDispatchPacket(this.dispatchPacket);
+          // this.packetEmitter.emit!DispatchPacket(this.dispatchPacket);
           // this.packetEmitter.emit!DispatchPacket(new DispatchPacket(obj));
         } catch (Exception e) {
           this.log.warning("failed to load dispatch: %s\n%s", e, obj.dumps);
@@ -257,7 +263,7 @@ class GatewayClient {
       }
 
       try {
-        this.dispatch(new JSONObject(data));
+        this.dispatch(parseJSON(data));
       } catch (Exception e) {
         this.log.warning("failed to handle %s (%s)", e, data);
       }

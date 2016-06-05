@@ -3,7 +3,8 @@ module dscord.types.base;
 import std.conv,
        std.typecons,
        std.stdio,
-       std.algorithm;
+       std.algorithm,
+       std.datetime;
 
 import dscord.client,
        dscord.util.json;
@@ -38,9 +39,16 @@ class Model {
   Client client;
 
   this(Client client, JSONObject obj) {
+    debug {
+      auto sw = StopWatch(AutoStart.yes);
+    }
+
     this.client = client;
-    this.client.log.tracef("creating model %s with data %s", this.toString, obj.dumps());
     this.load(obj);
+    debug {
+      this.client.log.tracef("creating model %s took %sms", this.toString,
+        sw.peek().to!("msecs", real));
+    }
   }
 
   void load(JSONObject obj) {}
