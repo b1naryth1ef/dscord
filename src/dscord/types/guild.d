@@ -13,8 +13,8 @@ alias RoleMap = ModelMap!(Snowflake, Role);
 alias GuildMemberMap = ModelMap!(Snowflake, GuildMember);
 
 bool memberHasRoleWithin(RoleMap map, GuildMember mem) {
-  foreach (ref role; mem.roles.values) {
-    if (map.has(role.id)) return true;
+  foreach (ref role; map.values) {
+    if (mem.hasRole(role)) return true;
   }
   return false;
 }
