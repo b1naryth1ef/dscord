@@ -144,7 +144,7 @@ class Message : Model {
     Returns a version of the message contents, with mentions completely removed
   */
   string withoutMentions() {
-    return this.replaceMentions((m, u) => "");
+    return this.replaceMentions((m, u) => "", (m, r) => "");
   }
 
   /*
@@ -157,21 +157,25 @@ class Message : Model {
         m = msg.guild.members.get(user.id);
       }
       return "@" ~ ((m && m.nick != "") ? m.nick : user.username);
-    });
+    }, (msg, role) { return "@" ~ role.name; });
   }
 
   /*
     Returns the message contents, replacing all mentions with the result from the
     specified delegate.
   */
-  string replaceMentions(string delegate(Message, User) f) {
+  string replaceMentions(string delegate(Message, User) fu, string delegate(Message, Role) fr) {
     if (!this.mentions.length) {
       return this.content;
     }
 
     string result = this.content;
     foreach (ref User user; this.mentions.values) {
-      result = replaceAll(result, regex(format("<@!?(%s)>", user.id)), f(this, user));
+      result = replaceAll(result, regex(format("<@!?(%s)>", user.id)), fu(this, user));
+    }
+
+    foreach (ref Role role; this.roleMentions.values) {
+      result = replaceAll(result, regex(format("<@!?(%s)>", role.id)), fr(this, role));
     }
 
     return result;
