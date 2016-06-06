@@ -32,6 +32,7 @@ class BasicPlugin : Plugin {
     event.msg.reply("IT WORKS!");
   }
 
+  /*
   @Command("whereami")
   void onWhereAmI(CommandEvent event) {
     auto chan = this.userVoiceChannel(event.msg.guild, event.msg.author);
@@ -41,17 +42,22 @@ class BasicPlugin : Plugin {
       event.msg.reply("You are not in a voice channel!");
     }
   }
+  */
 
+  /*
   @Listener!MessageCreate()
   void onMessageCreate(MessageCreate event) {
     this.log.info("Got message: %s", event.message.mentioned);
   }
+  */
 
+  /*
   Channel userVoiceChannel(Guild guild, User user) {
     auto states = guild.voiceStates.filter(s => s.user_id == user.id).array;
     if (!states.length) return null;
     return states[0].channel;
   }
+  */
 }
 
 

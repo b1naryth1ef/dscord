@@ -3,11 +3,12 @@ module dscord.types.base;
 import std.conv,
        std.typecons,
        std.stdio,
-       std.algorithm,
-       std.datetime;
+       std.algorithm;
 
-import dscord.client,
-       dscord.util.json;
+import dscord.client;
+
+public import dscord.util.temp;
+public import std.datetime;
 
 alias Snowflake = ulong;
 
@@ -35,23 +36,38 @@ class Cache(T) {
   }
 }
 
-class Model {
-  Client client;
+class IModel {
+  Client  client;
 
-  this(Client client, JSONObject obj) {
+  void init() {};
+  void load(ref JSON obj) {};
+
+  this(Client client, ref JSON obj) {
     debug {
       auto sw = StopWatch(AutoStart.yes);
     }
 
     this.client = client;
+    this.init();
     this.load(obj);
+
     debug {
       this.client.log.tracef("creating model %s took %sms", this.toString,
         sw.peek().to!("msecs", real));
     }
   }
+}
 
-  void load(JSONObject obj) {}
+mixin template Model() {
+  this(Client client, ref JSON obj) {
+    super(client, obj);
+  }
+}
+
+Snowflake readSnowflake(ref JSON obj) {
+  string data = obj.read!string;
+  if (!data) return 0;
+  return data.to!Snowflake;
 }
 
 class ModelMap(TKey, TValue) {

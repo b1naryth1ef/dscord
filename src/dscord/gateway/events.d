@@ -4,7 +4,8 @@ import std.variant,
        std.algorithm,
        std.string,
        std.stdio,
-       std.datetime;
+       std.datetime,
+       std.conv;
 
 import dscord.gateway.client,
        dscord.gateway.packets,
@@ -32,6 +33,15 @@ mixin template Event() {
   }
 }
 
+T[] loadMany(T)(Client client, ref JSON obj) {
+  T[] data;
+  foreach (item; obj) {
+    data ~= new T(client, obj);
+  }
+  // obj.skipValue();
+  return data;
+}
+
 class ReadyEvent {
   mixin Event;
 
@@ -47,9 +57,19 @@ class ReadyEvent {
       { this.ver = obj.read!ushort; },
       { this.heartbeatInterval = obj.read!uint; },
       { this.sessionID = obj.read!string; },
-      { obj.skipValue(); /* TODO */ },
-      { obj.skipValue(); /* TODO */ },
+      { obj.skipValue; },
+      { this.guilds = loadMany!Guild(this.client, obj); },
     );
+  }
+}
+
+class GuildCreateEvent {
+  mixin Event;
+
+  Guild guild;
+
+  void load(ref JSON obj) {
+    this.guild = new Guild(this.client, obj);
   }
 }
 
@@ -71,6 +91,7 @@ mixin template NewEvent() {
   }
 }
 
+/*
 class Ready : BaseEvent {
   mixin NewEvent;
 
@@ -372,3 +393,4 @@ class VoiceServerUpdate : BaseEvent {
     this.guild_id = d.data.get!Snowflake("guild_id");
   }
 }
+*/

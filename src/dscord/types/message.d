@@ -7,13 +7,12 @@ import std.stdio,
        std.regex;
 
 import dscord.client,
-       dscord.types.base,
-       dscord.types.user,
-       dscord.types.guild,
-       dscord.types.channel,
+       dscord.types.all,
        dscord.util.json;
 
-class MessageEmbed : Model {
+class MessageEmbed : IModel {
+  mixin Model;
+
   string  title;
   string  type;
   string  description;
@@ -21,19 +20,19 @@ class MessageEmbed : Model {
 
   // TODO: thumbnail, provider
 
-  this(Client client, JSONObject obj) {
-    super(client, obj);
-  }
-
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     this.title = obj.get!string("title");
     this.type = obj.get!string("type");
     this.description = obj.get!string("description");
     this.url = obj.get!string("url");
+    */
   }
 }
 
-class MessageAttachment : Model {
+class MessageAttachment : IModel {
+  mixin Model;
+
   Snowflake  id;
   string     filename;
   uint       size;
@@ -42,11 +41,8 @@ class MessageAttachment : Model {
   uint       height;
   uint       width;
 
-  this(Client client, JSONObject obj) {
-    super(client, obj);
-  }
-
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     this.id = obj.get!Snowflake("id");
     this.filename = obj.get!string("filename");
     this.size = obj.get!uint("size");
@@ -54,10 +50,13 @@ class MessageAttachment : Model {
     this.proxyUrl = obj.maybeGet!string("proxy_url", "");
     this.height = obj.maybeGet!uint("height", 0);
     this.width = obj.maybeGet!uint("width", 0);
+    */
   }
 }
 
-class Message : Model {
+class Message : IModel {
+  mixin Model;
+
   Snowflake  id;
   Snowflake  channelID;
   User       author;
@@ -79,13 +78,13 @@ class Message : Model {
   MessageAttachment[]  attachments;
 
 
-  this(Client client, JSONObject obj) {
+  override void init() {
     this.mentions = new UserMap;
     this.roleMentions = new RoleMap;
-    super(client, obj);
   }
 
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     this.id = obj.get!Snowflake("id");
     this.channelID = obj.get!Snowflake("channel_id");
     this.content = obj.maybeGet!(string)("content", "");
@@ -138,6 +137,7 @@ class Message : Model {
         this.attachments ~= attach;
       }
     }
+    */
   }
 
   /*

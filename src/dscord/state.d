@@ -46,6 +46,7 @@ class State : Emitter {
   }
 
   void bindEvents() {
+    /*
     this.client.events.listen!Ready(&this.onReady);
 
     // Guilds
@@ -60,8 +61,10 @@ class State : Emitter {
 
     // Voice State
     this.client.events.listen!VoiceStateUpdate(&this.onVoiceStateUpdate);
+    */
   }
 
+  /*
   void onReady(Ready r) {
     this.me = r.me;
     this.onReadyGuildCount = r.guilds.length;
@@ -121,6 +124,7 @@ class State : Emitter {
       guild.voiceStates[u.state.session_id] = u.state;
     }
   }
+  */
 }
 
 

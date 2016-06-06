@@ -8,7 +8,9 @@ import dscord.client,
 
 alias VoiceStateMap = ModelMap!(string, VoiceState);
 
-class VoiceState : Model {
+class VoiceState : IModel {
+  mixin Model;
+
   Snowflake  guild_id;
   Snowflake  channel_id;
   Snowflake  user_id;
@@ -19,11 +21,8 @@ class VoiceState : Model {
   bool       self_mute;
   bool       suppress;
 
-  this(Client client, JSONObject obj) {
-    super(client, obj);
-  }
-
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     this.guild_id = obj.maybeGet!Snowflake("guild_id", 0);
 
     if (!obj.isNull("channel_id")) {
@@ -37,6 +36,7 @@ class VoiceState : Model {
     this.self_deaf = obj.get!bool("self_deaf");
     this.self_mute = obj.get!bool("self_mute");
     this.suppress = obj.get!bool("suppress");
+    */
   }
 
   @property Guild guild() {

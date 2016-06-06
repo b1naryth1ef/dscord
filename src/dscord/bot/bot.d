@@ -46,7 +46,7 @@ class Bot {
     this.log = this.client.log;
 
     if (this.feature(BotFeatures.COMMANDS)) {
-      this.client.events.listen!MessageCreate(&this.onMessageCreate);
+      // this.client.events.listen!MessageCreate(&this.onMessageCreate);
     }
   }
 
@@ -140,11 +140,13 @@ class Bot {
     obj.func(event);
   }
 
+  /*
   void onMessageCreate(MessageCreate event) {
     if (this.feature(BotFeatures.COMMANDS)) {
       this.tryHandleCommand(new CommandEvent(event));
     }
   }
+  */
 
   void run() {
     client.gw.start();

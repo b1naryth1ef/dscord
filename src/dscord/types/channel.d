@@ -6,12 +6,7 @@ import std.stdio,
 
 import dscord.client,
        dscord.voice.client,
-       dscord.types.base,
-       dscord.types.guild,
-       dscord.types.message,
-       dscord.types.user,
-       dscord.types.permission,
-       dscord.types.voice,
+       dscord.types.all,
        dscord.util.json;
 
 alias ChannelMap = ModelMap!(Snowflake, Channel);
@@ -30,7 +25,9 @@ enum PermissionOverwriteType {
 	MEMBER = 1 << 1,
 }
 
-class PermissionOverwrite : Model {
+class PermissionOverwrite : IModel {
+  mixin Model;
+
 	Snowflake  id;
   Channel    channel;
 
@@ -41,11 +38,8 @@ class PermissionOverwrite : Model {
 	Permission  allow;
 	Permission  deny;
 
-  this(Client client, JSONObject obj) {
-    super(client, obj);
-  }
-
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     this.id = obj.get!Snowflake("id");
     this.allow = obj.get!Permission("allow");
     this.deny = obj.get!Permission("deny");
@@ -53,6 +47,7 @@ class PermissionOverwrite : Model {
     this.type = obj.get!string("type") == "role" ?
       PermissionOverwriteType.ROLE :
       PermissionOverwriteType.MEMBER;
+    */
   }
 
   Snowflake getID() {
@@ -60,7 +55,9 @@ class PermissionOverwrite : Model {
   }
 }
 
-class Channel : Model {
+class Channel : IModel {
+  mixin Model;
+
   Snowflake    id;
   string      name;
   string      topic;
@@ -77,13 +74,12 @@ class Channel : Model {
   // Voice Connection
   VoiceClient  vc;
 
-  this(Client client, JSONObject obj) {
+  override void init() {
     this.overwrites = new PermissionOverwriteMap;
-
-    super(client, obj);
   }
 
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     this.id = obj.get!Snowflake("id");
     this.name = obj.maybeGet!string("name", "");
     this.topic = obj.maybeGet!string("topic", null);
@@ -109,6 +105,7 @@ class Channel : Model {
       overwrite.channel = this;
       this.overwrites[overwrite.id] = overwrite;
     }
+    */
   }
 
   Snowflake getID() {

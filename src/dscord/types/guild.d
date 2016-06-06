@@ -20,7 +20,9 @@ bool memberHasRoleWithin(RoleMap map, GuildMember mem) {
   return false;
 }
 
-class Role : Model {
+class Role : IModel {
+  mixin Model;
+
   Snowflake   id;
   Guild       guild;
   Permission  permission;
@@ -33,12 +35,13 @@ class Role : Model {
   bool    mentionable;
 
 
-  this(Guild guild, JSONObject obj) {
+  this(Guild guild, ref JSON obj) {
     this.guild = guild;
     super(guild.client, obj);
   }
 
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     this.id = obj.get!Snowflake("id");
     this.name = obj.get!string("name");
     this.hoist = obj.get!bool("hoist");
@@ -53,6 +56,7 @@ class Role : Model {
     } else {
       this.color = obj.get!uint("color");
     }
+    */
   }
 
   Snowflake getID() {
@@ -60,7 +64,9 @@ class Role : Model {
   }
 }
 
-class Emoji : Model {
+class Emoji : IModel {
+  mixin Model;
+
   Snowflake  id;
   Guild      guild;
   string     name;
@@ -68,12 +74,13 @@ class Emoji : Model {
   bool       requireColons;
   bool       managed;
 
-  this(Guild guild, JSONObject obj) {
+  this(Guild guild, ref JSON obj) {
     this.guild = guild;
     super(guild.client, obj);
   }
 
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     this.id = obj.get!Snowflake("id");
     this.name = obj.get!string("name");
     this.requireColons = obj.get!bool("require_colons");
@@ -82,10 +89,13 @@ class Emoji : Model {
     foreach (Variant v; obj.getRaw("roles")) {
       this.roles ~= this.guild.roles.get(v.coerce!Snowflake);
     }
+    */
   }
 }
 
-class GuildMember : Model {
+class GuildMember : IModel {
+  mixin Model;
+
   User    user;
   Guild   guild;
   string  nick;
@@ -95,18 +105,17 @@ class GuildMember : Model {
 
   RoleMap    roles;
 
-  this(Client client, Guild guild, JSONObject obj) {
+  this(Guild guild, ref JSON obj) {
     this.guild = guild;
-    this.roles = new RoleMap;
     super(client, obj);
   }
 
-  this(Client client, JSONObject obj) {
+  override void init() {
     this.roles = new RoleMap;
-    super(client, obj);
   }
 
-  override void load(JSONObject obj) {
+  override void load(ref JSON obj) {
+    /*
     auto uobj = obj.get!JSONObject("user");
     if (this.client.state.users.has(uobj.get!Snowflake("id"))) {
       this.user = this.client.state.users.get(uobj.get!Snowflake("id"));
@@ -132,6 +141,7 @@ class GuildMember : Model {
     this.nick = obj.maybeGet!string("nick", "");
     this.mute = obj.get!bool("mute");
     this.deaf = obj.get!bool("deaf");
+    */
   }
 
   Snowflake getID() {
@@ -147,19 +157,23 @@ class GuildMember : Model {
   }
 }
 
-class Guild : Model {
+class Guild : IModel {
+  mixin Model;
+
   Snowflake  id;
-  Snowflake  owner_id;
-  Snowflake  afk_channel_id;
-  Snowflake  embed_channel_id;
-  string    name;
+  Snowflake  ownerID;
+  Snowflake  afkChannelID;
+  Snowflake  embedChannelID;
+  string     name;
   string     icon;
   string     splash;
   string     region;
-  uint       afk_timeout;
-  bool       embed_enabled;
-  ushort     verification_level;
+  uint       afkTimeout;
+  bool       embedEnabled;
+  ushort     verificationLevel;
   string[]   features;
+
+  bool  unavailable;
 
   // Mappings
   GuildMemberMap  members;
@@ -168,39 +182,33 @@ class Guild : Model {
   RoleMap         roles;
   EmojiMap        emojis;
 
-  this(Client client, JSONObject obj) {
+  override void init() {
     this.members = new GuildMemberMap;
     this.voiceStates = new VoiceStateMap;
     this.channels = new ChannelMap;
     this.roles = new RoleMap;
     this.emojis = new EmojiMap;
-    super(client, obj);
   }
 
-  GuildMember getMember(User obj) {
-    return this.getMember(obj.id);
-  }
+  override void load(ref JSON obj) {
+    obj.keySwitch!(
+      "id", "unavailable", "owner_id", "name", "icon",
+      "region", "verification_level", "afk_channel_id",
+      "splash", "afk_timeout",
+    )(
+      { this.id = readSnowflake(obj); },
+      { this.unavailable = obj.read!bool; },
+      { this.ownerID = readSnowflake(obj); },
+      { this.name = obj.read!string; },
+      { this.icon = obj.read!string; },
+      { this.region = obj.read!string; },
+      { this.verificationLevel = obj.read!ushort; },
+      { this.afkChannelID = readSnowflake(obj); },
+      { this.splash = obj.read!string; },
+      { this.afkTimeout = obj.read!uint; });
 
-  GuildMember getMember(Snowflake id) {
-    return this.members[id];
-  }
 
-  override void load(JSONObject obj) {
-    this.id = obj.get!Snowflake("id");
-
-    if (obj.has("unavailable") && obj.get!bool("unavailable")) {
-      return;
-    }
-
-    this.owner_id = obj.get!string("owner_id").to!Snowflake;
-    this.name = obj.get!string("name");
-    this.icon = obj.get!string("icon");
-    this.region = obj.get!string("region");
-    this.verification_level = obj.get!ushort("verification_level");
-    this.afk_channel_id = obj.maybeGet!Snowflake("afk_channel_id", 0);
-    this.splash = obj.maybeGet!string("splash", null);
-    this.afk_timeout = obj.maybeGet!uint("afk_timeout", 0);
-
+    /*
     if (obj.has("channels")) {
       foreach (Variant obj; obj.getRaw("channels")) {
         auto channel = new Channel(this.client, new JSONObject(variantToJSON(obj)));
@@ -244,6 +252,15 @@ class Guild : Model {
         this.features ~= obj.coerce!string;
       }
     }
+    */
+  }
+
+  GuildMember getMember(User obj) {
+    return this.getMember(obj.id);
+  }
+
+  GuildMember getMember(Snowflake id) {
+    return this.members[id];
   }
 
   Snowflake getID() {

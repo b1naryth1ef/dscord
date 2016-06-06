@@ -257,6 +257,7 @@ class VoiceClient {
     this.log.warning("voice websocket closed");
   }
 
+  /*
   void onVoiceServerUpdate(VoiceServerUpdate event) {
     if (this.channel.guild_id != event.guild_id) {
       return;
@@ -279,13 +280,14 @@ class VoiceClient {
       this.token
     ));
   }
+  */
 
   bool connect(Duration timeout=5.seconds) {
     this.waitForConnectedMutex = new TaskMutex;
     this.waitForConnected = new TaskCondition(this.waitForConnectedMutex);
 
-    this.l = this.client.gw.eventEmitter.listen!VoiceServerUpdate(toDelegate(
-      &this.onVoiceServerUpdate));
+    //this.l = this.client.gw.eventEmitter.listen!VoiceServerUpdate(toDelegate(
+    //  &this.onVoiceServerUpdate));
 
     this.client.gw.send(new VoiceStateUpdatePacket(
       this.channel.guild_id,

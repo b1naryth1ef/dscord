@@ -54,17 +54,19 @@ class CommandObject {
 
 // Command event is a special event encapsulating MessageCreate's that has util methods for bots
 class CommandEvent {
-  MessageCreate  event;
+  // MessageCreate  event;
   Message        msg;
 
   // Contents
   string    contents;
   string[]  args;
 
+  /*
   this(MessageCreate event) {
     this.event = event;
     this.msg = event.message;
   }
+  */
 
   bool has(ushort index) {
     return (index < this.args.length);

@@ -48,7 +48,7 @@ class GatewayClient {
 
     this.eventEmitter = new Emitter;
     this.eventEmitter.listen!ReadyEvent(toDelegate(&this.handleReadyEvent));
-    this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
+    // this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
 
     // Copy emitters to client for easier API access
     client.events = this.eventEmitter;
@@ -73,16 +73,15 @@ class GatewayClient {
 
   void handleReadyEvent(ReadyEvent r) {
     this.log.infof("Recieved READY payload, starting heartbeater");
-    this.log.tracef("hb: %s, s: %s", r.heartbeatInterval, r.sessionID);
     this.hb_interval = r.heartbeatInterval;
     this.session_id = r.sessionID;
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
     this.reconnects = 0;
   }
 
-  void handleResumedEvent(Resumed r) {
+  /*void handleResumedEvent(Resumed r) {
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
-  }
+  }*/
 
   void handleDispatchPacket(uint seq, string type, ref JSON obj) {
     // Update sequence number if it's larger than what we have
@@ -93,6 +92,10 @@ class GatewayClient {
     switch (type) {
       case "READY":
         this.eventEmitter.emit!ReadyEvent(new ReadyEvent(this.client, obj));
+        break;
+      case "GUILD_CREATE":
+        this.eventEmitter.emit!GuildCreateEvent(new GuildCreateEvent(
+          this.client, obj));
         break;
       default:
         this.log.warningf("Unhandled dispatch event: %s", type);
