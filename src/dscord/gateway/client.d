@@ -209,7 +209,7 @@ class GatewayClient {
     }
   }
 
-  void dispatch(JSONValue obj) {
+  void dispatch(JSONObject obj) {
     this.log.tracef("gateway-dispatch: %s", obj.get!OPCode("op"));
     switch (obj.get!OPCode("op")) {
       case OPCode.DISPATCH:
@@ -263,7 +263,8 @@ class GatewayClient {
       }
 
       try {
-        this.dispatch(parseJSON(data));
+        this.log.tracef("gateway-recv: %s", data);
+        this.dispatch(new JSONObject(data));
       } catch (Exception e) {
         this.log.warning("failed to handle %s (%s)", e, data);
       }

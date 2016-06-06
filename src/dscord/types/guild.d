@@ -12,16 +12,25 @@ alias GuildMap = ModelMap!(Snowflake, Guild);
 alias RoleMap = ModelMap!(Snowflake, Role);
 alias GuildMemberMap = ModelMap!(Snowflake, GuildMember);
 
+bool memberHasRoleWithin(RoleMap map, GuildMember mem) {
+  foreach (ref role; mem.roles.values) {
+    if (map.has(role.id)) return true;
+  }
+  return false;
+}
+
 class Role : Model {
   Snowflake   id;
-  string     name;
-  uint        color;
-  bool        hoist;
-  short       position;
+  Guild       guild;
   Permission  permission;
-  bool        managed;
 
-  Guild  guild;
+  string  name;
+  uint    color;
+  bool    hoist;
+  short   position;
+  bool    managed;
+  bool    mentionable;
+
 
   this(Client client, JSONObject obj) {
     super(client, obj);
@@ -34,6 +43,7 @@ class Role : Model {
     this.position = obj.get!short("position");
     this.permission = obj.get!Permission("permissions");
     this.managed = obj.get!bool("managed");
+    this.mentionable = obj.get!bool("mentionable");
 
     // Lets guard shitty data
     if (obj.get!int("color") < 0) {
@@ -60,14 +70,22 @@ class Emoji {
 
 class GuildMember : Model {
   User    user;
+  Guild   guild;
   string  nick;
-  string  joined_at;
+  string  joinedAt;
   bool    mute;
   bool    deaf;
 
-  // Role[]  roles;
+  RoleMap    roles;
+
+  this(Client client, Guild guild, JSONObject obj) {
+    this.guild = guild;
+    this.roles = new RoleMap;
+    super(client, obj);
+  }
 
   this(Client client, JSONObject obj) {
+    this.roles = new RoleMap;
     super(client, obj);
   }
 
@@ -81,6 +99,19 @@ class GuildMember : Model {
       this.client.state.users.set(this.user.id, this.user);
     }
 
+    if (obj.has("guild_id")) {
+      this.guild = this.client.state.guilds.get(obj.get!Snowflake("guild_id"));
+    }
+
+    if (obj.has("roles")) {
+      foreach (Variant v; obj.getRaw("roles")) {
+        auto roleID = v.coerce!Snowflake;
+        auto role = this.guild.roles.get(roleID);
+        if (!role) continue;
+        this.roles[role.id] = role;
+      }
+    }
+
     this.nick = obj.maybeGet!string("nick", "");
     this.mute = obj.get!bool("mute");
     this.deaf = obj.get!bool("deaf");
@@ -88,6 +119,14 @@ class GuildMember : Model {
 
   Snowflake getID() {
     return this.user.id;
+  }
+
+  bool hasRole(Role role) {
+    return this.hasRole(role.id);
+  }
+
+  bool hasRole(Snowflake id) {
+    return this.roles.has(id);
   }
 }
 
@@ -123,6 +162,14 @@ class Guild : Model {
     super(client, obj);
   }
 
+  GuildMember getMember(User obj) {
+    return this.getMember(obj.id);
+  }
+
+  GuildMember getMember(Snowflake id) {
+    return this.members[id];
+  }
+
   override void load(JSONObject obj) {
     this.id = obj.get!Snowflake("id");
 
@@ -147,18 +194,18 @@ class Guild : Model {
       }
     }
 
-    if (obj.has("members")) {
-      foreach (Variant obj; obj.getRaw("members")) {
-        auto member = new GuildMember(this.client, new JSONObject(variantToJSON(obj)));
-        this.members[member.user.id] = member;
-      }
-    }
-
     if (obj.has("roles")) {
       foreach (Variant obj; obj.getRaw("roles")) {
         auto role = new Role(this.client, new JSONObject(variantToJSON(obj)));
         role.guild = this;
         this.roles[role.id] = role;
+      }
+    }
+
+    if (obj.has("members")) {
+      foreach (Variant obj; obj.getRaw("members")) {
+        auto member = new GuildMember(this.client, this, new JSONObject(variantToJSON(obj)));
+        this.members[member.user.id] = member;
       }
     }
 

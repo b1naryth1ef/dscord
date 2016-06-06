@@ -85,6 +85,7 @@ class State : Emitter {
   }
 
   void onGuildUpdate(GuildUpdate c) {
+    this.log.warning("Hit onGuildUpdate leaving state stale");
     // TODO
     // this.guilds[c.guild.id].load(c.payload);
   }

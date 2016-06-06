@@ -63,11 +63,14 @@ class Message : Model {
   User       author;
   string    content;
   string     timestamp; // TODO: timestamps lol
-  string     edited_timestamp; // TODO: timestamps lol
+  string     editedTimestamp; // TODO: timestamps lol
   bool       tts;
-  bool       mention_everyone;
+  bool       mentionEveryone;
   string     nonce;
+
+  // TODO: GuildMemberMap here
   UserMap    mentions;
+  RoleMap    roleMentions;
 
   // Embeds
   MessageEmbed[]  embeds;
@@ -78,6 +81,7 @@ class Message : Model {
 
   this(Client client, JSONObject obj) {
     this.mentions = new UserMap;
+    this.roleMentions = new RoleMap;
     super(client, obj);
   }
 
@@ -86,9 +90,9 @@ class Message : Model {
     this.channelID = obj.get!Snowflake("channel_id");
     this.content = obj.maybeGet!(string)("content", "");
     this.timestamp = obj.maybeGet!string("timestamp", "");
-    this.edited_timestamp = obj.maybeGet!string("edited_timestamp", "");
+    this.editedTimestamp = obj.maybeGet!string("edited_timestamp", "");
     this.tts = obj.maybeGet!bool("tts", false);
-    this.mention_everyone = obj.maybeGet!bool("mention_everyone", false);
+    this.mentionEveryone = obj.maybeGet!bool("mention_everyone", false);
     this.nonce = obj.maybeGet!string("nonce", "");
 
     if (obj.has("author")) {
@@ -110,6 +114,13 @@ class Message : Model {
           user = this.client.state.users.get(user.id);
         }
         this.mentions.set(user.id, user);
+      }
+    }
+
+    if (obj.has("mention_roles")) {
+      foreach (Variant v; obj.getRaw("mention_roles")) {
+        auto roleID = v.coerce!Snowflake;
+        this.roleMentions[roleID] = this.guild.roles.get(roleID);
       }
     }
 
@@ -171,8 +182,16 @@ class Message : Model {
     this.client.api.sendMessage(this.channelID, content, nonce, tts);
   }
 
+  @property bool mentioned() {
+    return this.mentionEveryone ||
+      this.mentions.has(this.client.state.me.id) ||
+      this.roleMentions.memberHasRoleWithin(
+        this.guild.getMember(this.client.state.me));
+  }
+
   @property Guild guild() {
-    return this.channel.guild;
+    if (this.channel) return this.channel.guild;
+    return null;
   }
 
   @property Channel channel() {

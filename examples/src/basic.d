@@ -44,7 +44,7 @@ class BasicPlugin : Plugin {
 
   @Listener!MessageCreate()
   void onMessageCreate(MessageCreate event) {
-    this.log.info("Got message!");
+    this.log.info("Got message: %s", event.message.mentioned);
   }
 
   Channel userVoiceChannel(Guild guild, User user) {
