@@ -209,7 +209,8 @@ class GuildRoleCreate : BaseEvent {
 
   void load(DispatchPacket d) {
     this.guild_id = d.data.get!Snowflake("guild_id");
-    this.role = new Role(this.client, d.data.get!JSONObject("role"));
+    auto guild = this.client.state.guilds.get(this.guild_id);
+    this.role = new Role(guild, d.data.get!JSONObject("role"));
   }
 }
 
@@ -221,7 +222,8 @@ class GuildRoleUpdate : BaseEvent {
 
   void load(DispatchPacket d) {
     this.guild_id = d.data.get!Snowflake("guild_id");
-    this.role = new Role(this.client, d.data.get!JSONObject("role"));
+    auto guild = this.client.state.guilds.get(this.guild_id);
+    this.role = new Role(guild, d.data.get!JSONObject("role"));
   }
 }
 

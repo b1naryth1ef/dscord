@@ -11,6 +11,7 @@ import dscord.client,
 alias GuildMap = ModelMap!(Snowflake, Guild);
 alias RoleMap = ModelMap!(Snowflake, Role);
 alias GuildMemberMap = ModelMap!(Snowflake, GuildMember);
+alias EmojiMap = ModelMap!(Snowflake, Emoji);
 
 bool memberHasRoleWithin(RoleMap map, GuildMember mem) {
   foreach (ref role; map.values) {
@@ -32,8 +33,9 @@ class Role : Model {
   bool    mentionable;
 
 
-  this(Client client, JSONObject obj) {
-    super(client, obj);
+  this(Guild guild, JSONObject obj) {
+    this.guild = guild;
+    super(guild.client, obj);
   }
 
   override void load(JSONObject obj) {
@@ -58,15 +60,30 @@ class Role : Model {
   }
 }
 
-/*
-class Emoji {
-  Snowflake id;
-  string name;
-  Role[] roles;
-  bool require_colons;
-  bool managed;
+class Emoji : Model {
+  Snowflake  id;
+  Guild      guild;
+  string     name;
+  Role[]     roles;
+  bool       requireColons;
+  bool       managed;
+
+  this(Guild guild, JSONObject obj) {
+    this.guild = guild;
+    super(guild.client, obj);
+  }
+
+  override void load(JSONObject obj) {
+    this.id = obj.get!Snowflake("id");
+    this.name = obj.get!string("name");
+    this.requireColons = obj.get!bool("require_colons");
+    this.managed = obj.get!bool("managed");
+
+    foreach (Variant v; obj.getRaw("roles")) {
+      this.roles ~= this.guild.roles.get(v.coerce!Snowflake);
+    }
+  }
 }
-*/
 
 class GuildMember : Model {
   User    user;
@@ -149,16 +166,14 @@ class Guild : Model {
   VoiceStateMap   voiceStates;
   ChannelMap      channels;
   RoleMap         roles;
-
-  // Role[] roles;
-  // Emoji[] emoji;
-  // Channel[]  channels;
+  EmojiMap        emojis;
 
   this(Client client, JSONObject obj) {
     this.members = new GuildMemberMap;
     this.voiceStates = new VoiceStateMap;
     this.channels = new ChannelMap;
     this.roles = new RoleMap;
+    this.emojis = new EmojiMap;
     super(client, obj);
   }
 
@@ -196,8 +211,7 @@ class Guild : Model {
 
     if (obj.has("roles")) {
       foreach (Variant obj; obj.getRaw("roles")) {
-        auto role = new Role(this.client, new JSONObject(variantToJSON(obj)));
-        role.guild = this;
+        auto role = new Role(this, new JSONObject(variantToJSON(obj)));
         this.roles[role.id] = role;
       }
     }
@@ -218,7 +232,18 @@ class Guild : Model {
       }
     }
 
-    // this.features = obj.get!string[]("features");
+    if (obj.has("emoji")) {
+      foreach (Variant obj; obj.getRaw("emoji")) {
+        auto emoji = new Emoji(this, new JSONObject(variantToJSON(obj)));
+        this.emojis[emoji.id] = emoji;
+      }
+    }
+
+    if (obj.has("features")) {
+      foreach (Variant obj; obj.getRaw("features")) {
+        this.features ~= obj.coerce!string;
+      }
+    }
   }
 
   Snowflake getID() {

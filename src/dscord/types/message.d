@@ -182,6 +182,9 @@ class Message : Model {
     this.client.api.sendMessage(this.channelID, content, nonce, tts);
   }
 
+  /*
+    True if this message mentions the current user in any way (everyone, direct mention, role mention)
+  */
   @property bool mentioned() {
     return this.mentionEveryone ||
       this.mentions.has(this.client.state.me.id) ||
