@@ -18,8 +18,17 @@ mixin template Event() {
   Client client;
 
   this(Client c, ref JSON obj) {
+    debug {
+      auto sw = StopWatch(AutoStart.yes);
+    }
+
     this.client = c;
     this.load(obj);
+
+    debug {
+      this.client.log.tracef("Create event for %s took %sms", this.toString,
+        sw.peek().to!("msecs", real));
+    }
   }
 }
 
