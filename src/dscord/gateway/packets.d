@@ -1,9 +1,11 @@
 module dscord.gateway.packets;
 
+import fast.json;
+
 import dscord.types.all,
        dscord.util.json;
 
-enum OPCode {
+enum OPCode : ushort {
   DISPATCH = 0,
   HEARTBEAT = 1,
   IDENTIFY = 2,
@@ -16,12 +18,14 @@ enum OPCode {
   INVALID_SESSION = 9,
 };
 
+alias JSON = Json!(0u, false);
+
 interface Serializable {
   JSONObject serialize();
 }
 
 interface Deserializable {
-  void deserialize(JSONObject);
+  void deserialize(ref JSON);
 }
 
 class BasePacket : Deserializable {
@@ -41,11 +45,15 @@ class BasePacket : Deserializable {
       .set!JSONObject("d", data);
   }
 
+  /*
   void deserialize(JSONObject obj) {
     this.raw = obj;
     this.op = obj.get!OPCode("op");
     this.data = obj.get!JSONObject("d");
   }
+  */
+
+  void deserialize(ref JSON obj) {}
 }
 
 class HeartbeatPacket : BasePacket, Serializable {
@@ -129,15 +137,15 @@ class DispatchPacket : BasePacket, Deserializable {
 
   }
 
-  this(JSONObject obj) {
-    this.deserialize(obj);
-  }
-
+  /*
   override void deserialize(JSONObject obj) {
     super.deserialize(obj);
     this.seq = obj.get!int("s");
     this.event = obj.get!string("t");
   }
+  */
+
+  override void deserialize(ref JSON obj) {}
 
   T castEvent(T)() {
     return new T(this);

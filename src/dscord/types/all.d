@@ -9,3 +9,5 @@ public import dscord.types.user;
 public import dscord.types.voice;
 public import dscord.util.json;
 public import dscord.client;
+
+public import dscord.util.temp;

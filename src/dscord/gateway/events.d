@@ -14,6 +14,37 @@ interface BaseEvent {
   void load(DispatchPacket);
 }
 
+mixin template Event() {
+  Client client;
+
+  this(Client c, ref JSON obj) {
+    this.client = c;
+    this.load(obj);
+  }
+}
+
+class ReadyEvent {
+  mixin Event;
+
+  ushort     ver;
+  uint       heartbeatInterval;
+  string     sessionID;
+  User       me;
+  Guild[]    guilds;
+  Channel[]  dms;
+
+  void load(ref JSON obj) {
+    obj.keySwitch!("v", "heartbeat_interval", "session_id", "user", "guilds")(
+      { this.ver = obj.read!ushort; },
+      { this.heartbeatInterval = obj.read!uint; },
+      { this.sessionID = obj.read!string; },
+      { obj.skipValue(); /* TODO */ },
+      { obj.skipValue(); /* TODO */ },
+    );
+  }
+}
+
+
 mixin template NewEvent() {
   Client client;
 

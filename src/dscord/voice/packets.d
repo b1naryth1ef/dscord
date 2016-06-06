@@ -43,9 +43,10 @@ class VoiceReadyPacket : BasePacket, Deserializable {
   ushort    heartbeat_interval;
 
   this(JSONObject obj) {
-    this.deserialize(obj);
+    // this.deserialize(obj);
   }
 
+  /*
   override void deserialize(JSONObject obj) {
     super.deserialize(obj);
     this.ssrc = this.data.get!ushort("ssrc");
@@ -53,6 +54,9 @@ class VoiceReadyPacket : BasePacket, Deserializable {
     this.heartbeat_interval = this.data.get!ushort("heartbeat_interval");
     // TODO: this.modes = obj.get!
   }
+  */
+
+  override void deserialize(ref JSON obj) {};
 }
 
 class VoiceSelectProtocolPacket : BasePacket, Serializable {
@@ -112,12 +116,16 @@ class VoiceSessionDescriptionPacket : BasePacket, Deserializable {
   string  secretKey;
 
   this(JSONObject obj) {
-    this.deserialize(obj);
+    // this.deserialize(obj);
   }
 
+  /*
   override void deserialize(JSONObject obj) {
     super.deserialize(obj);
     this.secretKey = this.data.maybeGet!string("secretKey", "");
   }
+  */
+
+  override void deserialize(ref JSON obj) {};
 }
 

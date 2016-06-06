@@ -5,7 +5,8 @@ import std.stdio,
        std.functional,
        std.zlib,
        std.datetime,
-       std.variant;
+       std.variant,
+       fast.json;
 
 import vibe.core.core,
        vibe.inet.url,
@@ -46,8 +47,7 @@ class GatewayClient {
     this.log = this.client.log;
 
     this.eventEmitter = new Emitter;
-    // this.packetEmitter.listen!DispatchPacket(toDelegate(&this.handleDispatchPacket));
-    this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
+    this.eventEmitter.listen!ReadyEvent(toDelegate(&this.handleReadyEvent));
     this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
 
     // Copy emitters to client for easier API access
@@ -71,9 +71,11 @@ class GatewayClient {
     this.sock.send(data.dumps());
   }
 
-  void handleReadyEvent(Ready r) {
-    this.hb_interval = r.heartbeat_interval;
-    this.session_id = r.session_id;
+  void handleReadyEvent(ReadyEvent r) {
+    this.log.infof("Recieved READY payload, starting heartbeater");
+    this.log.tracef("hb: %s, s: %s", r.heartbeatInterval, r.sessionID);
+    this.hb_interval = r.heartbeatInterval;
+    this.session_id = r.sessionID;
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
     this.reconnects = 0;
   }
@@ -82,16 +84,22 @@ class GatewayClient {
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
   }
 
-  void handleDispatchPacket(DispatchPacket d) {
-    debug {
-      auto sw = StopWatch(AutoStart.yes);
-    }
-
+  void handleDispatchPacket(uint seq, string type, ref JSON obj) {
     // Update sequence number if it's larger than what we have
-    if (d.seq > this.seq) {
-      this.seq = d.seq;
+    if (seq > this.seq) {
+      this.seq = seq;
     }
 
+    switch (type) {
+      case "READY":
+        this.eventEmitter.emit!ReadyEvent(new ReadyEvent(this.client, obj));
+        break;
+      default:
+        this.log.warningf("Unhandled dispatch event: %s", type);
+        break;
+    }
+
+    /*
     this.log.tracef("gateway-packet: %s", d.event);
     switch (d.event) {
       case "READY":
@@ -207,23 +215,42 @@ class GatewayClient {
     debug {
       this.log.tracef("gateway event parse took %sms", sw.peek().to!("msecs", real));
     }
+    */
   }
 
-  void dispatch(JSONObject obj) {
-    this.log.tracef("gateway-dispatch: %s", obj.get!OPCode("op"));
-    switch (obj.get!OPCode("op")) {
-      case OPCode.DISPATCH:
-        try {
-          this.dispatchPacket.deserialize(obj);
-          this.handleDispatchPacket(this.dispatchPacket);
-          // this.packetEmitter.emit!DispatchPacket(this.dispatchPacket);
-          // this.packetEmitter.emit!DispatchPacket(new DispatchPacket(obj));
-        } catch (Exception e) {
-          this.log.warning("failed to load dispatch: %s\n%s", e, obj.dumps);
-        }
-        break;
-      default:
-        break;
+  void parse(string rawData) {
+    auto json = parseTrustedJSON(rawData);
+
+    uint seq;
+    string type;
+    OPCode op;
+
+    foreach (key; json.byKey) {
+      switch (key) {
+        case "op":
+          op = cast(OPCode)json.read!ushort;
+          break;
+        case "t":
+          type = json.read!string;
+          break;
+        case "s":
+          seq = json.read!uint;
+          break;
+        case "d":
+          switch (op) {
+            case OPCode.DISPATCH:
+              this.handleDispatchPacket(seq, type, json);
+              // this.dispatchPacket.deserialize(json);
+              break;
+            default:
+              this.log.warningf("Unhandled gateway packet: %s", op);
+              break;
+          }
+          break;
+        default:
+          this.log.tracef("K: %s", key);
+          break;
+      }
     }
   }
 
@@ -263,8 +290,9 @@ class GatewayClient {
       }
 
       try {
-        this.log.tracef("gateway-recv: %s", data);
-        this.dispatch(new JSONObject(data));
+        // this.log.tracef("gateway-recv: %s", data);
+        this.parse(data);
+        // this.dispatch(new JSONObject(data));
       } catch (Exception e) {
         this.log.warning("failed to handle %s (%s)", e, data);
       }
