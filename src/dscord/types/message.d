@@ -21,12 +21,14 @@ class MessageEmbed : IModel {
   // TODO: thumbnail, provider
 
   override void load(ref JSON obj) {
-    /*
-    this.title = obj.get!string("title");
-    this.type = obj.get!string("type");
-    this.description = obj.get!string("description");
-    this.url = obj.get!string("url");
-    */
+    obj.keySwitch!(
+      "title", "type", "description", "url"
+    )(
+      { this.title = obj.read!string; },
+      { this.type = obj.read!string; },
+      { this.description = obj.read!string; },
+      { this.url = obj.read!string; },
+    );
   }
 }
 
@@ -42,15 +44,18 @@ class MessageAttachment : IModel {
   uint       width;
 
   override void load(ref JSON obj) {
-    /*
-    this.id = obj.get!Snowflake("id");
-    this.filename = obj.get!string("filename");
-    this.size = obj.get!uint("size");
-    this.url = obj.get!string("url");
-    this.proxyUrl = obj.maybeGet!string("proxy_url", "");
-    this.height = obj.maybeGet!uint("height", 0);
-    this.width = obj.maybeGet!uint("width", 0);
-    */
+    obj.keySwitch!(
+      "id", "filename", "size", "url", "proxy_url",
+      "height", "width",
+    )(
+      { this.id = readSnowflake(obj); },
+      { this.filename = obj.read!string; },
+      { this.size = obj.read!uint; },
+      { this.url = obj.read!string; },
+      { this.proxyUrl = obj.read!string; },
+      { this.height = obj.read!uint; },
+      { this.width = obj.read!uint; },
+    );
   }
 }
 
@@ -59,8 +64,9 @@ class Message : IModel {
 
   Snowflake  id;
   Snowflake  channelID;
+  Channel    channel;
   User       author;
-  string    content;
+  string     content;
   string     timestamp; // TODO: timestamps lol
   string     editedTimestamp; // TODO: timestamps lol
   bool       tts;
@@ -77,6 +83,14 @@ class Message : IModel {
   // Attachments
   MessageAttachment[]  attachments;
 
+  this(Client client, ref JSON obj) {
+    super(client, obj);
+  }
+
+  this(Channel channel, ref JSON obj) {
+    this.channel = channel;
+    super(channel.client, obj);
+  }
 
   override void init() {
     this.mentions = new UserMap;
@@ -84,60 +98,31 @@ class Message : IModel {
   }
 
   override void load(ref JSON obj) {
-    /*
-    this.id = obj.get!Snowflake("id");
-    this.channelID = obj.get!Snowflake("channel_id");
-    this.content = obj.maybeGet!(string)("content", "");
-    this.timestamp = obj.maybeGet!string("timestamp", "");
-    this.editedTimestamp = obj.maybeGet!string("edited_timestamp", "");
-    this.tts = obj.maybeGet!bool("tts", false);
-    this.mentionEveryone = obj.maybeGet!bool("mention_everyone", false);
-    this.nonce = obj.maybeGet!string("nonce", "");
+    // TODO: avoid leaking user
 
-    if (obj.has("author")) {
-      auto auth = obj.get!JSONObject("author");
+    obj.keySwitch!(
+      "id", "channel_id", "content", "timestamp", "edited_timestamp", "tts",
+      "mention_everyone", "nonce", "author", "mentions", "mention_roles",
+      // "embeds", "attachments",
+    )(
+      { this.id = readSnowflake(obj); },
+      { this.channelID = readSnowflake(obj); },
+      { this.content = obj.read!string; },
+      { this.timestamp = obj.read!string; },
+      { this.editedTimestamp = obj.read!string; },
+      { this.tts = obj.read!bool; },
+      { this.mentionEveryone = obj.read!bool; },
+      { this.nonce = obj.read!string; },
+      { this.author = new User(this.client, obj); },
+      { loadMany!User(this.client, obj, (u) { this.mentions[u.id] = u; }); },
+      { obj.skipValue; },
+      // { obj.skipValue; },
+      // { obj.skipvalue; },
+    );
 
-      if (this.client.state.users.has(auth.get!Snowflake("id"))) {
-        this.author = this.client.state.users(auth.get!Snowflake("id"));
-        this.author.load(auth);
-      } else {
-        this.author = new User(this.client, auth);
-        this.client.state.users.set(this.author.id, this.author);
-      }
+    if (!this.channel && this.client.state.channels.has(this.channelID)) {
+      this.channel = this.client.state.channels.get(this.channelID);
     }
-
-    if (obj.has("mentions")) {
-      foreach (Variant v; obj.getRaw("mentions")) {
-        auto user = new User(this.client, new JSONObject(variantToJSON(v)));
-        if (this.client.state.users.has(user.id)) {
-          user = this.client.state.users.get(user.id);
-        }
-        this.mentions.set(user.id, user);
-      }
-    }
-
-    if (obj.has("mention_roles")) {
-      foreach (Variant v; obj.getRaw("mention_roles")) {
-        auto roleID = v.coerce!Snowflake;
-        this.roleMentions[roleID] = this.guild.roles.get(roleID);
-      }
-    }
-
-    if (obj.has("embeds")) {
-      foreach (Variant v; obj.getRaw("embeds")) {
-        auto embed = new MessageEmbed(this.client, new JSONObject(variantToJSON(v)));
-        this.embeds ~= embed;
-      }
-    }
-
-    if (obj.has("attachments")) {
-      foreach (Variant v; obj.getRaw("attachments")) {
-        auto attach = new MessageAttachment(this.client,
-          new JSONObject(variantToJSON(v)));
-        this.attachments ~= attach;
-      }
-    }
-    */
   }
 
   /*
@@ -183,13 +168,15 @@ class Message : IModel {
 
   void reply(string content, string nonce=null, bool tts=false, bool mention=false) {
     // TODO: support mentioning
-    this.client.api.sendMessage(this.channelID, content, nonce, tts);
+    this.client.api.sendMessage(this.channel.id, content, nonce, tts);
   }
 
   /*
     True if this message mentions the current user in any way (everyone, direct mention, role mention)
   */
   @property bool mentioned() {
+    this.client.log.tracef("M: %s", this.mentions.keys);
+
     return this.mentionEveryone ||
       this.mentions.has(this.client.state.me.id) ||
       this.roleMentions.memberHasRoleWithin(
@@ -197,16 +184,7 @@ class Message : IModel {
   }
 
   @property Guild guild() {
-    if (this.channel) return this.channel.guild;
+    if (this.channel && this.channel.guild) return this.channel.guild;
     return null;
-  }
-
-  @property Channel channel() {
-    // TODO: properly handle PM's
-    if (this.client.state.channels.has(this.channelID)) {
-      return this.client.state.channels.get(this.channelID);
-    } else {
-      return null;
-    }
   }
 }

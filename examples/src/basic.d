@@ -44,16 +44,14 @@ class BasicPlugin : Plugin {
   }
   */
 
-  /*
   @Listener!MessageCreate()
   void onMessageCreate(MessageCreate event) {
-    this.log.info("Got message: %s", event.message.mentioned);
+    this.log.infof("Got message: %s", event.message.mentioned);
   }
-  */
 
   /*
   Channel userVoiceChannel(Guild guild, User user) {
-    auto states = guild.voiceStates.filter(s => s.user_id == user.id).array;
+    auto states = guild.voiceStates.filter(s => s.userID == user.id).array;
     if (!states.length) return null;
     return states[0].channel;
   }

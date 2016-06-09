@@ -290,7 +290,7 @@ class VoiceClient {
     //  &this.onVoiceServerUpdate));
 
     this.client.gw.send(new VoiceStateUpdatePacket(
-      this.channel.guild_id,
+      this.channel.guild.id,
       this.channel.id,
       this.mute,
       this.deaf
@@ -312,7 +312,7 @@ class VoiceClient {
     this.sock.close();
     this.l.unbind();
     this.client.gw.send(new VoiceStateUpdatePacket(
-      this.channel.guild_id,
+      this.channel.guild.id,
       0, // TODO
       this.mute,
       this.deaf

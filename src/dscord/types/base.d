@@ -44,6 +44,7 @@ class IModel {
 
   this(Client client, ref JSON obj) {
     debug {
+      client.log.tracef("Starting creation of model %s", this.toString);
       auto sw = StopWatch(AutoStart.yes);
     }
 
@@ -52,7 +53,7 @@ class IModel {
     this.load(obj);
 
     debug {
-      this.client.log.tracef("creating model %s took %sms", this.toString,
+      this.client.log.tracef("Finished creation of model %s in %sms", this.toString,
         sw.peek().to!("msecs", real));
     }
   }
@@ -68,6 +69,18 @@ Snowflake readSnowflake(ref JSON obj) {
   string data = obj.read!string;
   if (!data) return 0;
   return data.to!Snowflake;
+}
+
+void loadMany(T)(Client client, ref JSON obj, void delegate(T) F) {
+  foreach (item; obj) {
+    F(new T(client, obj));
+  }
+}
+
+void loadManyComplex(TSub, T)(TSub sub, ref JSON obj, void delegate(T) F) {
+  foreach (item; obj) {
+    F(new T(sub, obj));
+  }
 }
 
 class ModelMap(TKey, TValue) {

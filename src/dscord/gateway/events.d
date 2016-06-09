@@ -1,10 +1,10 @@
 module dscord.gateway.events;
 
-import std.variant,
-       std.algorithm,
+import std.algorithm,
        std.string,
        std.stdio,
        std.datetime,
+       std.array,
        std.conv;
 
 import dscord.gateway.client,
@@ -33,16 +33,7 @@ mixin template Event() {
   }
 }
 
-T[] loadMany(T)(Client client, ref JSON obj) {
-  T[] data;
-  foreach (item; obj) {
-    data ~= new T(client, obj);
-  }
-  // obj.skipValue();
-  return data;
-}
-
-class ReadyEvent {
+class Ready {
   mixin Event;
 
   ushort     ver;
@@ -57,340 +48,306 @@ class ReadyEvent {
       { this.ver = obj.read!ushort; },
       { this.heartbeatInterval = obj.read!uint; },
       { this.sessionID = obj.read!string; },
-      { obj.skipValue; },
-      { this.guilds = loadMany!Guild(this.client, obj); },
+      { this.me = new User(this.client, obj); },
+      { loadMany!Guild(this.client, obj, (g) { this.guilds ~= g; }); },
     );
   }
 }
 
-class GuildCreateEvent {
+class Resumed {
   mixin Event;
 
-  Guild guild;
+  void load(ref JSON obj) {}
+}
+
+class ChannelCreate {
+  mixin Event;
+
+  Channel  channel;
+
+  void load(ref JSON obj) {
+    this.channel = new Channel(this.client, obj);
+  }
+}
+
+class ChannelUpdate {
+  mixin Event;
+
+  Channel  channel;
+
+  void load(ref JSON obj) {
+    this.channel = new Channel(this.client, obj);
+  }
+}
+
+class ChannelDelete {
+  mixin Event;
+
+  Channel  channel;
+
+  void load(ref JSON obj) {
+    this.channel = new Channel(this.client, obj);
+  }
+}
+
+class GuildCreate {
+  mixin Event;
+
+  Guild  guild;
 
   void load(ref JSON obj) {
     this.guild = new Guild(this.client, obj);
   }
 }
 
-
-mixin template NewEvent() {
-  Client client;
-
-  this(Client c, DispatchPacket d) {
-    debug {
-      auto sw = StopWatch(AutoStart.yes);
-    }
-
-    this.client = c;
-    this.load(d);
-    debug {
-      this.client.log.tracef("Create event for %s took %sms", this.toString,
-        sw.peek().to!("msecs", real));
-    }
-  }
-}
-
-/*
-class Ready : BaseEvent {
-  mixin NewEvent;
-
-  ushort      ver;
-  uint        heartbeat_interval;
-  string      session_id;
-  User        me;
-  Channel[]   dms;
-  Guild[]     guilds;
-
-  void load(DispatchPacket d) {
-    this.ver = d.data.get!ushort("v");
-    this.heartbeat_interval = d.data.get!uint("heartbeat_interval");
-    this.session_id = d.data.get!string("session_id");
-    this.me = new User(this.client, d.data.get!JSONObject("user"));
-
-    foreach (Variant gobj; d.data.getRaw("guilds")) {
-      this.guilds ~= new Guild(this.client, new JSONObject(variantToJSON(gobj)));
-    }
-
-    // TODO: dms
-  }
-}
-
-class Resumed : BaseEvent {
-  mixin NewEvent;
-
-  void load(DispatchPacket d) {}
-}
-
-class ChannelCreate : BaseEvent {
-  mixin NewEvent;
-
-  Channel  channel;
-
-  void load(DispatchPacket d) {
-    this.channel = new Channel(this.client, d.data);
-  }
-}
-
-class ChannelUpdate : BaseEvent {
-  mixin NewEvent;
-
-  Channel  channel;
-
-  void load(DispatchPacket d) {
-    this.channel = new Channel(this.client, d.data);
-  }
-}
-
-class ChannelDelete : BaseEvent {
-  mixin NewEvent;
-
-  Channel  channel;
-
-  void load(DispatchPacket d) {
-    this.channel = new Channel(this.client, d.data);
-  }
-}
-
-class GuildCreate : BaseEvent {
-  mixin NewEvent;
-
-  Guild  guild;
-  bool   unavailable;
-  bool   created;
-
-  void load(DispatchPacket d) {
-    this.guild = new Guild(this.client, d.data);
-
-    if (d.data.has("unavailable")) {
-      this.unavailable = d.data.get!bool("unavailable");
-    } else {
-      this.created = true;
-    }
-  }
-}
-
-class GuildUpdate : BaseEvent {
-  mixin NewEvent;
+class GuildUpdate {
+  mixin Event;
 
   Guild  guild;
 
-  void load(DispatchPacket d) {
-    this.guild = new Guild(this.client, d.data);
+  void load(ref JSON obj) {
+    this.guild = new Guild(this.client, obj);
   }
 }
 
-class GuildDelete : BaseEvent {
-  mixin NewEvent;
+class GuildDelete {
+  mixin Event;
 
-  Snowflake  guild_id;
+  Snowflake  guildID;
   bool       unavailable;
 
-  void load(DispatchPacket d) {
-    this.guild_id = d.data.get!Snowflake("id");
-    if (d.data.has("unavailable")) {
-      this.unavailable = d.data.get!bool("unavailable");
-    }
+  void load(ref JSON obj) {
+    obj.keySwitch!("guild_id", "unavailable")(
+      { this.guildID = readSnowflake(obj); },
+      { this.unavailable = obj.read!bool; },
+    );
   }
 }
 
-class GuildBanAdd : BaseEvent {
-  mixin NewEvent;
+class GuildBanAdd {
+  mixin Event;
 
   User  user;
 
-  void load(DispatchPacket d) {
-    // this.user = new User(this.client, d.data);
+  void load(ref JSON obj) {
+    this.user = new User(this.client, obj);
   }
 }
 
-class GuildBanRemove : BaseEvent {
-  mixin NewEvent;
+class GuildBanRemove {
+  mixin Event;
 
   User  user;
 
-  void load(DispatchPacket d) {
-    // this.user = new User(this.client, d.data);
+  void load(ref JSON obj) {
+    this.user = new User(this.client, obj);
   }
 }
 
-class GuildEmojisUpdate : BaseEvent {
-  mixin NewEvent;
+class GuildEmojisUpdate {
+  mixin Event;
 
-  void load(DispatchPacket d) {}
+  void load(ref JSON obj) {}
 }
 
-class GuildIntegrationsUpdate : BaseEvent {
-  mixin NewEvent;
+class GuildIntegrationsUpdate {
+  mixin Event;
 
-  void load(DispatchPacket d) {}
+  void load(ref JSON obj) {}
 }
 
-class GuildMemberAdd : BaseEvent {
-  mixin NewEvent;
+class GuildMemberAdd {
+  mixin Event;
 
   GuildMember  member;
 
-  void load(DispatchPacket d) {
-    this.member = new GuildMember(this.client, d.data);
+  void load(ref JSON obj) {
+    this.member = new GuildMember(this.client, obj);
   }
 }
 
-class GuildMemberRemove : BaseEvent {
-  mixin NewEvent;
+class GuildMemberRemove {
+  mixin Event;
 
-  Snowflake  guild_id;
+  Snowflake  guildID;
   User       user;
 
-  void load(DispatchPacket d) {
-    this.guild_id = d.data.get!Snowflake("guild_id");
-    this.user = new User(this.client, d.data.get!JSONObject("user"));
+  void load(ref JSON obj) {
+    obj.keySwitch!("guild_id", "user")(
+      { this.guildID = readSnowflake(obj); },
+      { this.user = new User(this.client, obj); },
+    );
   }
 }
 
-class GuildMemberUpdate : BaseEvent {
-  mixin NewEvent;
+class GuildMemberUpdate {
+  mixin Event;
 
-  Snowflake  guild_id;
+  Snowflake  guildID;
   User       user;
   Role[]     roles;
 
-  void load(DispatchPacket d) {
-    this.guild_id = d.data.get!Snowflake("guild_id");
-    this.user = new User(this.client, d.data.get!JSONObject("user"));
-    // TODO: roles
+  void load(ref JSON obj) {
+    obj.keySwitch!("guild_id", "user", "roles")(
+      { this.guildID = readSnowflake(obj); },
+      { this.user = new User(this.client, obj); },
+      { loadMany!Role(this.client, obj, (r) { this.roles ~= r; }); },
+    );
+
+    // Update guild roles TODO: make this safe
+    auto guild = this.client.state.guilds.get(this.guildID);
+    foreach (role; this.roles) {
+      role.guild = guild;
+    }
   }
 }
 
-class GuildRoleCreate : BaseEvent {
-  mixin NewEvent;
+class GuildRoleCreate {
+  mixin Event;
 
-  Snowflake  guild_id;
+  Snowflake  guildID;
   Role       role;
 
-  void load(DispatchPacket d) {
-    this.guild_id = d.data.get!Snowflake("guild_id");
-    auto guild = this.client.state.guilds.get(this.guild_id);
-    this.role = new Role(guild, d.data.get!JSONObject("role"));
+  void load(ref JSON obj) {
+    obj.keySwitch!("guild_id", "role")(
+      { this.guildID = readSnowflake(obj); },
+      { this.role = new Role(this.client, obj); },
+    );
   }
 }
 
-class GuildRoleUpdate : BaseEvent {
-  mixin NewEvent;
+class GuildRoleUpdate {
+  mixin Event;
 
-  Snowflake  guild_id;
+  Snowflake  guildID;
   Role       role;
 
-  void load(DispatchPacket d) {
-    this.guild_id = d.data.get!Snowflake("guild_id");
-    auto guild = this.client.state.guilds.get(this.guild_id);
-    this.role = new Role(guild, d.data.get!JSONObject("role"));
+  void load(ref JSON obj) {
+    obj.keySwitch!("guild_id", "role")(
+      { this.guildID = readSnowflake(obj); },
+      { this.role = new Role(this.client, obj); },
+    );
   }
 }
 
-class GuildRoleDelete : BaseEvent {
-  mixin NewEvent;
+class GuildRoleDelete {
+  mixin Event;
 
-  Snowflake  guild_id;
+  Snowflake  guildID;
   Role       role;
 
-  void load(DispatchPacket d) {
-    this.guild_id = d.data.get!Snowflake("guild_id");
-    // this.role = new Role(this.client, d.data.get!JSONObject("role"));
+  void load(ref JSON obj) {
+    obj.keySwitch!("guild_id", "role")(
+      { this.guildID = readSnowflake(obj); },
+      { this.role = new Role(this.client, obj); },
+    );
   }
 }
 
-class MessageCreate : BaseEvent {
-  mixin NewEvent;
+class MessageCreate {
+  mixin Event;
 
   Message  message;
 
-  void load(DispatchPacket d) {
-    this.message = new Message(this.client, d.data);
+  void load(ref JSON obj) {
+    this.message = new Message(this.client, obj);
   }
 }
 
-class MessageUpdate : BaseEvent {
-  mixin NewEvent;
+class MessageUpdate {
+  mixin Event;
 
-  Message message;
+  Message  message;
 
-  void load(DispatchPacket d) {
-    this.message = new Message(this.client, d.data);
+  void load(ref JSON obj) {
+    this.message = new Message(this.client, obj);
   }
 }
 
-class MessageDelete : BaseEvent {
-  mixin NewEvent;
+class MessageDelete {
+  mixin Event;
 
   Snowflake  id;
-  Snowflake  channel_id;
+  Snowflake  channelID;
 
-  void load(DispatchPacket d) {
-    this.id = d.data.get!Snowflake("id");
-    this.channel_id = d.data.get!Snowflake("channel_id");
+  void load(ref JSON obj) {
+    obj.keySwitch!("id", "channel_id")(
+      { this.id = readSnowflake(obj); },
+      { this.channelID = readSnowflake(obj); },
+    );
   }
 }
 
-class PresenceUpdate : BaseEvent {
-  mixin NewEvent;
+class PresenceUpdate {
+  mixin Event;
 
   User         user;
-  Snowflake    guild_id;
+  Snowflake    guildID;
   Snowflake[]  roles;
   string       game;
   string       status;
 
-  void load(DispatchPacket d) {}
-}
-
-class TypingStart : BaseEvent {
-  mixin NewEvent;
-
-  Snowflake  channel_id;
-  Snowflake  user_id;
-  string     timestamp;
-
-  void load(DispatchPacket d) {
-    this.channel_id = d.data.get!Snowflake("channel_id");
-    this.user_id = d.data.get!Snowflake("user_id");
-    this.timestamp = d.data.get!string("timestamp");
+  void load(ref JSON obj) {
+    obj.keySwitch!("user", "guild_id", "roles", "game", "status")(
+      { this.user = new User(this.client, obj); },
+      { this.guildID = readSnowflake(obj); },
+      { this.roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
+      { this.game = obj.read!string; },
+      { this.status = obj.read!string; },
+    );
   }
 }
 
-class UserSettingsUpdate : BaseEvent {
-  mixin NewEvent;
+class TypingStart {
+  mixin Event;
 
-  void load(DispatchPacket d) {}
+  Snowflake  channelID;
+  Snowflake  userID;
+  ulong      timestamp;
+
+  void load(ref JSON obj) {
+    obj.keySwitch!("channel_id", "user_id", "timestamp")(
+      { this.channelID = readSnowflake(obj); },
+      { this.userID = readSnowflake(obj); },
+      { this.timestamp = obj.read!ulong; },
+    );
+  }
 }
 
-class UserUpdate : BaseEvent {
-  mixin NewEvent;
+class UserSettingsUpdate {
+  mixin Event;
 
-  void load(DispatchPacket d) {}
+  void load(ref JSON obj) {};
 }
 
-class VoiceStateUpdate : BaseEvent {
-  mixin NewEvent;
+class UserUpdate {
+  mixin Event;
+
+  void load(ref JSON obj) {};
+}
+
+class VoiceStateUpdate {
+  mixin Event;
 
   VoiceState  state;
 
-  void load(DispatchPacket d) {
-    this.state = new VoiceState(this.client, d.data);
+  void load(ref JSON obj) {
+    this.state = new VoiceState(this.client, obj);
   }
 }
 
-class VoiceServerUpdate : BaseEvent {
-  mixin NewEvent;
+class VoiceServerUpdate {
+  mixin Event;
 
   string     token;
   string     endpoint;
-  Snowflake  guild_id;
+  Snowflake  guildID;
 
-  void load(DispatchPacket d) {
-    this.token = d.data.get!string("token");
-    this.endpoint = d.data.get!string("endpoint");
-    this.guild_id = d.data.get!Snowflake("guild_id");
+  void load(ref JSON obj) {
+    obj.keySwitch!("token", "endpoint", "guild_id")(
+      { this.token = obj.read!string; },
+      { this.endpoint = obj.read!string; },
+      { this.guildID = readSnowflake(obj); },
+    );
   }
 }
-*/

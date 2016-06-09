@@ -47,7 +47,7 @@ class GatewayClient {
     this.log = this.client.log;
 
     this.eventEmitter = new Emitter;
-    this.eventEmitter.listen!ReadyEvent(toDelegate(&this.handleReadyEvent));
+    this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
     // this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
 
     // Copy emitters to client for easier API access
@@ -71,7 +71,7 @@ class GatewayClient {
     this.sock.send(data.dumps());
   }
 
-  void handleReadyEvent(ReadyEvent r) {
+  void handleReadyEvent(Ready  r) {
     this.log.infof("Recieved READY payload, starting heartbeater");
     this.hb_interval = r.heartbeatInterval;
     this.session_id = r.sessionID;
@@ -83,6 +83,10 @@ class GatewayClient {
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
   }*/
 
+  void emitDispatchEvent(T)(ref JSON obj) {
+    this.eventEmitter.emit!T(new T(this.client, obj));
+  }
+
   void handleDispatchPacket(uint seq, string type, ref JSON obj) {
     // Update sequence number if it's larger than what we have
     if (seq > this.seq) {
@@ -91,134 +95,90 @@ class GatewayClient {
 
     switch (type) {
       case "READY":
-        this.eventEmitter.emit!ReadyEvent(new ReadyEvent(this.client, obj));
+        this.emitDispatchEvent!Ready(obj);
+        break;
+      case "RESUMED":
+        this.emitDispatchEvent!Resumed(obj);
+        break;
+      case "CHANNEL_CREATE":
+        this.emitDispatchEvent!ChannelCreate(obj);
+        break;
+      case "CHANNEL_UPDATE":
+        this.emitDispatchEvent!ChannelUpdate(obj);
+        break;
+      case "CHANNEL_DELETE":
+        this.emitDispatchEvent!ChannelDelete(obj);
+        break;
+      case "GUILD_BAN_ADD":
+        this.emitDispatchEvent!GuildBanAdd(obj);
+        break;
+      case "GUILD_BAN_REMOVE":
+        this.emitDispatchEvent!GuildBanRemove(obj);
         break;
       case "GUILD_CREATE":
-        this.eventEmitter.emit!GuildCreateEvent(new GuildCreateEvent(
-          this.client, obj));
+        this.emitDispatchEvent!GuildCreate(obj);
+        break;
+      case "GUILD_UPDATE":
+        this.emitDispatchEvent!GuildUpdate(obj);
+        break;
+      case "GUILD_DELETE":
+        this.emitDispatchEvent!GuildDelete(obj);
+        break;
+      case "GUILD_EMOJIS_UPDATE":
+        this.emitDispatchEvent!GuildEmojisUpdate(obj);
+        break;
+      case "GUILD_INTEGRATIONS_UPDATE":
+        this.emitDispatchEvent!GuildIntegrationsUpdate(obj);
+        break;
+      case "GUILD_MEMBER_ADD":
+        this.emitDispatchEvent!GuildMemberAdd(obj);
+        break;
+      case "GUILD_MEMBER_UPDATE":
+        this.emitDispatchEvent!GuildMemberUpdate(obj);
+        break;
+      case "GUILD_MEMBER_REMOVE":
+        this.emitDispatchEvent!GuildMemberRemove(obj);
+        break;
+      case "GUILD_ROLE_CREATE":
+        this.emitDispatchEvent!GuildRoleCreate(obj);
+        break;
+      case "GUILD_ROLE_UPDATE":
+        this.emitDispatchEvent!GuildRoleUpdate(obj);
+        break;
+      case "GUILD_ROLE_DELETE":
+        this.emitDispatchEvent!GuildRoleDelete(obj);
+        break;
+      case "MESSAGE_CREATE":
+        this.emitDispatchEvent!MessageCreate(obj);
+        break;
+      case "MESSAGE_UPDATE":
+        this.emitDispatchEvent!MessageUpdate(obj);
+        break;
+      case "MESSAGE_DELETE":
+        this.emitDispatchEvent!MessageDelete(obj);
+        break;
+      case "PRESENCE_UPDATE":
+        this.emitDispatchEvent!PresenceUpdate(obj);
+        break;
+      case "TYPING_START":
+        this.emitDispatchEvent!TypingStart(obj);
+        break;
+      case "USER_SETTINGS_UPDATE":
+        this.emitDispatchEvent!UserSettingsUpdate(obj);
+        break;
+      case "USER_UPDATE":
+        this.emitDispatchEvent!UserUpdate(obj);
+        break;
+      case "VOICE_STATE_UPDATE":
+        this.emitDispatchEvent!VoiceStateUpdate(obj);
+        break;
+      case "VOICE_SERVER_UPDATE":
+        this.emitDispatchEvent!VoiceServerUpdate(obj);
         break;
       default:
         this.log.warningf("Unhandled dispatch event: %s", type);
         break;
     }
-
-    /*
-    this.log.tracef("gateway-packet: %s", d.event);
-    switch (d.event) {
-      case "READY":
-        this.eventEmitter.emit!Ready(new Ready(this.client, d));
-        break;
-      case "RESUMED":
-        this.eventEmitter.emit!Resumed(new Resumed(this.client, d));
-        break;
-      case "CHANNEL_CREATE":
-        this.eventEmitter.emit!ChannelCreate(
-            new ChannelCreate(this.client, d));
-        break;
-      case "CHANNEL_UPDATE":
-        this.eventEmitter.emit!ChannelUpdate(
-            new ChannelUpdate(this.client, d));
-        break;
-      case "CHANNEL_DELETE":
-        this.eventEmitter.emit!ChannelDelete(
-            new ChannelDelete(this.client, d));
-        break;
-      case "GUILD_BAN_ADD":
-        this.eventEmitter.emit!GuildBanAdd(
-            new GuildBanAdd(this.client, d));
-        break;
-      case "GUILD_BAN_REMOVE":
-        this.eventEmitter.emit!GuildBanRemove(
-            new GuildBanRemove(this.client, d));
-        break;
-      case "GUILD_CREATE":
-        this.eventEmitter.emit!GuildCreate(
-            new GuildCreate(this.client, d));
-        break;
-      case "GUILD_UPDATE":
-        this.eventEmitter.emit!GuildUpdate(
-            new GuildUpdate(this.client, d));
-        break;
-      case "GUILD_DELETE":
-        this.eventEmitter.emit!GuildDelete(
-            new GuildDelete(this.client, d));
-        break;
-      case "GUILD_EMOJIS_UPDATE":
-        this.eventEmitter.emit!GuildEmojisUpdate(
-            new GuildEmojisUpdate(this.client, d));
-        break;
-      case "GUILD_INTEGRATIONS_UPDATE":
-        this.eventEmitter.emit!GuildIntegrationsUpdate(
-            new GuildIntegrationsUpdate(this.client, d));
-        break;
-      case "GUILD_MEMBER_ADD":
-        this.eventEmitter.emit!GuildMemberAdd(
-            new GuildMemberAdd(this.client, d));
-        break;
-      case "GUILD_MEMBER_UPDATE":
-        this.eventEmitter.emit!GuildMemberUpdate(
-            new GuildMemberUpdate(this.client, d));
-        break;
-      case "GUILD_MEMBER_REMOVE":
-        this.eventEmitter.emit!GuildMemberRemove(
-            new GuildMemberRemove(this.client, d));
-        break;
-      case "GUILD_ROLE_CREATE":
-        this.eventEmitter.emit!GuildRoleCreate(
-            new GuildRoleCreate(this.client, d));
-        break;
-      case "GUILD_ROLE_UPDATE":
-        this.eventEmitter.emit!GuildRoleUpdate(
-            new GuildRoleUpdate(this.client, d));
-        break;
-      case "GUILD_ROLE_DELETE":
-        this.eventEmitter.emit!GuildRoleDelete(
-            new GuildRoleDelete(this.client, d));
-        break;
-      case "MESSAGE_CREATE":
-        this.eventEmitter.emit!MessageCreate(
-            new MessageCreate(this.client, d));
-        break;
-      case "MESSAGE_UPDATE":
-        this.eventEmitter.emit!MessageUpdate(
-            new MessageUpdate(this.client, d));
-        break;
-      case "MESSAGE_DELETE":
-        this.eventEmitter.emit!MessageDelete(
-            new MessageDelete(this.client, d));
-        break;
-      case "PRESENCE_UPDATE":
-        this.eventEmitter.emit!PresenceUpdate(
-            new PresenceUpdate(this.client, d));
-        break;
-      case "TYPING_START":
-        this.eventEmitter.emit!TypingStart(
-            new TypingStart(this.client, d));
-        break;
-      case "USER_SETTINGS_UPDATE":
-        this.eventEmitter.emit!UserSettingsUpdate(
-            new UserSettingsUpdate(this.client, d));
-        break;
-      case "USER_UPDATE":
-        this.eventEmitter.emit!UserUpdate(
-            new UserUpdate(this.client, d));
-        break;
-      case "VOICE_STATE_UPDATE":
-        this.eventEmitter.emit!VoiceStateUpdate(
-            new VoiceStateUpdate(this.client, d));
-        break;
-      case "VOICE_SERVER_UPDATE":
-        this.eventEmitter.emit!VoiceServerUpdate(
-            new VoiceServerUpdate(this.client, d));
-        break;
-      default:
-        this.log.warningf("unhandled gateway event: %s", d.event);
-    }
-
-    debug {
-      this.log.tracef("gateway event parse took %sms", sw.peek().to!("msecs", real));
-    }
-    */
   }
 
   void parse(string rawData) {
