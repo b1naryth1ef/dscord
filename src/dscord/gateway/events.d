@@ -21,6 +21,7 @@ mixin template Event() {
   this(Client c, ref JSON obj) {
     debug {
       auto sw = StopWatch(AutoStart.yes);
+      c.log.tracef("Starting create event for %s", this.toString);
     }
 
     this.client = c;
@@ -183,22 +184,16 @@ class GuildMemberRemove {
 class GuildMemberUpdate {
   mixin Event;
 
-  Snowflake  guildID;
-  User       user;
-  Role[]     roles;
+  Snowflake    guildID;
+  User         user;
+  Snowflake[]  roles;
 
   void load(ref JSON obj) {
     obj.keySwitch!("guild_id", "user", "roles")(
       { this.guildID = readSnowflake(obj); },
       { this.user = new User(this.client, obj); },
-      { loadMany!Role(this.client, obj, (r) { this.roles ~= r; }); },
+      { this.roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
     );
-
-    // Update guild roles TODO: make this safe
-    auto guild = this.client.state.guilds.get(this.guildID);
-    foreach (role; this.roles) {
-      role.guild = guild;
-    }
   }
 }
 
