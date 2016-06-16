@@ -36,6 +36,10 @@ class GatewayClient {
 
   Emitter  eventEmitter;
 
+  private {
+    string  cachedGatewayURL;
+  }
+
   this(Client client) {
     this.client = client;
     this.log = this.client.log;
@@ -51,16 +55,19 @@ class GatewayClient {
   void start() {
     if (this.sock && this.sock.connected) this.sock.close();
 
+    // If this is our first connection, get a gateway WS URL
+    if (!this.cachedGatewayURL) {
+      this.cachedGatewayURL = client.api.gateway();
+    }
+
     // Start the main task
-    this.log.info("Starting connection to Gateway WebSocket");
-    this.sock = connectWebSocket(URL(client.api.gateway()));
+    this.log.infof("Starting connection to Gateway WebSocket (%s)", this.cachedGatewayURL);
+    this.sock = connectWebSocket(URL(this.cachedGatewayURL));
     runTask(toDelegate(&this.run));
   }
 
   void send(Serializable p) {
     JSONValue data = p.serialize();
-    this.log.tracef("2");
-    this.log.tracef("%s", data);
     this.log.tracef("gateway-send: %s", data.toString);
     this.sock.send(data.toString);
   }
@@ -182,6 +189,7 @@ class GatewayClient {
     string type;
     OPCode op;
 
+    // Scan over each key, store any extra information until we hit the data payload
     foreach (key; json.byKey) {
       switch (key) {
         case "op":
@@ -248,7 +256,7 @@ class GatewayClient {
       try {
         this.parse(data);
       } catch (Exception e) {
-        this.log.warning("failed to handle %s (%s)", e, data);
+        this.log.warningf("failed to handle %s (%s)", e, data);
       }
     }
 
