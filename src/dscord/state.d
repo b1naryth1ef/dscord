@@ -74,21 +74,11 @@ class State : Emitter {
     c.guild.channels.each((c) {
       this.channels[c.id] = c;
     });
-
-    /* TODO
-    if (!c.created) {
-      this.onReadyGuildCount -= 1;
-
-      if (this.onReadyGuildCount == 0) {
-        this.emit!StateStartupComplete(new StateStartupComplete);
-      }
-    }
-    */
   }
 
   void onGuildUpdate(GuildUpdate c) {
     this.log.warning("Hit onGuildUpdate leaving state stale");
-    // TODO
+    // TODO: handle state changes in here
     // this.guilds[c.guild.id].load(c.payload);
   }
 

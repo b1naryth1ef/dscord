@@ -23,8 +23,7 @@ import dscord.client,
        dscord.gateway.events,
        dscord.voice.packets,
        dscord.types.all,
-       dscord.util.emitter,
-       dscord.util.json;
+       dscord.util.emitter;
 
 struct RTPHeader {
   ushort  seq;
@@ -209,6 +208,7 @@ class VoiceClient {
     }
   }
 
+  /*
   void dispatch(JSONObject obj) {
     this.log.tracef("voice-dispatch: %s %s", obj.get!VoiceOPCode("op"), obj.dumps);
 
@@ -224,11 +224,12 @@ class VoiceClient {
         break;
     }
   }
+  */
 
   void send(Serializable p) {
-    JSONObject data = p.serialize();
-    this.log.tracef("voice-send: %s", data.dumps());
-    this.sock.send(data.dumps());
+    JSONValue data = p.serialize();
+    this.log.tracef("voice-send: %s", data.toString);
+    this.sock.send(data.toString);
   }
 
   void run() {
@@ -248,7 +249,7 @@ class VoiceClient {
       }
 
       try {
-        this.dispatch(new JSONObject(data));
+        // this.dispatch(new JSONObject(data));
       } catch (Exception e) {
         this.log.warning("failed to handle voice dispatch: %s (%s)", e, data);
       }

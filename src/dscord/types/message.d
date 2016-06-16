@@ -7,8 +7,7 @@ import std.stdio,
        std.regex;
 
 import dscord.client,
-       dscord.types.all,
-       dscord.util.json;
+       dscord.types.all;
 
 class MessageEmbed : IModel {
   mixin Model;

@@ -1,9 +1,8 @@
 module dscord.gateway.packets;
 
-import fast.json;
+import std.stdio;
 
-import dscord.types.all,
-       dscord.util.json;
+import dscord.types.all;
 
 enum OPCode : ushort {
   DISPATCH = 0,
@@ -21,39 +20,20 @@ enum OPCode : ushort {
 alias JSON = Json!(0u, false);
 
 interface Serializable {
-  JSONObject serialize();
+  JSONValue serialize();
 }
 
-interface Deserializable {
-  void deserialize(ref JSON);
-}
-
-class BasePacket : Deserializable {
+class BasePacket {
   OPCode      op;
-  JSONObject  data;
-  JSONObject  raw;
+  JSONValue  data;
+  JSONValue  raw;
 
-  JSONObject serialize(ushort op, JSONValue data) {
-    return new JSONObject()
-      .set!ushort("op", cast(ushort)op)
-      .setRaw("d", data);
+  JSONValue serialize(ushort op, JSONValue data) {
+    JSONValue res;
+    res["op"] = JSONValue(op);
+    res["d"] = data;
+    return res;
   }
-
-  JSONObject serialize(ushort op, JSONObject data) {
-    return new JSONObject()
-      .set!ushort("op", cast(ushort)op)
-      .set!JSONObject("d", data);
-  }
-
-  /*
-  void deserialize(JSONObject obj) {
-    this.raw = obj;
-    this.op = obj.get!OPCode("op");
-    this.data = obj.get!JSONObject("d");
-  }
-  */
-
-  void deserialize(ref JSON obj) {}
 }
 
 class HeartbeatPacket : BasePacket, Serializable {
@@ -63,7 +43,7 @@ class HeartbeatPacket : BasePacket, Serializable {
     this.seq = seq;
   }
 
-  override JSONObject serialize() {
+  override JSONValue serialize() {
     return super.serialize(OPCode.HEARTBEAT, JSONValue(this.seq));
   }
 }
@@ -79,11 +59,12 @@ class ResumePacket : BasePacket, Serializable {
     this.seq = seq;
   }
 
-  override JSONObject serialize() {
-    return super.serialize(OPCode.RESUME, new JSONObject()
-      .set!string("token", token)
-      .set!string("session_id", session_id)
-      .set!uint("seq", seq));
+  override JSONValue serialize() {
+    JSONValue obj;
+    obj["token"] = JSONValue(token);
+    obj["session_id"] = JSONValue(session_id);
+    obj["seq"] = JSONValue(seq);
+    return super.serialize(OPCode.RESUME, obj);
   }
 }
 
@@ -95,60 +76,25 @@ class ResumePacket : BasePacket, Serializable {
 /* class InvalidSession : BasePacket, Deserializable {} */
 
 class VoiceStateUpdatePacket : BasePacket, Serializable {
-  Snowflake  guild_id;
-  Snowflake  channel_id;
+  Snowflake  guildID;
+  Snowflake  channelID;
   bool       self_mute;
   bool       self_deaf;
 
   this(Snowflake guild_id, Snowflake channel_id, bool self_mute, bool self_deaf) {
-    this.guild_id = guild_id;
-    this.channel_id = channel_id;
+    this.guildID = guild_id;
+    this.channelID = channel_id;
     this.self_mute = self_mute;
     this.self_deaf = self_deaf;
   }
 
-  override JSONObject serialize() {
-    auto payload = new JSONObject()
-      .set!bool("self_mute", this.self_mute)
-      .set!bool("self_deaf", this.self_deaf);
-
-    if (this.guild_id) {
-      payload.set!Snowflake("guild_id", this.guild_id);
-    } else {
-      payload.setRaw("guild_id", JSONValue(null));
-    }
-
-    if (this.channel_id) {
-      payload.set!Snowflake("channel_id", this.channel_id);
-    } else {
-      payload.setRaw("channel_id", JSONValue(null));
-    }
-
-    return super.serialize(OPCode.VOICE_STATE_UPDATE, payload);
-  }
-}
-
-class DispatchPacket : BasePacket, Deserializable {
-  int         seq;
-  string      event;
-
-  // Default constructor, used just for alloc
-  this() {
-
-  }
-
-  /*
-  override void deserialize(JSONObject obj) {
-    super.deserialize(obj);
-    this.seq = obj.get!int("s");
-    this.event = obj.get!string("t");
-  }
-  */
-
-  override void deserialize(ref JSON obj) {}
-
-  T castEvent(T)() {
-    return new T(this);
+  override JSONValue serialize() {
+    JSONValue res;
+    res["self_mute"] = JSONValue(this.self_mute);
+    res["self_deaf"] = JSONValue(this.self_deaf);
+    res["guild_id"] = this.guildID ? JSONValue(this.guildID) : JSONValue(null);
+    res["channel_id"] = this.channelID ? JSONValue(this.channelID) : JSONValue(null);
+    return super.serialize(OPCode.VOICE_STATE_UPDATE, res);
   }
 }
 
@@ -161,22 +107,23 @@ class IdentifyPacket : BasePacket, Serializable {
     this.token = token;
   }
 
-  @property JSONObject properties() {
-    return new JSONObject()
-      .set!string("$os", "linux")
-      .set!string("$browser", "d-scord")
-      .set!string("$device", "d-scord")
-      .set!string("$referrer", "")
-      .set!string("$referring_domain", "");
+  @property JSONValue properties() {
+    JSONValue prop;
+    prop["$os"] = "linux";
+    prop["$browser"] = "dscord";
+    prop["$device"] = "dscord";
+    prop["$referrer"] = "";
+    prop["$browser"] = "";
+    return prop;
   }
 
-  override JSONObject serialize() {
-    auto result = new JSONObject()
-      .set!string("token", this.token)
-      .set!JSONObject("properties", this.properties)
-      .set!bool("compress", this.compress)
-      .set!ushort("large_threshold", this.large_threshold);
-    return super.serialize(OPCode.IDENTIFY, result);
+  override JSONValue serialize() {
+    JSONValue res;
+    res["token"] = JSONValue(this.token);
+    res["properties"] = this.properties;
+    res["compress"] = JSONValue(this.compress);
+    res["large_threshold"] = JSONValue(this.large_threshold);
+    return super.serialize(OPCode.IDENTIFY, res);
   }
 }
 

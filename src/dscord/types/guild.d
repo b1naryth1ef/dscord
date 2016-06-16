@@ -6,8 +6,7 @@ import std.stdio,
        std.conv;
 
 import dscord.client,
-       dscord.types.all,
-       dscord.util.json;
+       dscord.types.all;
 
 alias GuildMap = ModelMap!(Snowflake, Guild);
 alias RoleMap = ModelMap!(Snowflake, Role);

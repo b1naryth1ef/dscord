@@ -11,10 +11,6 @@ import dscord.gateway.client,
        dscord.gateway.packets,
        dscord.types.all;
 
-interface BaseEvent {
-  void load(DispatchPacket);
-}
-
 mixin template Event() {
   Client client;
 

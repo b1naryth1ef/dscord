@@ -7,7 +7,7 @@ import std.conv,
 
 import dscord.client;
 
-public import dscord.util.temp;
+public import dscord.util.json;
 public import std.datetime;
 
 alias Snowflake = ulong;

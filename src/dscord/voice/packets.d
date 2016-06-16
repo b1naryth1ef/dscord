@@ -15,48 +15,33 @@ enum VoiceOPCode {
 }
 
 class VoiceIdentifyPacket : BasePacket, Serializable {
-  Snowflake  server_id;
-  Snowflake  user_id;
-  string     session_id;
+  Snowflake  serverID;
+  Snowflake  userID;
+  string     sessionID;
   string     token;
 
   this(Snowflake server, Snowflake user, string session, string token) {
-    this.server_id = server;
-    this.user_id = user;
-    this.session_id = session;
+    this.serverID = server;
+    this.userID = user;
+    this.sessionID = session;
     this.token = token;
   }
 
-  override JSONObject serialize() {
-    return super.serialize(VoiceOPCode.VOICE_IDENTIFY, new JSONObject()
-      .set!Snowflake("server_id", server_id)
-      .set!Snowflake("user_id", user_id)
-      .set!string("session_id", session_id)
-      .set!string("token", token));
+  override JSONValue serialize() {
+    JSONValue res;
+    res["server_id"] = JSONValue(this.serverID);
+    res["user_id"] = JSONValue(this.userID);
+    res["session_id"] = JSONValue(this.sessionID);
+    res["token"] = JSONValue(this.token);
+    return super.serialize(VoiceOPCode.VOICE_IDENTIFY, res);
   }
 }
 
-class VoiceReadyPacket : BasePacket, Deserializable {
+class VoiceReadyPacket : BasePacket {
   ushort    ssrc;
   ushort    port;
   string[]  modes;
   ushort    heartbeat_interval;
-
-  this(JSONObject obj) {
-    // this.deserialize(obj);
-  }
-
-  /*
-  override void deserialize(JSONObject obj) {
-    super.deserialize(obj);
-    this.ssrc = this.data.get!ushort("ssrc");
-    this.port = this.data.get!ushort("port");
-    this.heartbeat_interval = this.data.get!ushort("heartbeat_interval");
-    // TODO: this.modes = obj.get!
-  }
-  */
-
-  override void deserialize(ref JSON obj) {};
 }
 
 class VoiceSelectProtocolPacket : BasePacket, Serializable {
@@ -72,15 +57,12 @@ class VoiceSelectProtocolPacket : BasePacket, Serializable {
     this.port = port;
   }
 
-  override JSONObject serialize() {
-    auto data = new JSONObject()
-      .set!ushort("port", this.port)
-      .set!string("address", this.ip)
-      .set!string("mode", this.mode);
-
-    return super.serialize(VoiceOPCode.VOICE_SELECT_PROTOCOL, new JSONObject()
-      .set!string("protocol", protocol)
-      .set!JSONObject("data", data));
+  override JSONValue serialize() {
+    JSONValue res;
+    res["port"] = this.port;
+    res["address"] = this.ip;
+    res["mode"] = this.mode;
+    return super.serialize(VoiceOPCode.VOICE_SELECT_PROTOCOL, res);
   }
 }
 
@@ -91,7 +73,7 @@ class VoiceHeartbeatPacket : BasePacket, Serializable {
     this.ts = ts;
   }
 
-  override JSONObject serialize() {
+  override JSONValue serialize() {
     return super.serialize(VoiceOPCode.VOICE_HEARTBEAT, JSONValue(this.ts));
   }
 }
@@ -105,27 +87,15 @@ class VoiceSpeakingPacket : BasePacket, Serializable {
     this.delay = delay;
   }
 
-  override JSONObject serialize() {
-    return super.serialize(VoiceOPCode.VOICE_SPEAKING, new JSONObject()
-      .set!bool("speaking", this.speaking)
-      .set!uint("delay", this.delay));
+  override JSONValue serialize() {
+    JSONValue res;
+    res["speaking"] = this.speaking;
+    res["delay"] = this.delay;
+    return super.serialize(VoiceOPCode.VOICE_SPEAKING, res);
   }
 }
 
-class VoiceSessionDescriptionPacket : BasePacket, Deserializable {
+class VoiceSessionDescriptionPacket : BasePacket {
   string  secretKey;
-
-  this(JSONObject obj) {
-    // this.deserialize(obj);
-  }
-
-  /*
-  override void deserialize(JSONObject obj) {
-    super.deserialize(obj);
-    this.secretKey = this.data.maybeGet!string("secretKey", "");
-  }
-  */
-
-  override void deserialize(ref JSON obj) {};
 }
 

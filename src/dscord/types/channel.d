@@ -6,8 +6,7 @@ import std.stdio,
 
 import dscord.client,
        dscord.voice.client,
-       dscord.types.all,
-       dscord.util.json;
+       dscord.types.all;
 
 alias ChannelMap = ModelMap!(Snowflake, Channel);
 alias PermissionOverwriteMap = ModelMap!(Snowflake, PermissionOverwrite);

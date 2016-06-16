@@ -5,8 +5,7 @@ import std.stdio,
        std.functional,
        std.zlib,
        std.datetime,
-       std.variant,
-       fast.json;
+       std.variant;
 
 import vibe.core.core,
        vibe.inet.url,
@@ -15,13 +14,12 @@ import vibe.core.core,
 import dscord.client,
        dscord.gateway.packets,
        dscord.gateway.events,
-       dscord.util.json,
-       dscord.util.emitter;
+       dscord.util.emitter,
+       dscord.util.json;
 
 const ubyte MAX_RECONNECTS = 6;
 
 alias GatewayPacketHandler = void delegate (BasePacket);
-alias GatewayEventHandler = void delegate (DispatchPacket);
 
 
 class GatewayClient {
@@ -38,10 +36,6 @@ class GatewayClient {
 
   Emitter  eventEmitter;
 
-  private {
-    DispatchPacket dispatchPacket;
-  }
-
   this(Client client) {
     this.client = client;
     this.log = this.client.log;
@@ -52,23 +46,23 @@ class GatewayClient {
 
     // Copy emitters to client for easier API access
     client.events = this.eventEmitter;
-
-    // Create a single DispatchPacket that can be used for all dispatches (PERF)
-    this.dispatchPacket = new DispatchPacket;
   }
 
   void start() {
     if (this.sock && this.sock.connected) this.sock.close();
 
     // Start the main task
+    this.log.info("Starting connection to Gateway WebSocket");
     this.sock = connectWebSocket(URL(client.api.gateway()));
     runTask(toDelegate(&this.run));
   }
 
   void send(Serializable p) {
-    JSONObject data = p.serialize();
-    this.log.tracef("gateway-send: %s", data.dumps());
-    this.sock.send(data.dumps());
+    JSONValue data = p.serialize();
+    this.log.tracef("2");
+    this.log.tracef("%s", data);
+    this.log.tracef("gateway-send: %s", data.toString);
+    this.sock.send(data.toString);
   }
 
   void handleReadyEvent(Ready  r) {
@@ -203,7 +197,6 @@ class GatewayClient {
           switch (op) {
             case OPCode.DISPATCH:
               this.handleDispatchPacket(seq, type, json);
-              // this.dispatchPacket.deserialize(json);
               break;
             default:
               this.log.warningf("Unhandled gateway packet: %s", op);
