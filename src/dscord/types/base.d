@@ -136,6 +136,15 @@ class ModelMap(TKey, TValue) {
     return this.data.values.each!(f);
   }
 
+  TValue pick(bool delegate(TValue) f) {
+    foreach (value; this.data.values) {
+      if (f(value)) {
+        return value;
+      }
+    }
+    return null;
+  }
+
   auto keys() {
     return this.data.keys;
   }

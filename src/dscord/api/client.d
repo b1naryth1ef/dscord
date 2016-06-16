@@ -1,7 +1,6 @@
 module dscord.api.client;
 
-import std.stdio,
-       std.array,
+import std.array,
        std.variant,
        std.conv,
        core.time;
@@ -124,7 +123,7 @@ class APIClient {
       throw new APIError(-1, "Request expired before rate-limit");
     }
 
-    debug writefln("R: %s %s %s", method, this.baseURL ~ url.value, data);
+    this.log.tracef("API Request: [%s] %s: %s", method, this.baseURL ~ url.value, data);
     auto res = new APIResponse(requestHTTP(this.baseURL ~ url.value,
       (scope req) {
         req.method = method;

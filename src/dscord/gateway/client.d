@@ -42,7 +42,7 @@ class GatewayClient {
 
     this.eventEmitter = new Emitter;
     this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
-    // this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
+    this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
 
     // Copy emitters to client for easier API access
     client.events = this.eventEmitter;
@@ -73,9 +73,9 @@ class GatewayClient {
     this.reconnects = 0;
   }
 
-  /*void handleResumedEvent(Resumed r) {
+  void handleResumedEvent(Resumed r) {
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
-  }*/
+  }
 
   void emitDispatchEvent(T)(ref JSON obj) {
     this.eventEmitter.emit!T(new T(this.client, obj));
@@ -246,9 +246,7 @@ class GatewayClient {
       }
 
       try {
-        // this.log.tracef("gateway-recv: %s", data);
         this.parse(data);
-        // this.dispatch(new JSONObject(data));
       } catch (Exception e) {
         this.log.warning("failed to handle %s (%s)", e, data);
       }
