@@ -3,11 +3,12 @@ module dscord.types.base;
 import std.conv,
        std.typecons,
        std.stdio,
-       std.algorithm,
-       std.datetime;
+       std.algorithm;
 
-import dscord.client,
-       dscord.util.json;
+import dscord.client;
+
+public import dscord.util.json;
+public import std.datetime;
 
 alias Snowflake = ulong;
 
@@ -35,23 +36,51 @@ class Cache(T) {
   }
 }
 
-class Model {
-  Client client;
+class IModel {
+  Client  client;
 
-  this(Client client, JSONObject obj) {
+  void init() {};
+  void load(ref JSON obj) {};
+
+  this(Client client, ref JSON obj) {
     debug {
+      client.log.tracef("Starting creation of model %s", this.toString);
       auto sw = StopWatch(AutoStart.yes);
     }
 
     this.client = client;
+    this.init();
     this.load(obj);
+
     debug {
-      this.client.log.tracef("creating model %s took %sms", this.toString,
+      this.client.log.tracef("Finished creation of model %s in %sms", this.toString,
         sw.peek().to!("msecs", real));
     }
   }
+}
 
-  void load(JSONObject obj) {}
+mixin template Model() {
+  this(Client client, ref JSON obj) {
+    super(client, obj);
+  }
+}
+
+Snowflake readSnowflake(ref JSON obj) {
+  string data = obj.read!string;
+  if (!data) return 0;
+  return data.to!Snowflake;
+}
+
+void loadMany(T)(Client client, ref JSON obj, void delegate(T) F) {
+  foreach (item; obj) {
+    F(new T(client, obj));
+  }
+}
+
+void loadManyComplex(TSub, T)(TSub sub, ref JSON obj, void delegate(T) F) {
+  foreach (item; obj) {
+    F(new T(sub, obj));
+  }
 }
 
 class ModelMap(TKey, TValue) {
@@ -105,6 +134,15 @@ class ModelMap(TKey, TValue) {
 
   auto each(TValue delegate(TValue) f) {
     return this.data.values.each!(f);
+  }
+
+  TValue pick(bool delegate(TValue) f) {
+    foreach (value; this.data.values) {
+      if (f(value)) {
+        return value;
+      }
+    }
+    return null;
   }
 
   auto keys() {

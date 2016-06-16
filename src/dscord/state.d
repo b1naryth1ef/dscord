@@ -74,27 +74,19 @@ class State : Emitter {
     c.guild.channels.each((c) {
       this.channels[c.id] = c;
     });
-
-    if (!c.created) {
-      this.onReadyGuildCount -= 1;
-
-      if (this.onReadyGuildCount == 0) {
-        this.emit!StateStartupComplete(new StateStartupComplete);
-      }
-    }
   }
 
   void onGuildUpdate(GuildUpdate c) {
     this.log.warning("Hit onGuildUpdate leaving state stale");
-    // TODO
+    // TODO: handle state changes in here
     // this.guilds[c.guild.id].load(c.payload);
   }
 
   void onGuildDelete(GuildDelete c) {
-    if (!this.guilds.has(c.guild_id)) return;
+    if (!this.guilds.has(c.guildID)) return;
 
-    destroy(this.guilds[c.guild_id]);
-    this.guilds.remove(c.guild_id);
+    destroy(this.guilds[c.guildID]);
+    this.guilds.remove(c.guildID);
   }
 
   void onChannelCreate(ChannelCreate c) {
@@ -113,14 +105,12 @@ class State : Emitter {
   }
 
   void onVoiceStateUpdate(VoiceStateUpdate u) {
-    auto guild = this.guilds.get(u.state.guild_id);
+    auto guild = this.guilds.get(u.state.guildID);
 
-    if (!u.state.channel_id) {
-      guild.voiceStates.remove(u.state.session_id);
+    if (!u.state.channelID) {
+      guild.voiceStates.remove(u.state.sessionID);
     } else {
-      guild.voiceStates[u.state.session_id] = u.state;
+      guild.voiceStates[u.state.sessionID] = u.state;
     }
   }
 }
-
-

@@ -7,28 +7,31 @@ import dscord.client,
 
 alias UserMap = ModelMap!(Snowflake, User);
 
-class User : Model {
+class User : IModel {
+  mixin Model;
+
   Snowflake  id;
   string     username;
   string     discriminator;
-  byte[]     avatar;
+  string     avatar;
   bool       verified;
   string     email;
 
-  this(Client client, JSONObject obj) {
-    super(client, obj);
+  override void load(ref JSON obj) {
+    obj.keySwitch!(
+      "id", "username", "discriminator", "avatar",
+      "verified", "email"
+    )(
+      { this.id = readSnowflake(obj); },
+      { this.username = obj.read!string; },
+      { this.discriminator = obj.read!string; },
+      { this.avatar = obj.read!string; },
+      { this.verified = obj.read!bool; },
+      { this.email = obj.read!string; },
+    );
   }
 
   Snowflake getID() {
     return this.id;
-  }
-
-  override void load(JSONObject obj) {
-    this.id = obj.get!Snowflake("id");
-    this.username = obj.get!string("username");
-    this.discriminator = obj.get!string("discriminator");
-    this.avatar = cast(byte[])obj.get!string("avatar");
-    this.verified = obj.get!bool("verified", false);
-    this.email = obj.get!string("email", "");
   }
 }

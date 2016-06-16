@@ -8,42 +8,41 @@ import dscord.client,
 
 alias VoiceStateMap = ModelMap!(string, VoiceState);
 
-class VoiceState : Model {
-  Snowflake  guild_id;
-  Snowflake  channel_id;
-  Snowflake  user_id;
-  string     session_id;
+class VoiceState : IModel {
+  mixin Model;
+
+  Snowflake  guildID;
+  Snowflake  channelID;
+  Snowflake  userID;
+  string     sessionID;
   bool       deaf;
   bool       mute;
-  bool       self_deaf;
-  bool       self_mute;
+  bool       selfDeaf;
+  bool       selfMute;
   bool       suppress;
 
-  this(Client client, JSONObject obj) {
-    super(client, obj);
-  }
-
-  override void load(JSONObject obj) {
-    this.guild_id = obj.maybeGet!Snowflake("guild_id", 0);
-
-    if (!obj.isNull("channel_id")) {
-      this.channel_id = obj.get!Snowflake("channel_id");
-    }
-
-    this.user_id = obj.get!Snowflake("user_id");
-    this.session_id = obj.get!string("session_id");
-    this.deaf = obj.get!bool("deaf");
-    this.mute = obj.get!bool("mute");
-    this.self_deaf = obj.get!bool("self_deaf");
-    this.self_mute = obj.get!bool("self_mute");
-    this.suppress = obj.get!bool("suppress");
+  override void load(ref JSON obj) {
+    obj.keySwitch!(
+      "guild_id", "channel_id", "user_id", "session_id",
+      "deaf", "mute", "self_deaf", "self_mute", "suppress"
+    )(
+      { this.guildID = readSnowflake(obj); },
+      { this.channelID = readSnowflake(obj); },
+      { this.userID = readSnowflake(obj); },
+      { this.sessionID = obj.read!string; },
+      { this.deaf = obj.read!bool; },
+      { this.mute = obj.read!bool; },
+      { this.selfDeaf = obj.read!bool; },
+      { this.selfMute = obj.read!bool; },
+      { this.suppress = obj.read!bool; },
+    );
   }
 
   @property Guild guild() {
-    return this.client.state.guilds(this.guild_id);
+    return this.client.state.guilds(this.guildID);
   }
 
   @property Channel channel() {
-    return this.client.state.channels(this.channel_id);
+    return this.client.state.channels(this.channelID);
   }
 }

@@ -1,7 +1,6 @@
 module dscord.api.client;
 
-import std.stdio,
-       std.array,
+import std.array,
        std.variant,
        std.conv,
        core.time;
@@ -12,6 +11,8 @@ import vibe.http.client,
 import dscord.types.all,
        dscord.api.ratelimit,
        dscord.util.errors;
+
+import std.json : parseJSON;
 
 class APIError : BaseError {
   this(int code, string msg) {
@@ -74,12 +75,8 @@ class APIResponse {
     return this.res.statusCode;
   }
 
-  @property JSONObject json() {
-    return new JSONObject(this.content);
-  }
-
-  @property JSONObject[] jsonArray() {
-    return fromJSONArray(this.content);
+  @property JSONValue json() {
+    return parseJSON(this.content);
   }
 
   @property string content() {
@@ -100,9 +97,13 @@ class APIClient {
   string       baseURL = "https://discordapp.com/api/";
   string       token;
   RateLimiter  ratelimit;
+  Client       client;
+  Logger       log;
 
-  this(string token) {
-    this.token = token;
+  this(Client client) {
+    this.client = client;
+    this.log = client.log;
+    this.token = client.token;
     this.ratelimit = new RateLimiter;
   }
 
@@ -110,8 +111,8 @@ class APIClient {
     return requestJSON(method, url, "");
   }
 
-  APIResponse requestJSON(HTTPMethod method, U url, JSONObject data) {
-    return requestJSON(method, url, data.dumps());
+  APIResponse requestJSON(HTTPMethod method, U url, JSONValue obj) {
+    return requestJSON(method, url, obj.toString);
   }
 
   APIResponse requestJSON(HTTPMethod method, U url, string data,
@@ -122,7 +123,7 @@ class APIClient {
       throw new APIError(-1, "Request expired before rate-limit");
     }
 
-    debug writefln("R: %s %s %s", method, this.baseURL ~ url.value, data);
+    this.log.tracef("API Request: [%s] %s: %s", method, this.baseURL ~ url.value, data);
     auto res = new APIResponse(requestHTTP(this.baseURL ~ url.value,
       (scope req) {
         req.method = method;
@@ -144,36 +145,35 @@ class APIClient {
     return res;
   }
 
-  JSONObject me() {
+  JSONValue me() {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me"));
     res.ok();
     return res.json;
   }
 
-  JSONObject[] meGuilds() {
+  JSONValue meGuilds() {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me")("guilds"));
     res.ok();
-    return res.jsonArray;
+    return res.json;
   }
 
-  JSONObject user(Snowflake id) {
+  JSONValue user(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")(id));
     res.ok();
     return res.json;
   }
 
-  JSONObject guild(Snowflake id) {
+  JSONValue guild(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, U("guilds")(id));
     res.ok();
     return res.json;
   }
 
-  JSONObject sendMessage(Snowflake chan, string content, string nonce, bool tts) {
-    auto payload = new JSONObject()
-      .set!string("content", content)
-      .set!string("nonce", nonce)
-      .set!bool("tts", tts);
-
+  JSONValue sendMessage(Snowflake chan, string content, string nonce, bool tts) {
+    JSONValue payload;
+    payload["content"] = JSONValue(content);
+    payload["nonce"] = JSONValue(nonce);
+    payload["tts"] = JSONValue(tts);
     auto res = this.requestJSON(HTTPMethod.POST,
         U("channels")(chan)("messages").bucket("send-message"), payload);
     res.ok();
@@ -183,6 +183,6 @@ class APIClient {
   string gateway() {
     auto res = this.requestJSON(HTTPMethod.GET, U("gateway?v=4"));
     res.ok();
-    return res.json.get!string("url");
+    return res.json["url"].str();
   }
 }

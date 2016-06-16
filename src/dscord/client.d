@@ -36,7 +36,7 @@ class Client {
     this.log = new FileLogger(stdout, lvl);
     this.token = token;
 
-    this.api = new APIClient(this.token);
+    this.api = new APIClient(this);
     this.gw = new GatewayClient(this);
     this.state = new State(this);
   }

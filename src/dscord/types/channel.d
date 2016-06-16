@@ -6,13 +6,7 @@ import std.stdio,
 
 import dscord.client,
        dscord.voice.client,
-       dscord.types.base,
-       dscord.types.guild,
-       dscord.types.message,
-       dscord.types.user,
-       dscord.types.permission,
-       dscord.types.voice,
-       dscord.util.json;
+       dscord.types.all;
 
 alias ChannelMap = ModelMap!(Snowflake, Channel);
 alias PermissionOverwriteMap = ModelMap!(Snowflake, PermissionOverwrite);
@@ -30,7 +24,9 @@ enum PermissionOverwriteType {
 	MEMBER = 1 << 1,
 }
 
-class PermissionOverwrite : Model {
+class PermissionOverwrite : IModel {
+  mixin Model;
+
 	Snowflake  id;
   Channel    channel;
 
@@ -41,18 +37,23 @@ class PermissionOverwrite : Model {
 	Permission  allow;
 	Permission  deny;
 
-  this(Client client, JSONObject obj) {
-    super(client, obj);
+  this(Channel channel, ref JSON obj) {
+    this.channel = channel;
+    super(channel.client, obj);
   }
 
-  override void load(JSONObject obj) {
-    this.id = obj.get!Snowflake("id");
-    this.allow = obj.get!Permission("allow");
-    this.deny = obj.get!Permission("deny");
-
-    this.type = obj.get!string("type") == "role" ?
-      PermissionOverwriteType.ROLE :
-      PermissionOverwriteType.MEMBER;
+  override void load(ref JSON obj) {
+    obj.keySwitch!(
+      "id", "allow", "deny", "type"
+    )(
+      { this.id = readSnowflake(obj); },
+      { this.allow = Permission(obj.read!uint); },
+      { this.deny = Permission(obj.read!uint); },
+      { this.type = obj.read!string == "role" ?
+        PermissionOverwriteType.ROLE :
+        PermissionOverwriteType.MEMBER;
+      },
+    );
   }
 
   Snowflake getID() {
@@ -60,16 +61,20 @@ class PermissionOverwrite : Model {
   }
 }
 
-class Channel : Model {
+class Channel : IModel {
+  mixin Model;
+
   Snowflake    id;
-  string      name;
-  string      topic;
-  Snowflake    guild_id;
+  string       name;
+  string       topic;
+  Guild        guild;
   Snowflake    lastMessageID;
-  ChannelType  type;
+  // ChannelType  type;
   short        position;
   uint         bitrate;
   User         recipient;
+  string       type;
+  bool         isPrivate;
 
   // Overwrites
   PermissionOverwriteMap  overwrites;
@@ -77,38 +82,37 @@ class Channel : Model {
   // Voice Connection
   VoiceClient  vc;
 
-  this(Client client, JSONObject obj) {
-    this.overwrites = new PermissionOverwriteMap;
-
+  this(Client client, ref JSON obj) {
     super(client, obj);
   }
 
-  override void load(JSONObject obj) {
-    this.id = obj.get!Snowflake("id");
-    this.name = obj.maybeGet!string("name", "");
-    this.topic = obj.maybeGet!string("topic", null);
-    this.guild_id = obj.maybeGet!Snowflake("guild_id", 0);
-    this.lastMessageID = obj.maybeGet!Snowflake("lastMessageID", 0);
-    this.position = obj.maybeGet!short("position", 0);
-    this.bitrate = obj.maybeGet!uint("bitrate", 0);
+  this(Guild guild, ref JSON obj) {
+    this.guild = guild;
+    super(guild.client, obj);
+  }
 
-    if (obj.has("is_private") && obj.get!bool("is_private")) {
-      this.type |= ChannelType.PRIVATE;
-    } else {
-      this.type |= ChannelType.PUBLIC;
-    }
+  override void init() {
+    this.overwrites = new PermissionOverwriteMap;
+  }
 
-    if (obj.get!string("type") == "text") {
-      this.type |= ChannelType.TEXT;
-    } else {
-      this.type |= ChannelType.VOICE;
-    }
-
-    foreach (Variant obj; obj.getRaw("permission_overwrites")) {
-      auto overwrite = new PermissionOverwrite(this.client, new JSONObject(variantToJSON(obj)));
-      overwrite.channel = this;
-      this.overwrites[overwrite.id] = overwrite;
-    }
+  override void load(ref JSON obj) {
+    obj.keySwitch!(
+      "id", "name", "topic", "guild_id", "last_message_id", "position",
+      "bitrate", "is_private", "type", "permission_overwrites",
+    )(
+      { this.id = readSnowflake(obj); },
+      { this.name = obj.read!string; },
+      { this.topic = obj.read!string; },
+      { this.guild = this.client.state.guilds.get(readSnowflake(obj)); },
+      { this.lastMessageID = readSnowflake(obj); },
+      { this.position = obj.read!short; },
+      { this.bitrate = obj.read!uint; },
+      { this.isPrivate = obj.read!bool; },
+      { this.type = obj.read!string; },
+      {
+        loadManyComplex!(Channel, PermissionOverwrite)(this, obj, (p) { this.overwrites[p.id] = p; });
+      },
+    );
   }
 
   Snowflake getID() {
@@ -119,24 +123,20 @@ class Channel : Model {
     this.client.api.sendMessage(this.id, content, nonce, tts);
   }
 
-  Guild guild() {
-    return this.client.state.guilds(this.guild_id);
-  }
-
   @property bool DM() {
-    return cast(bool)(this.type & ChannelType.PRIVATE);
+    return this.isPrivate;
   }
 
   @property bool voice() {
-    return cast(bool)(this.type & ChannelType.VOICE);
+    return this.type == "voice";
   }
 
   @property bool text() {
-    return cast(bool)(this.type & ChannelType.TEXT);
+    return this.type == "text";
   }
 
   @property auto voiceStates() {
-    return this.guild.voiceStates.filter(c => c.channel_id == this.id);
+    return this.guild.voiceStates.filter(c => c.channelID == this.id);
   }
 
   VoiceClient joinVoice() {

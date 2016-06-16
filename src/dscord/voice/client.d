@@ -23,8 +23,7 @@ import dscord.client,
        dscord.gateway.events,
        dscord.voice.packets,
        dscord.types.all,
-       dscord.util.emitter,
-       dscord.util.json;
+       dscord.util.emitter;
 
 struct RTPHeader {
   ushort  seq;
@@ -209,6 +208,7 @@ class VoiceClient {
     }
   }
 
+  /*
   void dispatch(JSONObject obj) {
     this.log.tracef("voice-dispatch: %s %s", obj.get!VoiceOPCode("op"), obj.dumps);
 
@@ -224,11 +224,12 @@ class VoiceClient {
         break;
     }
   }
+  */
 
   void send(Serializable p) {
-    JSONObject data = p.serialize();
-    this.log.tracef("voice-send: %s", data.dumps());
-    this.sock.send(data.dumps());
+    JSONValue data = p.serialize();
+    this.log.tracef("voice-send: %s", data.toString);
+    this.sock.send(data.toString);
   }
 
   void run() {
@@ -248,7 +249,7 @@ class VoiceClient {
       }
 
       try {
-        this.dispatch(new JSONObject(data));
+        // this.dispatch(new JSONObject(data));
       } catch (Exception e) {
         this.log.warning("failed to handle voice dispatch: %s (%s)", e, data);
       }
@@ -257,6 +258,7 @@ class VoiceClient {
     this.log.warning("voice websocket closed");
   }
 
+  /*
   void onVoiceServerUpdate(VoiceServerUpdate event) {
     if (this.channel.guild_id != event.guild_id) {
       return;
@@ -279,16 +281,17 @@ class VoiceClient {
       this.token
     ));
   }
+  */
 
   bool connect(Duration timeout=5.seconds) {
     this.waitForConnectedMutex = new TaskMutex;
     this.waitForConnected = new TaskCondition(this.waitForConnectedMutex);
 
-    this.l = this.client.gw.eventEmitter.listen!VoiceServerUpdate(toDelegate(
-      &this.onVoiceServerUpdate));
+    //this.l = this.client.gw.eventEmitter.listen!VoiceServerUpdate(toDelegate(
+    //  &this.onVoiceServerUpdate));
 
     this.client.gw.send(new VoiceStateUpdatePacket(
-      this.channel.guild_id,
+      this.channel.guild.id,
       this.channel.id,
       this.mute,
       this.deaf
@@ -310,7 +313,7 @@ class VoiceClient {
     this.sock.close();
     this.l.unbind();
     this.client.gw.send(new VoiceStateUpdatePacket(
-      this.channel.guild_id,
+      this.channel.guild.id,
       0, // TODO
       this.mute,
       this.deaf
