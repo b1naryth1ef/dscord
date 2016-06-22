@@ -85,7 +85,9 @@ class GatewayClient {
   }
 
   void emitDispatchEvent(T)(ref JSON obj) {
-    this.eventEmitter.emit!T(new T(this.client, obj));
+    T v = new T(this.client, obj);
+    this.eventEmitter.emit!T(v);
+    v.destroy();
   }
 
   void handleDispatchPacket(uint seq, string type, ref JSON obj) {

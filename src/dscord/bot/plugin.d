@@ -1,6 +1,7 @@
 module dscord.bot.plugin;
 
-import std.experimental.logger;
+import std.experimental.logger,
+       vibe.d : runTask;
 
 import dscord.bot.command,
        dscord.bot.listener,
@@ -14,6 +15,9 @@ class Plugin {
 
   mixin Listenable;
   mixin Commandable;
+
+  // Used to store the void-pointer to the dynamic library (if one exists)
+  void* dynamicLibrary;
 
   // Config for the plugin
   PluginConfig cfg;
@@ -30,7 +34,7 @@ class Plugin {
   }
 
   void unload() {
-
+    this.bot.unloadPlugin(this);
   }
 
   string name() {

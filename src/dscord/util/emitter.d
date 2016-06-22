@@ -10,6 +10,10 @@ import std.stdio,
        std.datetime,
        core.time;
 
+import dscord.util.errors;
+
+class EmitterStop : Exception { mixin ExceptionMixin; }
+
 interface BoundEmitter {
   void call(string, Variant);
 }
@@ -60,7 +64,7 @@ class Emitter {
 
   EventListener on(string event, void delegate() f) {
     auto li = new EventListener(this, event, (arg) {
-      f();
+      try { f(); } catch (EmitterStop) { return; }
     });
 
     this.listeners[event] ~= li;
@@ -69,7 +73,7 @@ class Emitter {
 
   EventListener listen(T)(void delegate(T) f) {
     auto li = new EventListener(this, T.stringof, (arg) {
-      f(arg.get!T);
+      try { f(arg.get!T); } catch (EmitterStop) { return; }
     });
 
     this.listeners[T.stringof] ~= li;
@@ -89,15 +93,11 @@ class Emitter {
   }
 
   void emit(T)(T obj) {
-    runTask(&this.emitByName!T, T.stringof, obj, false);
-    runTask(&this.emitByName!T, T.stringof, obj, true);
+    this.emitByName!T(T.stringof, obj, false);
+    this.emitByName!T(T.stringof, obj, true);
   }
 
   void emitByName(T)(string name, T obj, bool all) {
-    debug {
-      auto sw = StopWatch(AutoStart.yes);
-    }
-
     if (!((all ? "" : name) in this.listeners)) {
       return;
     }
@@ -105,11 +105,7 @@ class Emitter {
     auto v = Variant(obj);
 
     foreach (func; this.listeners[all ? "" : name]) {
-      func.call(name, v);
-    }
-
-    debug {
-      writefln("event emit took %sms", sw.peek().to!("msecs", real));
+      runTask(&func.call, name, v);
     }
   }
 }

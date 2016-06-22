@@ -11,8 +11,11 @@ import dscord.gateway.client,
        dscord.gateway.packets,
        dscord.types.all;
 
+alias EventDeferredFunc = void delegate();
+
 mixin template Event() {
   Client client;
+  EventDeferredFunc[] deferred;
 
   this(Client c, ref JSON obj) {
     debug {
@@ -26,6 +29,16 @@ mixin template Event() {
     debug {
       this.client.log.tracef("Create event for %s took %sms", this.toString,
         sw.peek().to!("msecs", real));
+    }
+  }
+
+  void defer(EventDeferredFunc f) {
+    this.deferred ~= f;
+  }
+
+  ~this() {
+    foreach (ref f; this.deferred) {
+      f();
     }
   }
 }

@@ -11,14 +11,6 @@ import dscord.client,
 alias ChannelMap = ModelMap!(Snowflake, Channel);
 alias PermissionOverwriteMap = ModelMap!(Snowflake, PermissionOverwrite);
 
-enum ChannelType {
-  NONE,
-  TEXT = 1 << 0,
-  VOICE = 1 << 1,
-  PUBLIC = 1 << 2,
-  PRIVATE = 1 << 3,
-};
-
 enum PermissionOverwriteType {
 	ROLE = 1 << 0,
 	MEMBER = 1 << 1,
@@ -69,7 +61,6 @@ class Channel : IModel {
   string       topic;
   Guild        guild;
   Snowflake    lastMessageID;
-  // ChannelType  type;
   short        position;
   uint         bitrate;
   User         recipient;
