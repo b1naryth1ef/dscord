@@ -16,6 +16,9 @@ class Plugin {
   mixin Listenable;
   mixin Commandable;
 
+  // Store the path to the DLL for this plugin
+  string dynamicLibraryPath;
+
   // Used to store the void-pointer to the dynamic library (if one exists)
   void* dynamicLibrary;
 

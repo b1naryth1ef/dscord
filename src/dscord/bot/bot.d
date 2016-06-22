@@ -91,10 +91,21 @@ class Bot {
 
       // Track the DLL handle so we can close it when unloading
       p.dynamicLibrary = lh;
+      p.dynamicLibraryPath = path;
+    }
+
+    void dynamicReloadPlugin(Plugin p) {
+      string path = p.dynamicLibraryPath;
+      this.unloadPlugin(p);
+      this.dynamicLoadPlugin(path);
     }
   } else {
     void dynamicLoadPlugin(string path) {
-      throw new BaseError("Dynamic plugin loading is only supported on linux");
+      throw new BaseError("Dynamic plugins are only supported on linux");
+    }
+
+    void dynamicReloadPlugin(Plugin p) {
+      throw new BaseError("Dynamic plugins are only supported on linux");
     }
   }
 
