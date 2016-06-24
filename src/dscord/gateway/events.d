@@ -36,7 +36,7 @@ mixin template Event() {
     this.deferred ~= f;
   }
 
-  ~this() {
+  void resolveDeferreds() {
     foreach (ref f; this.deferred) {
       f();
     }

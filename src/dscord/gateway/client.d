@@ -87,6 +87,7 @@ class GatewayClient {
   void emitDispatchEvent(T)(ref JSON obj) {
     T v = new T(this.client, obj);
     this.eventEmitter.emit!T(v);
+    v.resolveDeferreds();
     v.destroy();
   }
 

@@ -71,6 +71,7 @@ class Message : IModel {
   bool       tts;
   bool       mentionEveryone;
   string     nonce;
+  bool       pinned;
 
   // TODO: GuildMemberMap here
   UserMap    mentions;
@@ -101,18 +102,25 @@ class Message : IModel {
 
     obj.keySwitch!(
       "id", "channel_id", "content", "timestamp", "edited_timestamp", "tts",
-      "mention_everyone", "nonce", "author", "mentions", "mention_roles",
+      "mention_everyone", "nonce", "author", "pinned", "mentions", "mention_roles",
       // "embeds", "attachments",
     )(
       { this.id = readSnowflake(obj); },
       { this.channelID = readSnowflake(obj); },
       { this.content = obj.read!string; },
       { this.timestamp = obj.read!string; },
-      { this.editedTimestamp = obj.read!string; },
+      {
+        if (obj.peek() == DataType.string) {
+          this.editedTimestamp = obj.read!string;
+        } else {
+          obj.skipValue;
+        }
+      },
       { this.tts = obj.read!bool; },
       { this.mentionEveryone = obj.read!bool; },
       { this.nonce = obj.read!string; },
       { this.author = new User(this.client, obj); },
+      { this.pinned = obj.read!bool; },
       { loadMany!User(this.client, obj, (u) { this.mentions[u.id] = u; }); },
       { obj.skipValue; },
       // { obj.skipValue; },

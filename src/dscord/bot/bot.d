@@ -70,8 +70,7 @@ class Bot {
 
   // Dynamic library plugin loading (linux only currently)
   version (linux) {
-    void dynamicLoadPlugin(string path) {
-
+    Plugin dynamicLoadPlugin(string path) {
       // Attempt to load the dynamic library from a given path
       void* lh = dlopen(toStringz(path), RTLD_NOW);
       if (!lh) {
@@ -92,24 +91,26 @@ class Bot {
       // Track the DLL handle so we can close it when unloading
       p.dynamicLibrary = lh;
       p.dynamicLibraryPath = path;
+      return p;
     }
 
-    void dynamicReloadPlugin(Plugin p) {
+    Plugin dynamicReloadPlugin(Plugin p) {
       string path = p.dynamicLibraryPath;
       this.unloadPlugin(p);
-      this.dynamicLoadPlugin(path);
+      return this.dynamicLoadPlugin(path);
     }
   } else {
-    void dynamicLoadPlugin(string path) {
+    Plugin dynamicLoadPlugin(string path) {
       throw new BaseError("Dynamic plugins are only supported on linux");
     }
 
-    void dynamicReloadPlugin(Plugin p) {
+    Plugin dynamicReloadPlugin(Plugin p) {
       throw new BaseError("Dynamic plugins are only supported on linux");
     }
   }
 
   void unloadPlugin(Plugin p) {
+    p.unload(this);
     this.plugins.remove(p.name);
 
     foreach (ref listener; p.listeners) {

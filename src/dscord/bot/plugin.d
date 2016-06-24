@@ -36,8 +36,8 @@ class Plugin {
     this.log = this.bot.log;
   }
 
-  void unload() {
-    this.bot.unloadPlugin(this);
+  void unload(Bot bot) {
+
   }
 
   string name() {
