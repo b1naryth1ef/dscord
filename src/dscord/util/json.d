@@ -1,6 +1,7 @@
 module dscord.util.json;
 
 public import std.json;
-public import fast.json;
+public import fast.json : FastJson = Json, parseTrustedJSON, DataType;
+public import vibe.data.json : VibeJSON = Json, parseJsonString;
 
-alias JSON = Json!(0u, false);
+alias JSON = FastJson!(0u, false);

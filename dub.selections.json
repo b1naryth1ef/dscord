@@ -9,6 +9,6 @@
 		"memutils": "0.4.6",
 		"openssl": "1.1.4+1.0.1g",
 		"shaker": "0.0.7",
-		"vibe-d": "0.7.30-alpha.2"
+		"vibe-d": "0.7.29"
 	}
 }

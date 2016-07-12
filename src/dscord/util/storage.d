@@ -1,68 +1,11 @@
 module dscord.util.storage;
 
-import std.stdio;
-
-
 import std.file : dirSeparator, read, write, exists;
-import std.json : JSON_TYPE, JSONValue, parseJSON;
+import dscord.util.json;
 
-class JSONObjectProxy {
-  JSONValue obj;
-  JSONObjectProxy[string]  proxies;
-
-  this(JSONValue obj) {
-    this.obj = obj;
-  }
-
-  this() {
-    this.obj = JSONValue();
-    this.obj.type = JSON_TYPE.OBJECT;
-  }
-
-  void remove(string key) {
-    // TODO: handle subproxies
-    destroy(this.obj[key]);
-  }
-
-  JSONValue opIndex(string key) {
-    return this.obj[key];
-  }
-
-  void opIndexAssign(JSONValue value, string key) {
-    this.obj[key] = value;
-  }
-
-  JSONObjectProxy getProxy(string key) {
-    if (key in this.proxies) {
-      return this.proxies[key];
-    }
-
-    if (!(key in this.obj)) {
-      this.obj[key] = JSONValue();
-      this.obj[key].type = JSON_TYPE.OBJECT;
-    }
-
-    return new JSONObjectProxy(this.obj[key]);
-  }
-
-  int opApply(int delegate(string, ref JSONValue) dg) {
-    int res;
-
-    foreach (string k, ref JSONValue v; this.obj) {
-      res = dg(k, v);
-      if (res < 0) return res;
-    }
-
-    return 0;
-  }
-
-  bool has(string key) {
-    return !((key in this.obj) is null);
-  }
-}
-
-class Storage : JSONObjectProxy {
-  string     path;
+class Storage {
+  VibeJSON  obj;
+  string    path;
 
   this(string path) {
     this.path = path;
@@ -70,30 +13,29 @@ class Storage : JSONObjectProxy {
 
   void load() {
     if (exists(this.path)) {
-      string data = cast(string)read(this.path);
-      this.obj = parseJSON(data);
+      this.obj = parseJsonString(cast(string)read(this.path));
     } else {
-      this.obj = JSONValue();
-      this.obj.type = JSON_TYPE.OBJECT;
+      this.obj = VibeJSON.emptyObject;
     }
   }
 
   void save() {
-    write(this.path, this.obj.toString());
+    write(this.path, this.obj.toPrettyString());
   }
 
-  /* void ensureObject(string key) { */
-  /*   if (!(key in this.obj)) { */
-  /*     this.obj[key] = JSONValue(); */
-  /*     this.obj[key].type = JSON_TYPE.OBJECT; */
-  /*   } */
-  /* } */
-  /*  */
-  /* JSONValue opIndex(string key) { */
-  /*   return this.obj[key]; */
-  /* } */
-  /*  */
-  /* bool has(string key) { */
-  /*   return !((key in this.obj) is null); */
-  /* } */
+  VibeJSON ensureObject(string key) {
+    if (!this.has(key)) {
+      this.obj[key] = VibeJSON.emptyObject;
+    }
+
+    return this.obj[key];
+  }
+
+  VibeJSON opIndex(string key) {
+    return this.obj[key];
+  }
+
+  bool has(string key) {
+    return !((key in this.obj) is null);
+  }
 }

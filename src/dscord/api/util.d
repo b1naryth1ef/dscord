@@ -6,8 +6,6 @@ import vibe.http.client,
 import dscord.types.all,
        dscord.util.errors;
 
-import std.json : parseJSON;
-
 class APIError : BaseError {
   this(int code, string msg) {
     super("[%s] %s", code, msg);
@@ -69,8 +67,8 @@ class APIResponse {
     return this.res.statusCode;
   }
 
-  @property JSONValue json() {
-    return parseJSON(this.content);
+  @property VibeJSON json() {
+    return parseJsonString(this.content);
   }
 
   @property string content() {

@@ -31,7 +31,7 @@ class APIClient {
     return requestJSON(method, url, "");
   }
 
-  APIResponse requestJSON(HTTPMethod method, U url, JSONValue obj) {
+  APIResponse requestJSON(HTTPMethod method, U url, VibeJSON obj) {
     return requestJSON(method, url, obj.toString);
   }
 
@@ -65,35 +65,35 @@ class APIClient {
     return res;
   }
 
-  JSONValue me() {
+  VibeJSON me() {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me"));
     res.ok();
     return res.json;
   }
 
-  JSONValue meGuilds() {
+  VibeJSON meGuilds() {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me")("guilds"));
     res.ok();
     return res.json;
   }
 
-  JSONValue user(Snowflake id) {
+  VibeJSON user(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")(id));
     res.ok();
     return res.json;
   }
 
-  JSONValue guild(Snowflake id) {
+  VibeJSON guild(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, U("guilds")(id));
     res.ok();
     return res.json;
   }
 
-  JSONValue sendMessage(Snowflake chan, string content, string nonce, bool tts) {
-    JSONValue payload;
-    payload["content"] = JSONValue(content);
-    payload["nonce"] = JSONValue(nonce);
-    payload["tts"] = JSONValue(tts);
+  VibeJSON sendMessage(Snowflake chan, string content, string nonce, bool tts) {
+    VibeJSON payload;
+    payload["content"] = VibeJSON(content);
+    payload["nonce"] = VibeJSON(nonce);
+    payload["tts"] = VibeJSON(tts);
     auto res = this.requestJSON(HTTPMethod.POST,
         U("channels")(chan)("messages").bucket("send-message"), payload);
     res.ok();
@@ -103,6 +103,6 @@ class APIClient {
   string gateway() {
     auto res = this.requestJSON(HTTPMethod.GET, U("gateway?v=4"));
     res.ok();
-    return res.json["url"].str();
+    return res.json["url"].to!string;
   }
 }

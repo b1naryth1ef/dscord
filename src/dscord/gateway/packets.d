@@ -17,8 +17,6 @@ enum OPCode : ushort {
   INVALID_SESSION = 9,
 };
 
-alias JSON = Json!(0u, false);
-
 interface Serializable {
   JSONValue serialize();
 }
