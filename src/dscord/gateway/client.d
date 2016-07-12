@@ -260,6 +260,8 @@ class GatewayClient {
         this.parse(data);
       } catch (Exception e) {
         this.log.warningf("failed to handle %s (%s)", e, data);
+      } catch (Error e) {
+        this.log.warningf("failed to handle %s (%s)", e, data);
       }
     }
 

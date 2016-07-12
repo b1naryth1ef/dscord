@@ -23,8 +23,7 @@ import etc.linux.memoryerror;
 
 class BasicPlugin : Plugin {
   this() {
-    PluginConfig cfg;
-    super(cfg);
+    super();
   }
 
   @Command("test")

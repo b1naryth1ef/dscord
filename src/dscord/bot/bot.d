@@ -57,8 +57,11 @@ class Bot {
     }
   }
 
-  void loadPlugin(Plugin p) {
-    p.load(this);
+  /*
+    Loads a plugin into the bot
+  */
+  void loadPlugin(Plugin p, PluginState state = null) {
+    p.load(this, state);
     this.plugins[p.name] = p;
 
     // Bind listeners
@@ -68,46 +71,52 @@ class Bot {
     }
   }
 
-  // Dynamic library plugin loading (linux only currently)
-  version (linux) {
-    Plugin dynamicLoadPlugin(string path) {
-      // Attempt to load the dynamic library from a given path
-      void* lh = dlopen(toStringz(path), RTLD_NOW);
-      if (!lh) {
-        throw new BaseError("Failed to dynamically load plugin: %s", fromStringz(dlerror()));
-      }
+// Dynamic library plugin loading (linux only currently)
+version (linux) {
 
-      // Try to grab the create function (which should return a new plugin instance)
-      Plugin function() fn = cast(Plugin function())dlsym(lh, "create");
-      char* error = dlerror();
-      if (error) {
-        throw new BaseError("Failed to dynamically load plugin create function: %s", fromStringz(error));
-      }
-
-      // Finally create the plugin instance and register it.
-      Plugin p = fn();
-      this.loadPlugin(p);
-
-      // Track the DLL handle so we can close it when unloading
-      p.dynamicLibrary = lh;
-      p.dynamicLibraryPath = path;
-      return p;
+  Plugin dynamicLoadPlugin(string path, PluginState state) {
+    // Attempt to load the dynamic library from a given path
+    void* lh = dlopen(toStringz(path), RTLD_NOW);
+    if (!lh) {
+      throw new BaseError("Failed to dynamically load plugin: %s", fromStringz(dlerror()));
     }
 
-    Plugin dynamicReloadPlugin(Plugin p) {
-      string path = p.dynamicLibraryPath;
-      this.unloadPlugin(p);
-      return this.dynamicLoadPlugin(path);
-    }
-  } else {
-    Plugin dynamicLoadPlugin(string path) {
-      throw new BaseError("Dynamic plugins are only supported on linux");
+    // Try to grab the create function (which should return a new plugin instance)
+    Plugin function() fn = cast(Plugin function())dlsym(lh, "create");
+    char* error = dlerror();
+    if (error) {
+      throw new BaseError("Failed to dynamically load plugin create function: %s", fromStringz(error));
     }
 
-    Plugin dynamicReloadPlugin(Plugin p) {
-      throw new BaseError("Dynamic plugins are only supported on linux");
-    }
+    // Finally create the plugin instance and register it.
+    Plugin p = fn();
+    this.loadPlugin(p, state);
+
+    // Track the DLL handle so we can close it when unloading
+    p.dynamicLibrary = lh;
+    p.dynamicLibraryPath = path;
+    return p;
   }
+
+  Plugin dynamicReloadPlugin(Plugin p) {
+    string path = p.dynamicLibraryPath;
+    PluginState state = p.state;
+    this.unloadPlugin(p);
+    return this.dynamicLoadPlugin(path, state);
+  }
+
+  // not linux
+  } else {
+
+  Plugin dynamicLoadPlugin(string path, PluginState state) {
+    throw new BaseError("Dynamic plugins are only supported on linux");
+  }
+
+  Plugin dynamicReloadPlugin(Plugin p) {
+    throw new BaseError("Dynamic plugins are only supported on linux");
+  }
+
+}
 
   void unloadPlugin(Plugin p) {
     p.unload(this);
