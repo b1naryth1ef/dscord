@@ -90,7 +90,7 @@ class APIClient {
   }
 
   VibeJSON sendMessage(Snowflake chan, string content, string nonce, bool tts) {
-    VibeJSON payload;
+    VibeJSON payload = VibeJSON.emptyObject;
     payload["content"] = VibeJSON(content);
     payload["nonce"] = VibeJSON(nonce);
     payload["tts"] = VibeJSON(tts);
