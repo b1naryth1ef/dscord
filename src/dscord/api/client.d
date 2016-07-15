@@ -3,6 +3,7 @@ module dscord.api.client;
 import std.array,
        std.variant,
        std.conv,
+       std.algorithm.iteration,
        core.time;
 
 import vibe.http.client,
@@ -12,7 +13,6 @@ import dscord.types.all,
        dscord.api.ratelimit,
        dscord.api.util;
 
-// Actual API client used for making requests
 class APIClient {
   string       baseURL = "https://discordapp.com/api";
   string       token;
@@ -65,44 +65,79 @@ class APIClient {
     return res;
   }
 
-  VibeJSON me() {
+  User me() {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me"));
     res.ok();
-    return res.json;
+    auto json = res.fastJSON();
+    return new User(this.client, json);
   }
 
-  VibeJSON meGuilds() {
+  Guild[] meGuilds() {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me")("guilds"));
     res.ok();
-    return res.json;
+    auto json = res.fastJSON();
+    return loadManyArray!Guild(this.client, json);
   }
 
-  VibeJSON user(Snowflake id) {
+  User user(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, U("users")(id));
     res.ok();
-    return res.json;
+    auto json = res.fastJSON();
+    return new User(this.client, json);
   }
 
-  VibeJSON guild(Snowflake id) {
+  Guild guild(Snowflake id) {
     auto res = this.requestJSON(HTTPMethod.GET, U("guilds")(id));
     res.ok();
-    return res.json;
+    auto json = res.fastJSON();
+    return new Guild(this.client, json);
   }
 
-  VibeJSON sendMessage(Snowflake chan, string content, string nonce, bool tts) {
+  Message sendMessage(Snowflake chan, string content, string nonce, bool tts) {
     VibeJSON payload = VibeJSON.emptyObject;
     payload["content"] = VibeJSON(content);
     payload["nonce"] = VibeJSON(nonce);
     payload["tts"] = VibeJSON(tts);
+
+    // Send payload and return message object
     auto res = this.requestJSON(HTTPMethod.POST,
         U("channels")(chan)("messages").bucket("send-message"), payload);
     res.ok();
-    return res.json;
+    auto json = res.fastJSON();
+    return new Message(this.client, json);
+  }
+
+  Message editMessage(Snowflake chan, Snowflake msg, string content) {
+    VibeJSON payload = VibeJSON.emptyObject;
+    payload["content"] = content;
+
+    auto res = this.requestJSON(HTTPMethod.PATCH,
+        U("channels")(chan)("messages")(msg).bucket("edit-message"), payload);
+    res.ok();
+
+    auto json = res.fastJSON();
+    return new Message(this.client, json);
+  }
+
+  void deleteMessage(Snowflake chan, Snowflake msg) {
+    auto res = this.requestJSON(HTTPMethod.DELETE,
+        U("channels")(chan)("messages")(msg).bucket("del-message"));
+    res.ok();
+  }
+
+  void bulkDeleteMessages(Snowflake chan, Snowflake[] msgs) {
+    VibeJSON payload = VibeJSON.emptyObject;
+    payload["messages"] = VibeJSON(array(map!(a => VibeJSON(a))(msgs)));
+
+    auto res = this.requestJSON(HTTPMethod.POST,
+        U("channels")(chan)("messages")("bulk_delete").bucket("bulk-del-messages"),
+        payload);
+    res.ok();
   }
 
   string gateway() {
     auto res = this.requestJSON(HTTPMethod.GET, U("gateway?v=4"));
     res.ok();
-    return res.json["url"].to!string;
+    return res.vibeJSON["url"].to!string;
   }
 }

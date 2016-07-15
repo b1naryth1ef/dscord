@@ -173,9 +173,20 @@ class Message : IModel {
     return result;
   }
 
-  void reply(string content, string nonce=null, bool tts=false, bool mention=false) {
+  Message reply(string content, string nonce=null, bool tts=false, bool mention=false) {
     // TODO: support mentioning
-    this.client.api.sendMessage(this.channel.id, content, nonce, tts);
+    return this.client.api.sendMessage(this.channel.id, content, nonce, tts);
+  }
+
+  Message edit(string content) {
+    // We can only edit messages we sent
+    assert(this.client.me.id == this.author.id);
+    return this.client.api.editMessage(this.channel.id, this.id, content);
+  }
+
+  void del() {
+    // TODO: permissions check
+    return this.client.api.deleteMessage(this.channel.id, this.id);
   }
 
   /*

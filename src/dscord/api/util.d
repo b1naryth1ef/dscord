@@ -42,13 +42,19 @@ struct U {
 }
 
 // Wrapper for HTTP API Responses
+// TODO: move this to another place
 class APIResponse {
   private {
     HTTPClientResponse res;
   }
 
+  // We cache content so HTTPClientResponse can be GC'd without pain
+  string content;
+
   this(HTTPClientResponse res) {
     this.res = res;
+    this.content = res.bodyReader.readAllUTF8();
+    this.res.disconnect();
   }
 
   void ok() {
@@ -67,12 +73,12 @@ class APIResponse {
     return this.res.statusCode;
   }
 
-  @property VibeJSON json() {
+  @property VibeJSON vibeJSON() {
     return parseJsonString(this.content);
   }
 
-  @property string content() {
-    return this.res.bodyReader.readAllUTF8();
+  @property JSON fastJSON() {
+    return parseTrustedJSON(this.content);
   }
 
   string header(string name, string def="") {

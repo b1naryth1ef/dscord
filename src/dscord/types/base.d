@@ -71,6 +71,16 @@ Snowflake readSnowflake(ref JSON obj) {
   return data.to!Snowflake;
 }
 
+T[] loadManyArray(T)(Client client, ref JSON obj) {
+  T[] data;
+
+  foreach (item; obj) {
+    data ~= new T(client, obj);
+  }
+
+  return data;
+}
+
 void loadMany(T)(Client client, ref JSON obj, void delegate(T) F) {
   foreach (item; obj) {
     F(new T(client, obj));

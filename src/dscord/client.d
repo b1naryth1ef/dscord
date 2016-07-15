@@ -40,4 +40,8 @@ class Client {
     this.gw = new GatewayClient(this);
     this.state = new State(this);
   }
+
+  @property User me() {
+    return this.state.me;
+  }
 }
