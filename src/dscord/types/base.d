@@ -3,9 +3,13 @@ module dscord.types.base;
 import std.conv,
        std.typecons,
        std.stdio,
-       std.algorithm;
+       std.algorithm,
+       std.traits,
+       std.functional;
 
 import dscord.client;
+
+import vibe.core.core : runTask, sleep;
 
 public import dscord.util.json;
 public import std.datetime;
@@ -36,6 +40,28 @@ class Cache(T) {
   }
 }
 
+/*
+  ModelDispatcher is a proxy for chaining model actions
+    TODO: this needs to have a chained resolver in it so we can actually
+    y'know.. chain it?
+*/
+class ModelDispatcher(T) {
+  T obj;
+  Duration delay;
+
+  this(T obj, Duration delay) {
+    this.obj = obj;
+    this.delay = delay;
+  }
+
+  auto opDispatch(string func, Args...)(Args args) {
+    runTask({
+      sleep(delay);
+      this.obj.call!(func)(args);
+    });
+  }
+}
+
 class IModel {
   Client  client;
 
@@ -62,6 +88,14 @@ class IModel {
 mixin template Model() {
   this(Client client, ref JSON obj) {
     super(client, obj);
+  }
+
+  auto after(Duration delay) {
+    return new ModelDispatcher!(typeof(this))(this, delay);
+  }
+
+  void call(string blah, T...)(T args) {
+    __traits(getMember, this, blah)(args);
   }
 }
 
