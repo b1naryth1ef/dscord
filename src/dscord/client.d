@@ -4,6 +4,8 @@ import std.stdio;
 
 public import std.experimental.logger;
 
+import std.algorithm.iteration;
+
 import dscord.state,
        dscord.api.client,
        dscord.gateway.client,
@@ -43,5 +45,13 @@ class Client {
 
   @property User me() {
     return this.state.me;
+  }
+
+  void deleteMessages(Snowflake channelID, Snowflake[] messages) {
+    if (messages.length <= 2) {
+      messages.each!(x => this.api.deleteMessage(channelID, x));
+    } else {
+      this.api.bulkDeleteMessages(channelID, messages);
+    }
   }
 }

@@ -65,34 +65,70 @@ class APIClient {
     return res;
   }
 
+  /* -- USERS -- */
   User me() {
-    auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me"));
-    res.ok();
-    auto json = res.fastJSON();
+    auto json = this.requestJSON(HTTPMethod.GET, U("users")("@me")).ok().fastJSON;
+    return new User(this.client, json);
+  }
+
+  User user(Snowflake id) {
+    auto json = this.requestJSON(HTTPMethod.GET, U("users")(id)).ok().fastJSON;
+    return new User(this.client, json);
+  }
+
+  User meSettings(string username, string avatar) {
+    auto json = this.requestJSON(HTTPMethod.PATCH, U("users")("@me")).ok().fastJSON;
     return new User(this.client, json);
   }
 
   Guild[] meGuilds() {
-    auto res = this.requestJSON(HTTPMethod.GET, U("users")("@me")("guilds"));
-    res.ok();
-    auto json = res.fastJSON();
+    auto json = this.requestJSON(HTTPMethod.GET, U("users")("@me")("guilds")).ok().fastJSON;
     return loadManyArray!Guild(this.client, json);
   }
 
-  User user(Snowflake id) {
-    auto res = this.requestJSON(HTTPMethod.GET, U("users")(id));
-    res.ok();
-    auto json = res.fastJSON();
-    return new User(this.client, json);
+  void meGuildLeave(Snowflake id) {
+    this.requestJSON(HTTPMethod.DELETE, U("users")("@me")("guilds")(id)).ok();
   }
 
+  Channel[] meDMChannels() {
+    auto json = this.requestJSON(HTTPMethod.GET, U("users")("@me")("channels")).ok().fastJSON;
+    return loadManyArray!Channel(this.client, json);
+  }
+
+  Channel meDMCreate(Snowflake recipientID) {
+    VibeJSON payload = VibeJSON.emptyObject;
+    payload["recipient_id"] = VibeJSON(recipientID);
+    auto json = this.requestJSON(HTTPMethod.POST,
+        U("users")("@me")("channels"), payload).ok().fastJSON;
+    return new Channel(this.client, json);
+  }
+
+  /* -- GUILDS -- */
   Guild guild(Snowflake id) {
-    auto res = this.requestJSON(HTTPMethod.GET, U("guilds")(id));
-    res.ok();
-    auto json = res.fastJSON();
+    auto json = this.requestJSON(HTTPMethod.GET, U("guilds")(id)).ok().fastJSON;
     return new Guild(this.client, json);
   }
 
+  void guildDelete(Snowflake id) {
+    this.requestJSON(HTTPMethod.DELETE, U("guilds")(id)).ok();
+  }
+
+  Channel[] guildChannels(Snowflake id) {
+    auto json = this.requestJSON(HTTPMethod.GET, U("guilds")(id)("channels")).ok().fastJSON;
+    return loadManyArray!Channel(this.client, json);
+  }
+
+  /*
+  Channel guildChannelCreate(Snowflake id, string name, string type, int bitrate = -1, int userLimit = -1) {
+    VibeJSON payload = VibeJSON.emptyObject;
+    payload["name"] = VibeJSON(id);
+    payload["type"] = VibeJSON(type);
+    if (bitrate > -1) payload["bitrate"] = VibeJSON(bitrate);
+    if (userLimit > -1) payload["user_limit"] = VibeJSON(userLimit);
+  }
+  */
+
+  /* -- CHANNELS -- */
   Message sendMessage(Snowflake chan, string content, string nonce, bool tts) {
     VibeJSON payload = VibeJSON.emptyObject;
     payload["content"] = VibeJSON(content);
@@ -100,10 +136,8 @@ class APIClient {
     payload["tts"] = VibeJSON(tts);
 
     // Send payload and return message object
-    auto res = this.requestJSON(HTTPMethod.POST,
-        U("channels")(chan)("messages").bucket("send-message"), payload);
-    res.ok();
-    auto json = res.fastJSON();
+    auto json = this.requestJSON(HTTPMethod.POST,
+        U("channels")(chan)("messages").bucket("send-message"), payload).ok().fastJSON;
     return new Message(this.client, json);
   }
 
@@ -111,33 +145,26 @@ class APIClient {
     VibeJSON payload = VibeJSON.emptyObject;
     payload["content"] = content;
 
-    auto res = this.requestJSON(HTTPMethod.PATCH,
-        U("channels")(chan)("messages")(msg).bucket("edit-message"), payload);
-    res.ok();
-
-    auto json = res.fastJSON();
+    auto json = this.requestJSON(HTTPMethod.PATCH,
+        U("channels")(chan)("messages")(msg).bucket("edit-message"), payload).ok().fastJSON;
     return new Message(this.client, json);
   }
 
   void deleteMessage(Snowflake chan, Snowflake msg) {
-    auto res = this.requestJSON(HTTPMethod.DELETE,
-        U("channels")(chan)("messages")(msg).bucket("del-message"));
-    res.ok();
+    this.requestJSON(HTTPMethod.DELETE,
+        U("channels")(chan)("messages")(msg).bucket("del-message")).ok().fastJSON;
   }
 
   void bulkDeleteMessages(Snowflake chan, Snowflake[] msgs) {
     VibeJSON payload = VibeJSON.emptyObject;
-    payload["messages"] = VibeJSON(array(map!(a => VibeJSON(a))(msgs)));
+    payload["messages"] = VibeJSON(array(map!((m) => VibeJSON(m))(msgs)));
 
-    auto res = this.requestJSON(HTTPMethod.POST,
+    this.requestJSON(HTTPMethod.POST,
         U("channels")(chan)("messages")("bulk_delete").bucket("bulk-del-messages"),
-        payload);
-    res.ok();
+        payload).ok();
   }
 
   string gateway() {
-    auto res = this.requestJSON(HTTPMethod.GET, U("gateway?v=4"));
-    res.ok();
-    return res.vibeJSON["url"].to!string;
+    return this.requestJSON(HTTPMethod.GET, U("gateway?v=4")).ok().vibeJSON["url"].to!string;
   }
 }

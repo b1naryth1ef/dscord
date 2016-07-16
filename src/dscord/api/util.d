@@ -57,9 +57,9 @@ class APIResponse {
     this.res.disconnect();
   }
 
-  void ok() {
+  APIResponse ok() {
     if (100 < this.statusCode && this.statusCode < 400) {
-      return;
+      return this;
     }
 
     throw new APIError(this.statusCode, this.content);

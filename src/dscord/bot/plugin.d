@@ -5,7 +5,8 @@ import std.path;
 import std.experimental.logger,
        vibe.d : runTask;
 
-import dscord.bot.command,
+import dscord.client,
+       dscord.bot.command,
        dscord.bot.listener,
        dscord.bot.bot,
        dscord.util.storage;
@@ -103,6 +104,10 @@ class Plugin {
 
   @property PluginOptions options() {
     return this.state.options;
+  }
+
+  @property Client client() {
+    return this.bot.client;
   }
 
   string name() {
