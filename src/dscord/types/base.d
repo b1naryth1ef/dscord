@@ -10,7 +10,9 @@ import std.conv,
 import dscord.client;
 
 import vibe.core.core : runTask, sleep;
+import vibe.core.sync;
 
+// TODO: the fuck?
 public import dscord.util.json;
 public import std.datetime;
 
@@ -41,24 +43,53 @@ class Cache(T) {
 }
 
 /*
-  ModelDispatcher is a proxy for chaining model actions
-    TODO: this needs to have a chained resolver in it so we can actually
-    y'know.. chain it?
+  AsyncChainer is a utility for exposing methods that can help
+  chain actions with various delays/resolving patterns.
 */
-class ModelDispatcher(T) {
-  T obj;
-  Duration delay;
-
-  this(T obj, Duration delay) {
-    this.obj = obj;
-    this.delay = delay;
+class AsyncChainer(T) {
+  private {
+    T obj;
+    ManualEvent resolveEvent;
   }
 
-  auto opDispatch(string func, Args...)(Args args) {
+  // Base constructor just needs to know whether this requires
+  //  resolving, or is a pure (no-wait) member of the chain.
+  this(T obj, bool hasResolver = false) {
+    this.obj = obj;
+
+    if (hasResolver) {
+      this.resolveEvent = createManualEvent();
+    }
+  }
+
+  // Delayed constructor will wait for delay period of time
+  //  before resolving the next member in the chain.
+  this(T obj, Duration delay) {
+    this(obj, true);
+
     runTask({
       sleep(delay);
-      this.obj.call!(func)(args);
+      this.resolveEvent.emit();
     });
+  }
+
+  // opDispatch override provides the mechanisim for delaying the chain
+  //  asynchornously.
+  AsyncChainer!T opDispatch(string func, Args...)(Args args) {
+    if (this.resolveEvent) {
+      auto next = new AsyncChainer!T(this.obj, true);
+
+      runTask({
+        this.resolveEvent.wait();
+        this.obj.call!(func)(args);
+        next.resolveEvent.emit();
+      });
+
+      return next;
+    } else {
+      this.obj.call!(func)(args);
+      return new AsyncChainer!T(this.obj);
+    }
   }
 }
 
@@ -91,7 +122,7 @@ mixin template Model() {
   }
 
   auto after(Duration delay) {
-    return new ModelDispatcher!(typeof(this))(this, delay);
+    return new AsyncChainer!(typeof(this))(this, delay);
   }
 
   void call(string blah, T...)(T args) {
