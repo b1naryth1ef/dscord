@@ -125,6 +125,10 @@ mixin template Model() {
     return new AsyncChainer!(typeof(this))(this, delay);
   }
 
+  auto chain() {
+    return new AsyncChainer!(typeof(this))(this);
+  }
+
   void call(string blah, T...)(T args) {
     __traits(getMember, this, blah)(args);
   }
