@@ -4,7 +4,9 @@ import std.stdio,
        std.variant,
        std.conv,
        std.format,
-       std.regex;
+       std.regex,
+       std.array,
+       std.algorithm.iteration;
 
 import dscord.client,
        dscord.types.all;
@@ -204,5 +206,9 @@ class Message : IModel {
   @property Guild guild() {
     if (this.channel && this.channel.guild) return this.channel.guild;
     return null;
+  }
+
+  @property Snowflake[] customEmojiByID() {
+    return matchAll(this.content, regex("<:\\w+:(\\d+)>")).map!((m) => m.back.to!Snowflake).array;
   }
 }

@@ -95,6 +95,16 @@ class Emoji : IModel {
       { this.roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
     );
   }
+
+  bool matches(string usage) {
+    if (this.name == ":" ~ usage ~ ":") {
+      return true;
+    } else if (this.requireColons) {
+      return false;
+    } else {
+      return this.name == usage;
+    }
+  }
 }
 
 class GuildMember : IModel {
