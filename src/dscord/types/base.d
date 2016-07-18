@@ -88,7 +88,7 @@ class AsyncChainer(T) {
       return next;
     } else {
       this.obj.call!(func)(args);
-      return new AsyncChainer!T(this.obj);
+      return this;
     }
   }
 }
