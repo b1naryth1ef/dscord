@@ -32,7 +32,7 @@ struct BotConfig {
   bool    cmdRequireMention = true;
 
   // Used to grab the level for a user
-  uint delegate(User)  lvlGetter;
+  int delegate(User)  lvlGetter;
 
   // Props and stuff
   @property lvlEnabled() {

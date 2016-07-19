@@ -240,4 +240,12 @@ class Guild : IModel {
   Snowflake getID() {
     return this.id;
   }
+
+  void kick(GuildMember member) {
+    this.kick(member.user);
+  }
+
+  void kick(User user) {
+    this.client.api.guildRemoveMember(this.id, user.id);
+  }
 }

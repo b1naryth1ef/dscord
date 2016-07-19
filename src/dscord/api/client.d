@@ -118,6 +118,10 @@ class APIClient {
     return loadManyArray!Channel(this.client, json);
   }
 
+  void guildRemoveMember(Snowflake id, Snowflake user) {
+    this.requestJSON(HTTPMethod.DELETE, U("guilds")(id)("members")(user)).ok();
+  }
+
   /*
   Channel guildChannelCreate(Snowflake id, string name, string type, int bitrate = -1, int userLimit = -1) {
     VibeJSON payload = VibeJSON.emptyObject;
