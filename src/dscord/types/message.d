@@ -154,7 +154,7 @@ class Message : IModel {
     }, (msg, role) { return "@" ~ role.name; });
   }
 
-  /*
+  /**
     Returns the message contents, replacing all mentions with the result from the
     specified delegate.
   */
