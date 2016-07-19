@@ -175,17 +175,24 @@ class Message : IModel {
     return result;
   }
 
-  Message reply(string content, string nonce=null, bool tts=false, bool mention=false) {
-    // TODO: support mentioning
+  // Sends a new message to the same channel as this message object
+  Message reply(string content, string nonce=null, bool tts=false) {
     return this.client.api.sendMessage(this.channel.id, content, nonce, tts);
   }
 
+  // Formats and sends a new message to the same channel as this message object
+  Message replyf(T...)(string content, T args) {
+    return this.client.api.sendMessage(this.channel.id, format(content, args), null, false);
+  }
+
+  // Edits the current messages content
   Message edit(string content) {
     // We can only edit messages we sent
     assert(this.client.me.id == this.author.id);
     return this.client.api.editMessage(this.channel.id, this.id, content);
   }
 
+  // Deletes the current message
   void del() {
     // TODO: permissions check
     return this.client.api.deleteMessage(this.channel.id, this.id);
@@ -208,6 +215,7 @@ class Message : IModel {
     return null;
   }
 
+  // Returns an array of emoji IDs for all custom emoji used in this message
   @property Snowflake[] customEmojiByID() {
     return matchAll(this.content, regex("<:\\w+:(\\d+)>")).map!((m) => m.back.to!Snowflake).array;
   }

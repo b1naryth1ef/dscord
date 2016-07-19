@@ -16,7 +16,7 @@ import vibe.core.core,
        vibe.inet.url,
        vibe.http.websockets;
 
-import dcad.types : DCAFile;
+// import dcad.types : DCAFile;
 
 import dscord.client,
        dscord.gateway.packets,
@@ -99,6 +99,7 @@ class UDPVoiceClient {
     return true;
   }
 
+  /+
   void playDCA(DCAFile obj) {
     foreach (frame; obj.frames) {
       RTPHeader header;
@@ -112,6 +113,7 @@ class UDPVoiceClient {
       sleep((1.seconds / 1000) * 30);
     }
   }
+  +/
 }
 
 class VoiceClient {
@@ -196,9 +198,11 @@ class VoiceClient {
     this.waitForConnected.notifyAll();
   }
 
+  /+
   void playDCAFile(DCAFile f) {
     this.udp.playDCA(f);
   }
+  +/
 
   void heartbeat() {
     while (this.connected) {

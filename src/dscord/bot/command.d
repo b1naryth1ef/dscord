@@ -15,6 +15,25 @@ struct Command {
   uint    level = 0;
 }
 
+alias CommandObjectUpdate = void delegate(CommandObject);
+
+CommandObjectUpdate CommandDescription(string desc) {
+  return (c) {c.description = desc; };
+}
+
+CommandObjectUpdate CommandGroup(string group) {
+  return (c) {c.group = group;};
+}
+
+CommandObjectUpdate CommandRegex(bool rgx) {
+  return (c) {c.setRegex(rgx);};
+}
+
+CommandObjectUpdate CommandLevel(uint level) {
+  return (c) {c.level = level;};
+}
+
+
 // Command handler represents a function called when a command is triggered
 alias CommandHandler = void delegate(CommandEvent);
 
@@ -31,7 +50,9 @@ class CommandObject {
   CommandHandler  func;
 
   // Compiled regex match
-  Regex!char  rgx;
+  private {
+    Regex!char  rgx;
+  }
 
   this(Command cmd, CommandHandler func) {
     this.func = func;
@@ -39,9 +60,12 @@ class CommandObject {
     this.description = cmd.description;
     this.group = (cmd.group != "" ? cmd.group ~ " " : "");
     this.level = cmd.level;
+    this.setRegex(cmd.regex);
+  }
 
-    if (cmd.regex) {
-      this.rgx = regex(cmd.trigger);
+  void setRegex(bool rgx) {
+    if (rgx) {
+      this.rgx = regex(this.trigger);
     } else {
       this.rgx = regex("^" ~ this.group ~ this.trigger);
     }
@@ -54,6 +78,7 @@ class CommandObject {
 
 // Command event is a special event encapsulating MessageCreate's that has util methods for bots
 class CommandEvent {
+  CommandObject  cmd;
   MessageCreate  event;
   Message        msg;
 
@@ -82,16 +107,21 @@ mixin template Commandable() {
   CommandObject[string]  commands;
 
   void loadCommands(T)() {
+    CommandObject obj;
     foreach (mem; __traits(allMembers, T)) {
       foreach(attr; __traits(getAttributes, __traits(getMember, T, mem))) {
         static if (is(typeof(attr) == Command)) {
-          this.registerCommand(new CommandObject(attr, mixin("&(cast(T)this)." ~ mem)));
+          obj = this.registerCommand(new CommandObject(attr, mixin("&(cast(T)this)." ~ mem)));
+        }
+        static if (is(typeof(attr) == CommandObjectUpdate)) {
+          attr(obj);
         }
       }
     }
   }
 
-  void registerCommand(CommandObject obj) {
+  CommandObject registerCommand(CommandObject obj) {
     this.commands[obj.trigger] = obj;
+    return obj;
   }
 }

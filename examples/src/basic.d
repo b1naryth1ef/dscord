@@ -13,7 +13,7 @@ import std.experimental.logger;
 
 import vibe.core.core;
 import vibe.http.client;
-import dcad.types : DCAFile;
+// import dcad.types : DCAFile;
 
 
 import dscord.core;
@@ -27,8 +27,9 @@ class BasicPlugin : Plugin {
   }
 
   @Command("test")
+  @CommandDescription("HI")
   void onTestCommand(CommandEvent event) {
-    event.msg.reply("IT WORKS!");
+    event.msg.reply(event.cmd.description);
   }
 
   @Command("whereami")

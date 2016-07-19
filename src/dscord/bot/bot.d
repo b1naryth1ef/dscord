@@ -57,9 +57,7 @@ class Bot {
     }
   }
 
-  /*
-    Loads a plugin into the bot
-  */
+  // Loads a plugin into the bot
   void loadPlugin(Plugin p, PluginState state = null) {
     p.load(this, state);
     this.plugins[p.name] = p;
@@ -71,53 +69,52 @@ class Bot {
     }
   }
 
-// Dynamic library plugin loading (linux only currently)
-version (linux) {
+  // Dynamic library plugin loading (linux only currently)
+  version (linux) {
+    Plugin dynamicLoadPlugin(string path, PluginState state) {
+      // Attempt to load the dynamic library from a given path
+      void* lh = dlopen(toStringz(path), RTLD_NOW);
+      if (!lh) {
+        throw new BaseError("Failed to dynamically load plugin: %s", fromStringz(dlerror()));
+      }
 
-  Plugin dynamicLoadPlugin(string path, PluginState state) {
-    // Attempt to load the dynamic library from a given path
-    void* lh = dlopen(toStringz(path), RTLD_NOW);
-    if (!lh) {
-      throw new BaseError("Failed to dynamically load plugin: %s", fromStringz(dlerror()));
+      // Try to grab the create function (which should return a new plugin instance)
+      Plugin function() fn = cast(Plugin function())dlsym(lh, "create");
+      char* error = dlerror();
+      if (error) {
+        throw new BaseError("Failed to dynamically load plugin create function: %s", fromStringz(error));
+      }
+
+      // Finally create the plugin instance and register it.
+      Plugin p = fn();
+      this.loadPlugin(p, state);
+
+      // Track the DLL handle so we can close it when unloading
+      p.dynamicLibrary = lh;
+      p.dynamicLibraryPath = path;
+      return p;
     }
 
-    // Try to grab the create function (which should return a new plugin instance)
-    Plugin function() fn = cast(Plugin function())dlsym(lh, "create");
-    char* error = dlerror();
-    if (error) {
-      throw new BaseError("Failed to dynamically load plugin create function: %s", fromStringz(error));
+    Plugin dynamicReloadPlugin(Plugin p) {
+      string path = p.dynamicLibraryPath;
+      PluginState state = p.state;
+      this.unloadPlugin(p);
+      return this.dynamicLoadPlugin(path, state);
     }
 
-    // Finally create the plugin instance and register it.
-    Plugin p = fn();
-    this.loadPlugin(p, state);
+    // not linux
+    } else {
 
-    // Track the DLL handle so we can close it when unloading
-    p.dynamicLibrary = lh;
-    p.dynamicLibraryPath = path;
-    return p;
+    Plugin dynamicLoadPlugin(string path, PluginState state) {
+      throw new BaseError("Dynamic plugins are only supported on linux");
+    }
+
+    Plugin dynamicReloadPlugin(Plugin p) {
+      throw new BaseError("Dynamic plugins are only supported on linux");
+    }
   }
 
-  Plugin dynamicReloadPlugin(Plugin p) {
-    string path = p.dynamicLibraryPath;
-    PluginState state = p.state;
-    this.unloadPlugin(p);
-    return this.dynamicLoadPlugin(path, state);
-  }
-
-  // not linux
-  } else {
-
-  Plugin dynamicLoadPlugin(string path, PluginState state) {
-    throw new BaseError("Dynamic plugins are only supported on linux");
-  }
-
-  Plugin dynamicReloadPlugin(Plugin p) {
-    throw new BaseError("Dynamic plugins are only supported on linux");
-  }
-
-}
-
+  // Unload a plugin from the bot by instance
   void unloadPlugin(Plugin p) {
     p.unload(this);
     this.plugins.remove(p.name);
@@ -136,10 +133,12 @@ version (linux) {
     }
   }
 
+  // Unload a plugin from the bot by name
   void unloadPlugin(string name) {
     this.unloadPlugin(this.plugins[name]);
   }
 
+  // Check whether the bot instance supports a feature
   bool feature(BotFeatures[] features...) {
     return (this.config.features & reduce!((a, b) => a & b)(features)) > 0;
   }
@@ -169,14 +168,13 @@ version (linux) {
 
     // Iterate over all plugins and check for command matches
     Captures!string capture;
-    CommandObject obj;
     foreach (ref plugin; this.plugins.values) {
       foreach (ref command; plugin.commands) {
         if (!command.enabled) continue;
 
         auto c = command.match(contents);
         if (c.length) {
-          obj = command;
+          event.cmd = command;
           capture = c;
           break;
         }
@@ -198,12 +196,12 @@ version (linux) {
 
     // Check permissions
     if (this.config.lvlEnabled) {
-      if (this.config.lvlGetter(event.msg.author) < obj.level) {
+      if (this.config.lvlGetter(event.msg.author) < event.cmd.level) {
         return;
       }
     }
 
-    obj.func(event);
+    event.cmd.func(event);
   }
 
   void onMessageCreate(MessageCreate event) {

@@ -12,34 +12,15 @@ import dscord.client;
 import vibe.core.core : runTask, sleep;
 import vibe.core.sync;
 
-// TODO: the fuck?
+// Commonly used public imports
 public import dscord.util.json;
 public import std.datetime;
 
+// TODO: Eventually this should be a type
 alias Snowflake = ulong;
 
 string toString(Snowflake s) {
   return to!string(s);
-}
-
-class Cache(T) {
-  T data;
-
-  T get() {
-    return data;
-  }
-
-  T all(T delegate() f) {
-    if (!this.data) {
-      this.data = f();
-    }
-    return this.data;
-  }
-
-  T refresh(T delegate() f) {
-    this.data = f();
-    return this.data;
-  }
 }
 
 /*
