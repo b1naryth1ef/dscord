@@ -22,7 +22,7 @@ CommandObjectUpdate CommandDescription(string desc) {
 }
 
 CommandObjectUpdate CommandGroup(string group) {
-  return (c) {c.group = group;};
+  return (c) {c.setGroup(group);};
 }
 
 CommandObjectUpdate CommandRegex(bool rgx) {
@@ -41,7 +41,6 @@ alias CommandHandler = void delegate(CommandEvent);
 class CommandObject {
   string  trigger;
   string  description;
-  string  group;
   uint    level;
 
   // Hidden stuff
@@ -52,22 +51,36 @@ class CommandObject {
   // Compiled regex match
   private {
     Regex!char  rgx;
+    string      group;
+    bool        useRegex;
   }
 
   this(Command cmd, CommandHandler func) {
     this.func = func;
     this.trigger = cmd.trigger;
     this.description = cmd.description;
-    this.group = (cmd.group != "" ? cmd.group ~ " " : "");
     this.level = cmd.level;
+    this.setGroup(cmd.group);
     this.setRegex(cmd.regex);
   }
 
+  void setGroup(string group) {
+    this.group = group;
+    this.rebuild();
+  }
+
   void setRegex(bool rgx) {
-    if (rgx) {
+    this.useRegex = rgx;
+    this.rebuild();
+  }
+
+  void rebuild() {
+    if (this.useRegex) {
       this.rgx = regex(this.trigger);
     } else {
-      this.rgx = regex("^" ~ this.group ~ this.trigger);
+      // Append space to grouping
+      group = (this.group != "" ? this.group ~ " " : "");
+      this.rgx = regex("^" ~ group ~ this.trigger);
     }
   }
 
