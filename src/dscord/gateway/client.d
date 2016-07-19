@@ -27,7 +27,7 @@ class GatewayClient {
   Client     client;
   WebSocket  sock;
 
-  string  session_id;
+  string  sessionID;
   uint    seq;
   uint    hb_interval;
   bool    connected;
@@ -75,7 +75,7 @@ class GatewayClient {
   void handleReadyEvent(Ready  r) {
     this.log.infof("Recieved READY payload, starting heartbeater");
     this.hb_interval = r.heartbeatInterval;
-    this.session_id = r.sessionID;
+    this.sessionID = r.sessionID;
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
     this.reconnects = 0;
   }
@@ -232,10 +232,12 @@ class GatewayClient {
     string data;
 
     // If we already have a sequence number, attempt to resume
-    if (this.session_id && this.seq) {
-      this.send(new ResumePacket(this.client.token, this.session_id, this.seq));
+    if (this.sessionID && this.seq) {
+      this.log.infof("Sending Resume Payload (we where %s at %s)", this.sessionID, this.seq);
+      this.send(new ResumePacket(this.client.token, this.sessionID, this.seq));
     } else {
       // On startup, send the identify payload
+      this.log.info("Sending Identify Payload");
       this.send(new IdentifyPacket(this.client.token));
     }
 
@@ -275,7 +277,7 @@ class GatewayClient {
     }
 
     if (this.reconnects > 1) {
-      this.session_id = null;
+      this.sessionID = null;
       this.seq = 0;
       this.log.warning("Waiting 5 seconds before reconnecting...");
       sleep(5.seconds);
