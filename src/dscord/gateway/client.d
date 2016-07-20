@@ -17,33 +17,50 @@ import dscord.client,
        dscord.util.emitter,
        dscord.util.json;
 
+/** Maximum reconnects the GatewayClient will try before resetting session state */
 const ubyte MAX_RECONNECTS = 6;
 
-alias GatewayPacketHandler = void delegate (BasePacket);
-
-
+/**
+  GatewayClient is the base abstraction for connecting to, and interacting with
+  the Discord Websocket (gateway) API.
+*/
 class GatewayClient {
-  Logger     log;
+  /** Client instance for this gateway connection */
   Client     client;
+
+  /** WebSocket connection for this gateway connection */
   WebSocket  sock;
 
+  /** Gateway SessionID, used for resuming. */
   string  sessionID;
+
+  /** Gateway sequence number, used for resuming */
   uint    seq;
+
+  /** Heartbeat interval */
   uint    hb_interval;
+
+  /** Whether this GatewayClient is currently connected */
   bool    connected;
+
+  /** Number of reconnects attempted */
   ubyte   reconnects;
+
+  /** The heartbeater task */
   Task    heartbeater;
 
+  /** Event emitter for Gateway Packets */
   Emitter  eventEmitter;
 
   private {
+    /** Cached gateway URL from the API */
     string  cachedGatewayURL;
   }
 
   this(Client client) {
     this.client = client;
-    this.log = this.client.log;
 
+    // Create the event emitter and listen to some required gateway events.
     this.eventEmitter = new Emitter;
     this.eventEmitter.listen!Ready(toDelegate(&this.handleReadyEvent));
     this.eventEmitter.listen!Resumed(toDelegate(&this.handleResumedEvent));
@@ -52,6 +69,16 @@ class GatewayClient {
     client.events = this.eventEmitter;
   }
 
+  /**
+    Logger for this GatewayClient.
+  */
+  @property Logger log() {
+    return this.client.log;
+  }
+
+  /**
+    Starts a connection to the gateway. Also called for resuming/reconnecting.
+  */
   void start() {
     if (this.sock && this.sock.connected) this.sock.close();
 
@@ -66,13 +93,16 @@ class GatewayClient {
     runTask(toDelegate(&this.run));
   }
 
+  /**
+    Send a gateway payload.
+  */
   void send(Serializable p) {
     JSONValue data = p.serialize();
     this.log.tracef("gateway-send: %s", data.toString);
     this.sock.send(data.toString);
   }
 
-  void handleReadyEvent(Ready  r) {
+  private void handleReadyEvent(Ready  r) {
     this.log.infof("Recieved READY payload, starting heartbeater");
     this.hb_interval = r.heartbeatInterval;
     this.sessionID = r.sessionID;
@@ -80,18 +110,18 @@ class GatewayClient {
     this.reconnects = 0;
   }
 
-  void handleResumedEvent(Resumed r) {
+  private void handleResumedEvent(Resumed r) {
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
   }
 
-  void emitDispatchEvent(T)(ref JSON obj) {
+  private void emitDispatchEvent(T)(ref JSON obj) {
     T v = new T(this.client, obj);
     this.eventEmitter.emit!T(v);
     v.resolveDeferreds();
     v.destroy();
   }
 
-  void handleDispatchPacket(uint seq, string type, ref JSON obj) {
+  private void handleDispatchPacket(uint seq, string type, ref JSON obj) {
     // Update sequence number if it's larger than what we have
     if (seq > this.seq) {
       this.seq = seq;
@@ -185,7 +215,7 @@ class GatewayClient {
     }
   }
 
-  void parse(string rawData) {
+  private void parse(string rawData) {
     auto json = parseTrustedJSON(rawData);
 
     uint seq;
@@ -221,13 +251,16 @@ class GatewayClient {
     }
   }
 
-  void heartbeat() {
+  private void heartbeat() {
     while (this.connected) {
       this.send(new HeartbeatPacket(this.seq));
       sleep(this.hb_interval.msecs);
     }
   }
 
+  /**
+    Runs the GatewayClient until completion.
+  */
   void run() {
     string data;
 

@@ -1,3 +1,7 @@
+/**
+  Utilties for building user-controlled commands with the dscord bot interface
+*/
+
 module dscord.bot.command;
 
 import std.regex,
@@ -158,10 +162,6 @@ class CommandEvent {
     return this.args[index];
   }
 }
-
-/*
-  The CommandHandler class is a base-class virtual implementation of UDA-constructed command handlers.
-*/
 
 /**
   The Commandable template is a virtual implementation which handles the command
