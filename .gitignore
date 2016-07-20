@@ -2,3 +2,4 @@
 *.a
 docs.json
 docs/
+__test__library__
