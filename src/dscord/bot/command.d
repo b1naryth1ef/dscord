@@ -6,7 +6,9 @@ import std.regex,
 import dscord.gateway.events,
        dscord.types.all;
 
-// Only used for the UDA constructor
+/**
+  A UDA that can be used to flag a function as a command handler.
+*/
 struct Command {
   string  trigger;
   string  description = "";
@@ -15,42 +17,69 @@ struct Command {
   uint    level = 0;
 }
 
+/**
+  A delegate type which can be used in UDA's to adjust a CommandObjects settings
+  or behavior.
+*/
 alias CommandObjectUpdate = void delegate(CommandObject);
 
+/**
+  Sets a commands description.
+*/
 CommandObjectUpdate CommandDescription(string desc) {
   return (c) {c.description = desc; };
 }
 
+/**
+  Sets a commands group.
+*/
 CommandObjectUpdate CommandGroup(string group) {
   return (c) {c.setGroup(group);};
 }
 
+/**
+  Sets whether a command uses regex matching
+*/
 CommandObjectUpdate CommandRegex(bool rgx) {
   return (c) {c.setRegex(rgx);};
 }
 
+/**
+  Sets a commands permission level.
+*/
 CommandObjectUpdate CommandLevel(uint level) {
   return (c) {c.level = level;};
 }
 
 
-// Command handler represents a function called when a command is triggered
+/**
+  A delegate type which represents a function used for handling commands.
+*/
 alias CommandHandler = void delegate(CommandEvent);
 
-// CommandObject is the in-memory representation of commands (built from the Command struct)
+/**
+  A CommandObject represents the configuration/state for  a single command.
+*/
 class CommandObject {
+  /** The command "trigger" or name */
   string  trigger;
+
+  /** The description / help text for the command */
   string  description;
+
+  /** The permissions level required for the command */
   uint    level;
 
-  // Hidden stuff
+  /** Whether this command is enabled */
   bool  enabled = true;
 
+  /** The function handler for this command */
   CommandHandler  func;
 
-  // Compiled regex match
   private {
+    // Compiled matching regex
     Regex!char  rgx;
+
     string      group;
     bool        useRegex;
   }
@@ -64,16 +93,25 @@ class CommandObject {
     this.setRegex(cmd.regex);
   }
 
+  /**
+    Sets this commands group.
+  */
   void setGroup(string group) {
     this.group = group;
     this.rebuild();
   }
 
+  /**
+    Sets whether this command uses regex matching.
+  */
   void setRegex(bool rgx) {
     this.useRegex = rgx;
     this.rebuild();
   }
 
+  /**
+    Rebuilds the locally cached regex.
+  */
   void rebuild() {
     if (this.useRegex) {
       this.rgx = regex(this.trigger);
@@ -84,19 +122,27 @@ class CommandObject {
     }
   }
 
+  /**
+    Returns a Regex capture group matched against the commands regex.
+  */
   Captures!string match(string msg) {
     return msg.matchFirst(this.rgx);
   }
 }
 
-// Command event is a special event encapsulating MessageCreate's that has util methods for bots
+/**
+  Special event encapsulating MessageCreate's, containing specific Bot utilties
+  and functionality.
+*/
 class CommandEvent {
   CommandObject  cmd;
   MessageCreate  event;
   Message        msg;
 
-  // Contents
+  /** The message contents */
   string    contents;
+
+  /** Array of arguments */
   string[]  args;
 
   this(MessageCreate event) {
@@ -116,6 +162,11 @@ class CommandEvent {
 /*
   The CommandHandler class is a base-class virtual implementation of UDA-constructed command handlers.
 */
+
+/**
+  The Commandable template is a virtual implementation which handles the command
+  UDAs, storing them within a local "commands" mapping.
+*/
 mixin template Commandable() {
   CommandObject[string]  commands;
 
@@ -133,6 +184,9 @@ mixin template Commandable() {
     }
   }
 
+  /**
+    Registers a command from a CommandObject
+  */
   CommandObject registerCommand(CommandObject obj) {
     this.commands[obj.trigger] = obj;
     return obj;

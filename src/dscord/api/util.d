@@ -1,37 +1,73 @@
 module dscord.api.util;
 
+import std.uri,
+       std.array,
+       std.format,
+       std.algorithm.iteration;
+
 import vibe.http.client,
        vibe.stream.operations;
 
 import dscord.types.all,
        dscord.util.errors;
 
+/**
+  An error returned from the `APIClient` based on HTTP response code.
+*/
 class APIError : BaseError {
   this(int code, string msg) {
     super("[%s] %s", code, msg);
   }
 }
 
-// Simple URL constructor to help building routes
+/**
+  Simple URL constructor to help building routes
+*/
 struct U {
-  string  _bucket;
-  string  value;
+  private {
+    string          _bucket;
+    string[]        paths;
+    string[string]  params;
+  }
 
-  this(string url) {
-    if (url[0] != '/') {
-      url = "/" ~ url;
+  @property string value() {
+    string url = this.paths.join("/");
+
+    if (this.params.length) {
+      string[] parts;
+      foreach (ref key, ref value; this.params) {
+        parts ~= format("%s=%s", key, encodeComponent(value));
+      }
+      url ~= "?" ~ parts.join("&");
     }
 
-    this.value = url;
+    return "/" ~ url;
+  }
+
+  this(string url) {
+    this.paths ~= url;
+  }
+
+  this(string paramKey, string paramValue) {
+    this.params[paramKey] = paramValue;
+  }
+
+  string getBucket() {
+    return this._bucket;
   }
 
   U opCall(string url) {
-    this.value ~= "/" ~ url;
+    this.paths ~= url;
     return this;
   }
 
   U opCall(Snowflake s) {
-    this.opCall(s.toString());
+    this.paths ~= s.toString();
+    return this;
+  }
+
+  U opCall(string paramKey, string paramValue) {
+    this.params[paramKey] = paramValue;
     return this;
   }
 
@@ -39,10 +75,20 @@ struct U {
     this._bucket = bucket;
     return this;
   }
+
+  U param(string name, string value) {
+    this.params[name] = value;
+    return this;
+  }
 }
 
-// Wrapper for HTTP API Responses
-// TODO: move this to another place
+unittest {
+  assert(U("this")("is")("a")("test")("key", "value").value == "/this/is/a/test/?key=value");
+}
+
+/**
+  Wrapper for HTTP REST Responses.
+*/
 class APIResponse {
   private {
     HTTPClientResponse res;
@@ -57,6 +103,9 @@ class APIResponse {
     this.res.disconnect();
   }
 
+  /**
+    Raises an APIError exception if the request failed.
+  */
   APIResponse ok() {
     if (100 < this.statusCode && this.statusCode < 400) {
       return this;

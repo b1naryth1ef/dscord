@@ -1,3 +1,7 @@
+/**
+  A simple but extendable Discord bot implementation.
+*/
+
 module dscord.bot.bot;
 
 import std.algorithm,
@@ -20,26 +24,44 @@ version (linux) {
   import core.sys.posix.dlfcn;
 }
 
+/**
+  Feature flags that can be used to toggle behavior of the Bot interface.
+*/
 enum BotFeatures {
+  /** This bot will parse/dispatch commands */
   COMMANDS = 1 << 1,
 }
 
+/**
+  Configuration that can be used to control the behavior of the Bot.
+*/
 struct BotConfig {
+  /** API Authentication Token */
   string  token;
+
+  /** Bitwise flags from `BotFeatures` */
   uint    features = BotFeatures.COMMANDS;
 
+  /** Command prefix (can be empty for none) */
   string  cmdPrefix = "!";
+
+  /** Whether the bot requires mentioning to respond */
   bool    cmdRequireMention = true;
 
-  // Used to grab the level for a user
+  /** Function which should be used to determine a given users level */
   int delegate(User)  lvlGetter;
 
-  // Props and stuff
-  @property lvlEnabled() {
+  /** Returns true if user levels are enabled (e.g. lvlGetter is set) */
+  @property bool lvlEnabled() {
     return this.lvlGetter != null;
   }
 }
 
+/**
+  The Bot class is an extensible, fully-featured base for building Bots with the
+  dscord library. It was meant to serve as a base class that can be extended in
+  seperate projects.
+*/
 class Bot {
   Client     client;
   BotConfig  config;
@@ -57,7 +79,9 @@ class Bot {
     }
   }
 
-  // Loads a plugin into the bot
+  /**
+    Loads a plugin into the bot, optionally restoring previous plugin state.
+  */
   void loadPlugin(Plugin p, PluginState state = null) {
     p.load(this, state);
     this.plugins[p.name] = p;
@@ -71,6 +95,10 @@ class Bot {
 
   // Dynamic library plugin loading (linux only currently)
   version (linux) {
+    /**
+      Loads a plugin from a dynamic library, optionally restoring previous plugin
+      state.
+    */
     Plugin dynamicLoadPlugin(string path, PluginState state) {
       // Attempt to load the dynamic library from a given path
       void* lh = dlopen(toStringz(path), RTLD_NOW);
@@ -95,6 +123,10 @@ class Bot {
       return p;
     }
 
+    /**
+      Reloads a plugin which was previously loaded as a dynamic library. This
+      function restores previous plugin state.
+    */
     Plugin dynamicReloadPlugin(Plugin p) {
       string path = p.dynamicLibraryPath;
       PluginState state = p.state;
@@ -114,7 +146,9 @@ class Bot {
     }
   }
 
-  // Unload a plugin from the bot by instance
+  /**
+    Unloads a plugin from the bot, unbinding all listeners and commands.
+  */
   void unloadPlugin(Plugin p) {
     p.unload(this);
     this.plugins.remove(p.name);
@@ -133,17 +167,22 @@ class Bot {
     }
   }
 
-  // Unload a plugin from the bot by name
+  /**
+    Unloads a plugin from the bot by name.
+  */
   void unloadPlugin(string name) {
     this.unloadPlugin(this.plugins[name]);
   }
 
-  // Check whether the bot instance supports a feature
+  /**
+    Returns true if the current bot instance/configuration supports all of the
+    passed BotFeature flags.
+  */
   bool feature(BotFeatures[] features...) {
     return (this.config.features & reduce!((a, b) => a & b)(features)) > 0;
   }
 
-  void tryHandleCommand(CommandEvent event) {
+  private void tryHandleCommand(CommandEvent event) {
     // If we require a mention, make sure we got it
     if (this.config.cmdRequireMention) {
       if (!event.msg.mentions.length) {
@@ -204,12 +243,15 @@ class Bot {
     event.cmd.func(event);
   }
 
-  void onMessageCreate(MessageCreate event) {
+  private void onMessageCreate(MessageCreate event) {
     if (this.feature(BotFeatures.COMMANDS)) {
       this.tryHandleCommand(new CommandEvent(event));
     }
   }
 
+  /**
+    Starts the bot.
+  */
   void run() {
     client.gw.start();
   }
