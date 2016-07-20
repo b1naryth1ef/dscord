@@ -4,23 +4,15 @@ dscord is a Discord client library written in D-lang thats focused on performanc
 ## Compiling
 To compile dscord, you need any modern D-lang compiler (I recommend the latest stable version of dmd).
 
-## Example
-```d
-import dscord.client;
+## Building Documentation
 
-// First, setup an API client with our bot auth token
-auto client = new Client("MY_BOT_AUTH_TOKEN");
+Building docs currently is a derp fest, due to some weird dependency issues. To do it:
 
-// Bind a state update, this will inform us when we've recieved all guilds
-client.state.onStartupComplete = {
-  writefln("Startup Complete");
-};
+1. Install scod from [here](https://github.com/b1naryth1ef/scod)
+2. Manually pin the version in dub to wherever you cloned scod e.g.:
 
-// Bind a gateway event, this will tell us when we've gotten (and processed) the ready payload
-client.gw.onEvent!Ready((Ready r) {
-  writeln("Ready Complete");
-});
-
-// Next, open up our gateway connection
-client.gw.start();
 ```
+{"version": "~master", "path": "../scod"}
+```
+
+3. Run `dub build -b ddox` and profit.
