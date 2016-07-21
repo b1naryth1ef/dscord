@@ -30,6 +30,7 @@ string toString(Snowflake s) {
 class AsyncChainer(T) {
   private {
     T obj;
+    AsyncChainer!T parent;
     ManualEvent resolveEvent;
   }
 
@@ -45,13 +46,23 @@ class AsyncChainer(T) {
 
   // Delayed constructor will wait for delay period of time
   //  before resolving the next member in the chain.
-  this(T obj, Duration delay) {
+  this(T obj, Duration delay, AsyncChainer!T parent = null) {
     this(obj, true);
 
+    this.parent = parent;
+
     runTask({
+      if (this.parent) {
+        this.parent.resolveEvent.wait();
+      }
+
       sleep(delay);
       this.resolveEvent.emit();
     });
+  }
+
+  AsyncChainer!T after(Duration delay) {
+    return new AsyncChainer!T(this.obj, delay, this);
   }
 
   // opDispatch override provides the mechanisim for delaying the chain
