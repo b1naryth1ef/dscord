@@ -171,6 +171,13 @@ class ModelMap(TKey, TValue) {
     return this.data[key];
   }
 
+  TValue get(TKey key, TValue def) {
+    if (this.has(key)) {
+      return this.get(key);
+    }
+    return def;
+  }
+
   TValue opCall(TKey key) {
     return this.data[key];
   }
