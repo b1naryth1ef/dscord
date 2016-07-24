@@ -12,8 +12,9 @@ import dscord.client,
        dscord.types.all,
        dscord.util.emitter;
 
-class StateStartupComplete {};
-
+/**
+  The State class is used to track and maintain client state.
+*/
 class State : Emitter {
   // Client
   Client         client;

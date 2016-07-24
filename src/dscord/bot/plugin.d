@@ -1,6 +1,7 @@
 module dscord.bot.plugin;
 
-import std.path;
+import std.path,
+       std.file;
 
 import std.experimental.logger,
        vibe.d : runTask;
@@ -96,6 +97,11 @@ class Plugin {
   void load(Bot bot, PluginState state = null) {
     this.bot = bot;
 
+    // Make sure our storage directory exists
+    if (!exists(this.storageDirectoryPath)) {
+      mkdir(this.storageDirectoryPath);
+    }
+
     // If we got state, assume this was a plugin reload and replace
     if (state) {
       this.state = state;
@@ -126,10 +132,17 @@ class Plugin {
   }
 
   /**
+    Returns path to this plugins storage directory.
+  */
+  @property string storageDirectoryPath() {
+    return "storage" ~ dirSeparator ~ this.name;
+  }
+
+  /**
     Returns path to this plugins storage file.
   */
   @property string storagePath() {
-    return "storage" ~ dirSeparator ~ this.name ~ ".json";
+    return this.storageDirectoryPath ~ dirSeparator ~ "storage.json";
   }
 
   /**

@@ -5,6 +5,7 @@
 module dscord.bot.command;
 
 import std.regex,
+       std.array,
        std.algorithm;
 
 import dscord.gateway.events,
@@ -152,6 +153,10 @@ class CommandEvent {
   this(MessageCreate event) {
     this.event = event;
     this.msg = event.message;
+  }
+
+  @property string cleanedContents() {
+    return this.args.join(" ");
   }
 
   bool has(ushort index) {

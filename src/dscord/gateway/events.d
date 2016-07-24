@@ -11,10 +11,25 @@ import dscord.gateway.client,
        dscord.gateway.packets,
        dscord.types.all;
 
+/**
+  A wrapper type for delegates that can be attached to an event, and run after
+  all listeners are executed. This can be used to ensure an event has fully passed
+  through all listeners, or to avoid having function/stack pointers within plugin
+  code (which allows for dynamically reloading the plugin).
+*/
 alias EventDeferredFunc = void delegate();
 
+/**
+  Base template for events from discord. Handles basic initilization, and some
+  deferred-function code.
+*/
 mixin template Event() {
   Client client;
+
+  /**
+    Array of functions to be ran when this event has completed its pass through
+    the any listeners, and is ready to be destroyed.
+  */
   EventDeferredFunc[] deferred;
 
   this(Client c, ref JSON obj) {
@@ -32,10 +47,17 @@ mixin template Event() {
     }
   }
 
+  /**
+    Used to defer a functions execution until after this event has passed through
+    all listeners, and is ready to be destroyed.
+  */
   void defer(EventDeferredFunc f) {
     this.deferred ~= f;
   }
 
+  /**
+    Calls all deferred functions.
+  */
   void resolveDeferreds() {
     foreach (ref f; this.deferred) {
       f();
@@ -43,6 +65,9 @@ mixin template Event() {
   }
 }
 
+/**
+  Sent when we initially connect, contains base state and connection information.
+*/
 class Ready {
   mixin Event;
 
@@ -64,12 +89,18 @@ class Ready {
   }
 }
 
+/**
+  Sent when we've completed a reconnect/resume sequence.
+*/
 class Resumed {
   mixin Event;
 
   void load(ref JSON obj) {}
 }
 
+/**
+  Sent when a channel is created.
+*/
 class ChannelCreate {
   mixin Event;
 
@@ -80,6 +111,9 @@ class ChannelCreate {
   }
 }
 
+/**
+  Sent when a channel is updated.
+*/
 class ChannelUpdate {
   mixin Event;
 
@@ -90,6 +124,9 @@ class ChannelUpdate {
   }
 }
 
+/**
+  Sent when a channel is deleted.
+*/
 class ChannelDelete {
   mixin Event;
 
@@ -100,6 +137,9 @@ class ChannelDelete {
   }
 }
 
+/**
+  Sent when a guild is created (often on startup).
+*/
 class GuildCreate {
   mixin Event;
 
@@ -110,6 +150,9 @@ class GuildCreate {
   }
 }
 
+/**
+  Sent when a guild is updated
+*/
 class GuildUpdate {
   mixin Event;
 
@@ -120,6 +163,9 @@ class GuildUpdate {
   }
 }
 
+/**
+  Sent when a guild is deleted (or becomes unavailable)
+*/
 class GuildDelete {
   mixin Event;
 
@@ -134,6 +180,9 @@ class GuildDelete {
   }
 }
 
+/**
+  Sent when a guild ban is added.
+*/
 class GuildBanAdd {
   mixin Event;
 
@@ -144,6 +193,9 @@ class GuildBanAdd {
   }
 }
 
+/**
+  Sent when a guild ban is removed.
+*/
 class GuildBanRemove {
   mixin Event;
 
@@ -154,18 +206,27 @@ class GuildBanRemove {
   }
 }
 
+/**
+  Sent when a guilds emojis are updated.
+*/
 class GuildEmojisUpdate {
   mixin Event;
 
   void load(ref JSON obj) {}
 }
 
+/**
+  Sent when a guilds integrations are updated.
+*/
 class GuildIntegrationsUpdate {
   mixin Event;
 
   void load(ref JSON obj) {}
 }
 
+/**
+  Sent when a member is added to a guild.
+*/
 class GuildMemberAdd {
   mixin Event;
 
@@ -176,6 +237,9 @@ class GuildMemberAdd {
   }
 }
 
+/**
+  Sent when a member is removed from a guild.
+*/
 class GuildMemberRemove {
   mixin Event;
 
@@ -190,6 +254,9 @@ class GuildMemberRemove {
   }
 }
 
+/**
+  Sent when a guild member is updated.
+*/
 class GuildMemberUpdate {
   mixin Event;
 
@@ -206,6 +273,9 @@ class GuildMemberUpdate {
   }
 }
 
+/**
+  Sent when a guild role is created.
+*/
 class GuildRoleCreate {
   mixin Event;
 
@@ -220,6 +290,9 @@ class GuildRoleCreate {
   }
 }
 
+/**
+  Sent when a guild role is updated.
+*/
 class GuildRoleUpdate {
   mixin Event;
 
@@ -234,6 +307,9 @@ class GuildRoleUpdate {
   }
 }
 
+/**
+  Sent when a guild role is deleted.
+*/
 class GuildRoleDelete {
   mixin Event;
 
@@ -248,6 +324,9 @@ class GuildRoleDelete {
   }
 }
 
+/**
+  Sent when a message is created.
+*/
 class MessageCreate {
   mixin Event;
 
@@ -258,6 +337,9 @@ class MessageCreate {
   }
 }
 
+/**
+  Sent when a message is updated.
+*/
 class MessageUpdate {
   mixin Event;
 
@@ -268,6 +350,9 @@ class MessageUpdate {
   }
 }
 
+/**
+  Sent when a message is deleted.
+*/
 class MessageDelete {
   mixin Event;
 
@@ -282,6 +367,9 @@ class MessageDelete {
   }
 }
 
+/**
+  Sent when a users presence is updated.
+*/
 class PresenceUpdate {
   mixin Event;
 
@@ -302,6 +390,9 @@ class PresenceUpdate {
   }
 }
 
+/**
+  Sent when a user starts typing.
+*/
 class TypingStart {
   mixin Event;
 
@@ -318,18 +409,27 @@ class TypingStart {
   }
 }
 
+/**
+  Sent when this users settings are updated.
+*/
 class UserSettingsUpdate {
   mixin Event;
 
   void load(ref JSON obj) {};
 }
 
+/**
+  Sent when this user is updated.
+*/
 class UserUpdate {
   mixin Event;
 
   void load(ref JSON obj) {};
 }
 
+/**
+  Sent when a voice state is updated.
+*/
 class VoiceStateUpdate {
   mixin Event;
 
@@ -340,6 +440,9 @@ class VoiceStateUpdate {
   }
 }
 
+/**
+  Sent when a voice server is updated.
+*/
 class VoiceServerUpdate {
   mixin Event;
 

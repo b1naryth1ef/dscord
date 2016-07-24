@@ -1,13 +1,15 @@
 # dscord
-dscord is a Discord client library written in D-lang thats focused on performance at high user and guild counts.
+dscord is a client library for the Discord chat service, written in D-lang. The core focus of dscord is to provide a clean interface with a highly performant and scalable backing runtime, to support use-cases that contain a large number of user or guilds. Dscord provides both a base client implementation, and various extras that assist in constructing bots out of it. Dscord is still very much a work-in-progress, so beware of sharp edges or missing pieces.
 
-## Compiling
-To compile dscord, you need any modern D-lang compiler (I recommend the latest stable version of dmd).
+## Examples
+If your looking for sample code, or example implemenations the following are good places to start:
 
-## Building Documentation
+- [this repos examples](https://github.com/b1naryth1ef/dscord/tree/master/examples)
+- [jeff](https://github.com/b1naryth1ef/jeff), a friendly neighborhood Discord bot fully implemented in dscord.
 
-Building docs currently is a derp fest, due to some weird dependency issues. To do it:
 
-1. Install scod from [here](https://github.com/b1naryth1ef/scod)
-2. Manually pin the version in dub to wherever you cloned scod e.g. `{"version": "~master", "path": "../scod"}`
-3. Run `dub build -b ddox` and profit.
+## Compiling/Installing
+Dscord is available on [dub](https://code.dlang.org/packages/dscord), and can be easily dropped into new or existing projects.
+
+## Documentation
+Documentation is available [here](http://b1naryth1ef.github.io/dscord/).
