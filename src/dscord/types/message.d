@@ -126,7 +126,7 @@ class Message : IModel {
         } else if (obj.peek() == DataType.null_) {
           obj.skipValue;
         } else {
-          this.nonce = obj.read!int.to!string;
+          this.nonce = obj.read!ulong.to!string;
         }
       },
       { this.author = new User(this.client, obj); },
