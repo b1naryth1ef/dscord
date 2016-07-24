@@ -105,7 +105,13 @@ class Emitter {
     auto v = Variant(obj);
 
     foreach (func; this.listeners[all ? "" : name]) {
-      runTask(&func.call, name, v);
+      runTask({
+        try {
+          func.call(name, v);
+        } catch (Exception e) {
+          writeln(e.toString);
+        }
+      });
     }
   }
 }
