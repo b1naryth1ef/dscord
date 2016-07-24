@@ -120,7 +120,15 @@ class Message : IModel {
       },
       { this.tts = obj.read!bool; },
       { this.mentionEveryone = obj.read!bool; },
-      { this.nonce = obj.read!string; },
+      {
+        if (obj.peek() == DataType.string) {
+          this.nonce = obj.read!string;
+        } else if (obj.peek() == DataType.null_) {
+          obj.skipValue;
+        } else {
+          this.nonce = obj.read!int.to!string;
+        }
+      },
       { this.author = new User(this.client, obj); },
       { this.pinned = obj.read!bool; },
       { loadMany!User(this.client, obj, (u) { this.mentions[u.id] = u; }); },
