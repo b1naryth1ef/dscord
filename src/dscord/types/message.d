@@ -183,24 +183,44 @@ class Message : IModel {
     return result;
   }
 
-  // Sends a new message to the same channel as this message object
+  /**
+    Sends a new message to the same channel as this message.
+
+    Params:
+      content = the message contents
+      nonce = the message nonce
+      tts = whether this is a TTS message
+  */
   Message reply(string content, string nonce=null, bool tts=false) {
     return this.client.api.sendMessage(this.channel.id, content, nonce, tts);
   }
 
-  // Formats and sends a new message to the same channel as this message object
+  /**
+    Sends a new MessageBuffer message to the same channel as this message.
+  */
+  Message reply(MessageBuffer msg) {
+    return this.client.api.sendMessage(this.channel.id, msg.contents, null, false);
+  }
+
+  /**
+    Sends a new formatted message to the same channel as this message.
+  */
   Message replyf(T...)(string content, T args) {
     return this.client.api.sendMessage(this.channel.id, format(content, args), null, false);
   }
 
-  // Edits the current messages content
+  /**
+    Edits this message contents.
+  */
   Message edit(string content) {
     // We can only edit messages we sent
     assert(this.client.me.id == this.author.id);
     return this.client.api.editMessage(this.channel.id, this.id, content);
   }
 
-  // Deletes the current message
+  /**
+    Deletes this message.
+  */
   void del() {
     // TODO: permissions check
     return this.client.api.deleteMessage(this.channel.id, this.id);
@@ -218,12 +238,17 @@ class Message : IModel {
         this.guild.getMember(this.client.state.me));
   }
 
+  /**
+    Guild this message was sent in (if applicable).
+  */
   @property Guild guild() {
     if (this.channel && this.channel.guild) return this.channel.guild;
     return null;
   }
 
-  // Returns an array of emoji IDs for all custom emoji used in this message
+  /**
+    Returns an array of emoji IDs for all custom emoji used in this message.
+  */
   @property Snowflake[] customEmojiByID() {
     return matchAll(this.content, regex("<:\\w+:(\\d+)>")).map!((m) => m.back.to!Snowflake).array;
   }
