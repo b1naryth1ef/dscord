@@ -39,6 +39,12 @@ struct BotConfig {
   /** API Authentication Token */
   string  token;
 
+  /** This bot instances shard number */
+  ushort shard = 0;
+
+  /** The total number of shards */
+  ushort numShards = 1;
+
   /** Bitwise flags from `BotFeatures` */
   uint    features = BotFeatures.COMMANDS;
 
@@ -54,6 +60,10 @@ struct BotConfig {
   /** Returns true if user levels are enabled (e.g. lvlGetter is set) */
   @property bool lvlEnabled() {
     return this.lvlGetter != null;
+  }
+
+  @property ShardInfo* shardInfo() {
+    return new ShardInfo(this.shard, this.numShards);
   }
 }
 
@@ -71,7 +81,7 @@ class Bot {
 
   this(this T)(BotConfig bc, LogLevel lvl=LogLevel.all) {
     this.config = bc;
-    this.client = new Client(this.config.token, lvl);
+    this.client = new Client(this.config.token, lvl, this.config.shardInfo);
     this.log = this.client.log;
 
     if (this.feature(BotFeatures.COMMANDS)) {

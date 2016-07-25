@@ -100,9 +100,11 @@ class IdentifyPacket : BasePacket, Serializable {
   string token;
   bool compress = true;
   ushort large_threshold = 250;
+  ushort[2] shard;
 
-  this(string token) {
+  this(string token, ushort shard = 0, ushort numShards = 1) {
     this.token = token;
+    this.shard = [shard, numShards];
   }
 
   @property JSONValue properties() {
@@ -121,6 +123,7 @@ class IdentifyPacket : BasePacket, Serializable {
     res["properties"] = this.properties;
     res["compress"] = JSONValue(this.compress);
     res["large_threshold"] = JSONValue(this.large_threshold);
+    res["shard"] = JSONValue(this.shard);
     return super.serialize(OPCode.IDENTIFY, res);
   }
 }

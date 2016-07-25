@@ -15,7 +15,8 @@ import dscord.client,
        dscord.gateway.packets,
        dscord.gateway.events,
        dscord.util.emitter,
-       dscord.util.json;
+       dscord.util.json,
+       dscord.util.counter;
 
 /** Maximum reconnects the GatewayClient will try before resetting session state */
 const ubyte MAX_RECONNECTS = 6;
@@ -55,10 +56,17 @@ class GatewayClient {
   private {
     /** Cached gateway URL from the API */
     string  cachedGatewayURL;
+    Counter!string eventCounter;
+    bool eventTracking;
   }
 
-  this(Client client) {
+  /**
+    Params:
+      eventTracking = if true, log information about events recieved
+  */
+  this(Client client, bool eventTracking = false) {
     this.client = client;
+    this.eventTracking = eventTracking;
 
     // Create the event emitter and listen to some required gateway events.
     this.eventEmitter = new Emitter;
@@ -67,6 +75,10 @@ class GatewayClient {
 
     // Copy emitters to client for easier API access
     client.events = this.eventEmitter;
+
+    if (this.eventTracking) {
+      this.eventCounter = new Counter!string;
+    }
   }
 
   /**
@@ -102,12 +114,28 @@ class GatewayClient {
     this.sock.send(data.toString);
   }
 
+  private void debugEventCounts() {
+    while (true) {
+      this.eventCounter.resetAll();
+      sleep(5.seconds);
+      this.log.infof("%s total events", this.eventCounter.total);
+
+      foreach (ref event; this.eventCounter.mostCommon(5)) {
+        this.log.infof("  %s: %s", event, this.eventCounter.get(event));
+      }
+    }
+  }
+
   private void handleReadyEvent(Ready  r) {
     this.log.infof("Recieved READY payload, starting heartbeater");
     this.hb_interval = r.heartbeatInterval;
     this.sessionID = r.sessionID;
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
     this.reconnects = 0;
+
+    if (this.eventTracking) {
+      runTask(toDelegate(&this.debugEventCounts));
+    }
   }
 
   private void handleResumedEvent(Resumed r) {
@@ -125,6 +153,10 @@ class GatewayClient {
     // Update sequence number if it's larger than what we have
     if (seq > this.seq) {
       this.seq = seq;
+    }
+
+    if (this.eventTracking) {
+      this.eventCounter.tick(type);
     }
 
     switch (type) {
@@ -238,6 +270,10 @@ class GatewayClient {
           seq = json.read!uint;
           break;
         case "d":
+          if (type == "READY") {
+            this.log.infof("READY payload size: %s", rawData.length);
+          }
+
           switch (op) {
             case OPCode.DISPATCH:
               this.handleDispatchPacket(seq, type, json);
@@ -274,7 +310,10 @@ class GatewayClient {
     } else {
       // On startup, send the identify payload
       this.log.info("Sending Identify Payload");
-      this.send(new IdentifyPacket(this.client.token));
+      this.send(new IdentifyPacket(
+          this.client.token,
+          this.client.shardInfo.shard,
+          this.client.shardInfo.numShards));
     }
 
     this.log.info("Connected to Gateway");

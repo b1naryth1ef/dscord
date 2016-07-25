@@ -1,3 +1,6 @@
+/**
+  The top API abstraction encompassing REST, WS/Gateway, and state tracking.
+*/
 module dscord.client;
 
 import std.stdio;
@@ -13,30 +16,46 @@ import dscord.state,
        dscord.types.all,
        dscord.util.emitter;
 
+/**
+  Struct containing configuration for Gateway sharding.
+*/
+struct ShardInfo {
+  /** This shards number. */
+  ushort shard = 0;
+
+  /** Total number of shards. */
+  ushort numShards = 1;
+}
+
 class Client {
-  // Log
+  /** Base log */
   Logger  log;
 
-  // User auth token
+  /** Bot Authentication token */
   string  token;
 
-  // Clients
+  /** Sharding configuration */
+  ShardInfo* shardInfo;
+
+  /** APIClient instance */
   APIClient      api;
+
+  /** GatewayClient instance */
   GatewayClient  gw;
 
-  // Voice connections
-  VoiceClient[Snowflake]  voiceConns;
-
-  // State
+  /** State instance */
   State  state;
 
-  // Emitters
-  Emitter  events;
-  Emitter  packets;
+  /** Mapping of voice connections */
+  VoiceClient[Snowflake]  voiceConns;
 
-  this(string token, LogLevel lvl=LogLevel.all) {
+  /** Emitter for gateway events */
+  Emitter  events;
+
+  this(string token, LogLevel lvl=LogLevel.all, ShardInfo* shardInfo = null) {
     this.log = new FileLogger(stdout, lvl);
     this.token = token;
+    this.shardInfo = shardInfo ? shardInfo : new ShardInfo();
 
     this.api = new APIClient(this);
     this.gw = new GatewayClient(this);

@@ -71,6 +71,9 @@ class State : Emitter {
   void onGuildCreate(GuildCreate c) {
     this.guilds[c.guild.id] = c.guild;
 
+    if (this.guilds.length % 100 == 0)
+      this.log.infof("GUILD_CREATE, now have %s guilds", this.guilds.length);
+
     // Add channels
     c.guild.channels.each((c) {
       this.channels[c.id] = c;
