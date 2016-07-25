@@ -19,7 +19,7 @@ struct Command {
   string  description = "";
   string  group = "";
   bool    regex = false;
-  uint    level = 0;
+  int     level = 0;
 }
 
 /**
@@ -52,7 +52,7 @@ CommandObjectUpdate CommandRegex(bool rgx) {
 /**
   Sets a commands permission level.
 */
-CommandObjectUpdate CommandLevel(uint level) {
+CommandObjectUpdate CommandLevel(int level) {
   return (c) {c.level = level;};
 }
 
@@ -73,7 +73,7 @@ class CommandObject {
   string  description;
 
   /** The permissions level required for the command */
-  uint    level;
+  int     level;
 
   /** Whether this command is enabled */
   bool  enabled = true;
