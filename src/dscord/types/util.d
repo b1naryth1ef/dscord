@@ -85,7 +85,7 @@ class MessageBuffer {
       raw = raw.replace("`", "").replace("\n", "");
     }
 
-    if (this.length + raw.length > this.realMaxLength) {
+    if (this.length + raw.length > this.maxLength) {
       return false;
     }
 

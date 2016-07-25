@@ -62,6 +62,7 @@ class GatewayClient {
 
   /**
     Params:
+      client = base client
       eventTracking = if true, log information about events recieved
   */
   this(Client client, bool eventTracking = false) {
