@@ -209,6 +209,9 @@ class GatewayClient {
       case "VOICE_SERVER_UPDATE":
         this.emitDispatchEvent!VoiceServerUpdate(obj);
         break;
+      case "CHANNEL_PIN_UPDATE":
+        this.emitDispatchEvent!ChannelPinUpdate(obj);
+        break;
       default:
         this.log.warningf("Unhandled dispatch event: %s", type);
         break;

@@ -458,3 +458,20 @@ class VoiceServerUpdate {
     );
   }
 }
+
+/**
+  Sent when a channels pins are updated.
+*/
+class ChannelPinsUpdate {
+  mixin Event;
+
+  Snowflake  channelID;
+  string     lastPinTimestamp;
+
+  void load(ref JSON obj) {
+    obj.keySwitch!("channel_id", "last_pin_timestamp")(
+      { this.channelID = readSnowflake(obj); },
+      { this.lastPinTimestamp = obj.read!string; },
+    );
+  }
+}
