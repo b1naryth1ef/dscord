@@ -110,9 +110,9 @@ class GatewayClient {
     Send a gateway payload.
   */
   void send(Serializable p) {
-    JSONValue data = p.serialize();
-    this.log.tracef("gateway-send: %s", data.toString);
-    this.sock.send(data.toString);
+    string data = p.serialize().toString;
+    this.log.tracef("gateway-send: %s", data);
+    this.sock.send(data);
   }
 
   private void debugEventCounts() {

@@ -18,19 +18,19 @@ enum OPCode : ushort {
 };
 
 interface Serializable {
-  JSONValue serialize();
+  VibeJSON serialize();
 }
 
 class BasePacket {
   OPCode      op;
-  JSONValue  data;
-  JSONValue  raw;
+  VibeJSON    data;
+  VibeJSON    raw;
 
-  JSONValue serialize(ushort op, JSONValue data) {
-    JSONValue res;
-    res["op"] = JSONValue(op);
-    res["d"] = data;
-    return res;
+  VibeJSON serialize(ushort op, VibeJSON data) {
+    return VibeJSON([
+      "op": VibeJSON(op),
+      "d": data,
+    ]);
   }
 }
 
@@ -41,28 +41,28 @@ class HeartbeatPacket : BasePacket, Serializable {
     this.seq = seq;
   }
 
-  override JSONValue serialize() {
-    return super.serialize(OPCode.HEARTBEAT, JSONValue(this.seq));
+  override VibeJSON serialize() {
+    return super.serialize(OPCode.HEARTBEAT, VibeJSON(this.seq));
   }
 }
 
 class ResumePacket : BasePacket, Serializable {
   string  token;
-  string  session_id;
+  string  sessionID;
   uint    seq;
 
-  this(string token, string session_id, uint seq) {
+  this(string token, string sessionID, uint seq) {
     this.token = token;
-    this.session_id = session_id;
+    this.sessionID = sessionID;
     this.seq = seq;
   }
 
-  override JSONValue serialize() {
-    JSONValue obj;
-    obj["token"] = JSONValue(token);
-    obj["session_id"] = JSONValue(session_id);
-    obj["seq"] = JSONValue(seq);
-    return super.serialize(OPCode.RESUME, obj);
+  override VibeJSON serialize() {
+    return super.serialize(OPCode.RESUME, VibeJSON([
+      "token": VibeJSON(this.token),
+      "session_id": VibeJSON(this.sessionID),
+      "seq": VibeJSON(this.seq),
+    ]));
   }
 }
 
@@ -86,20 +86,20 @@ class VoiceStateUpdatePacket : BasePacket, Serializable {
     this.self_deaf = self_deaf;
   }
 
-  override JSONValue serialize() {
-    JSONValue res;
-    res["self_mute"] = JSONValue(this.self_mute);
-    res["self_deaf"] = JSONValue(this.self_deaf);
-    res["guild_id"] = this.guildID ? JSONValue(this.guildID) : JSONValue(null);
-    res["channel_id"] = this.channelID ? JSONValue(this.channelID) : JSONValue(null);
-    return super.serialize(OPCode.VOICE_STATE_UPDATE, res);
+  override VibeJSON serialize() {
+    return super.serialize(OPCode.VOICE_STATE_UPDATE, VibeJSON([
+      "self_mute": VibeJSON(this.self_mute),
+      "self_deaf": VibeJSON(this.self_deaf),
+      "guild_id": this.guildID ? VibeJSON(this.guildID) : VibeJSON(null),
+      "channel_id": this.channelID ? VibeJSON(this.channelID) : VibeJSON(null),
+    ]));
   }
 }
 
 class IdentifyPacket : BasePacket, Serializable {
   string token;
   bool compress = true;
-  ushort large_threshold = 250;
+  ushort largeThreshold = 250;
   ushort[2] shard;
 
   this(string token, ushort shard = 0, ushort numShards = 1) {
@@ -107,24 +107,22 @@ class IdentifyPacket : BasePacket, Serializable {
     this.shard = [shard, numShards];
   }
 
-  @property JSONValue properties() {
-    JSONValue prop;
-    prop["$os"] = "linux";
-    prop["$browser"] = "dscord";
-    prop["$device"] = "dscord";
-    prop["$referrer"] = "";
-    prop["$browser"] = "";
-    return prop;
+  @property VibeJSON properties() {
+    return VibeJSON([
+      "$os": VibeJSON("linux"),
+      "$browser": VibeJSON("dscord"),
+      "$device": VibeJSON("dscord"),
+      "$referrer": VibeJSON(""),
+    ]);
   }
 
-  override JSONValue serialize() {
-    JSONValue res;
-    res["token"] = JSONValue(this.token);
-    res["properties"] = this.properties;
-    res["compress"] = JSONValue(this.compress);
-    res["large_threshold"] = JSONValue(this.large_threshold);
-    res["shard"] = JSONValue(this.shard);
-    return super.serialize(OPCode.IDENTIFY, res);
+  override VibeJSON serialize() {
+    return super.serialize(OPCode.IDENTIFY, VibeJSON([
+      "token": VibeJSON(this.token),
+      "properties": this.properties,
+      "compress": VibeJSON(this.compress),
+      "large_threshold": VibeJSON(this.largeThreshold),
+      "shard": VibeJSON([VibeJSON(this.shard[0]), VibeJSON(this.shard[1])]),
+    ]));
   }
 }
-

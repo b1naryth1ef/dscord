@@ -231,9 +231,9 @@ class VoiceClient {
   */
 
   void send(Serializable p) {
-    JSONValue data = p.serialize();
-    this.log.tracef("voice-send: %s", data.toString);
-    this.sock.send(data.toString);
+    string data = p.serialize().toString;
+    this.log.tracef("voice-send: %s", data);
+    this.sock.send(data);
   }
 
   void run() {

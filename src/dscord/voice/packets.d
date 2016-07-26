@@ -27,13 +27,13 @@ class VoiceIdentifyPacket : BasePacket, Serializable {
     this.token = token;
   }
 
-  override JSONValue serialize() {
-    JSONValue res;
-    res["server_id"] = JSONValue(this.serverID);
-    res["user_id"] = JSONValue(this.userID);
-    res["session_id"] = JSONValue(this.sessionID);
-    res["token"] = JSONValue(this.token);
-    return super.serialize(VoiceOPCode.VOICE_IDENTIFY, res);
+  override VibeJSON serialize() {
+    return super.serialize(VoiceOPCode.VOICE_IDENTIFY, VibeJSON([
+      "server_id": VibeJSON(this.serverID),
+      "user_id": VibeJSON(this.userID),
+      "session_id": VibeJSON(this.sessionID),
+      "token": VibeJSON(this.token),
+    ]));
   }
 }
 
@@ -57,12 +57,12 @@ class VoiceSelectProtocolPacket : BasePacket, Serializable {
     this.port = port;
   }
 
-  override JSONValue serialize() {
-    JSONValue res;
-    res["port"] = this.port;
-    res["address"] = this.ip;
-    res["mode"] = this.mode;
-    return super.serialize(VoiceOPCode.VOICE_SELECT_PROTOCOL, res);
+  override VibeJSON serialize() {
+    return super.serialize(VoiceOPCode.VOICE_SELECT_PROTOCOL, VibeJSON([
+      "port": VibeJSON(this.port),
+      "address": VibeJSON(this.ip),
+      "mode": VibeJSON(this.mode),
+    ]));
   }
 }
 
@@ -73,8 +73,8 @@ class VoiceHeartbeatPacket : BasePacket, Serializable {
     this.ts = ts;
   }
 
-  override JSONValue serialize() {
-    return super.serialize(VoiceOPCode.VOICE_HEARTBEAT, JSONValue(this.ts));
+  override VibeJSON serialize() {
+    return super.serialize(VoiceOPCode.VOICE_HEARTBEAT, VibeJSON(this.ts));
   }
 }
 
@@ -87,15 +87,14 @@ class VoiceSpeakingPacket : BasePacket, Serializable {
     this.delay = delay;
   }
 
-  override JSONValue serialize() {
-    JSONValue res;
-    res["speaking"] = this.speaking;
-    res["delay"] = this.delay;
-    return super.serialize(VoiceOPCode.VOICE_SPEAKING, res);
+  override VibeJSON serialize() {
+    return super.serialize(VoiceOPCode.VOICE_SPEAKING, VibeJSON([
+      "speaking": VibeJSON(this.speaking),
+      "delay": VibeJSON(this.delay),
+    ]));
   }
 }
 
 class VoiceSessionDescriptionPacket : BasePacket {
   string  secretKey;
 }
-
