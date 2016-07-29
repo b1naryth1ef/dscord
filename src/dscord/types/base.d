@@ -32,6 +32,7 @@ class AsyncChainer(T) {
     T obj;
     AsyncChainer!T parent;
     ManualEvent resolveEvent;
+    bool ignoreFailure;
   }
 
   /**
@@ -80,6 +81,16 @@ class AsyncChainer(T) {
     });
   }
 
+  private void call(string func, Args...)(Args args) {
+    if (this.ignoreFailure) {
+      try {
+        this.obj.call!(func)(args);
+      } catch (Exception e) {}
+    } else {
+      this.obj.call!(func)(args);
+    }
+  }
+
   /**
     Utility method for chaining. Returns a new child member of the chain.
   */
@@ -97,15 +108,21 @@ class AsyncChainer(T) {
 
       runTask({
         this.resolveEvent.wait();
-        this.obj.call!(func)(args);
+        this.call!(func)(args);
         next.resolveEvent.emit();
       });
 
       return next;
     } else {
-      this.obj.call!(func)(args);
+      this.call!(func)(args);
+      // this.obj.call!(func)(args);
       return this;
     }
+  }
+
+  AsyncChainer!T maybe() {
+    this.ignoreFailure = true;
+    return this;
   }
 }
 
