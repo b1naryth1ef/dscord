@@ -34,7 +34,7 @@ class State : Emitter {
   APIClient      api;
   GatewayClient  gw;
 
-  // Storage
+  /// Currently logged in user, recieved from READY payload.
   User        me;
 
   private {
@@ -63,6 +63,9 @@ class State : Emitter {
     this.bindListeners();
   }
 
+  /**
+    Sets the state-tracking features
+  */
   void setFeatures(StateFeatures features) {
     this.features = features;
     this.bindListeners();
@@ -97,12 +100,12 @@ class State : Emitter {
     }
   }
 
-  void onReady(Ready r) {
+  private void onReady(Ready r) {
     this.me = r.me;
     this.onReadyGuildCount = r.guilds.length;
   }
 
-  void onGuildCreate(GuildCreate c) {
+  private void onGuildCreate(GuildCreate c) {
     this._guilds[c.guild.id] = c.guild;
 
     if (this._guilds.length % 100 == 0)
@@ -116,37 +119,40 @@ class State : Emitter {
     }
   }
 
-  void onGuildUpdate(GuildUpdate c) {
+  private void onGuildUpdate(GuildUpdate c) {
     this.log.warning("Hit onGuildUpdate leaving state stale");
     // TODO: handle state changes in here
     // this.guilds[c.guild.id].load(c.payload);
   }
 
-  void onGuildDelete(GuildDelete c) {
+  private void onGuildDelete(GuildDelete c) {
     if (!this._guilds.has(c.guildID)) return;
+
+    this._guilds[c.guildID].channels.each((c) {
+      destroy(c.id);
+      this._channels.remove(c.id);
+    });
 
     destroy(this._guilds[c.guildID]);
     this._guilds.remove(c.guildID);
-
-    // TODO: channels?
   }
 
-  void onChannelCreate(ChannelCreate c) {
+  private void onChannelCreate(ChannelCreate c) {
     this._channels[c.channel.id] = c.channel;
   }
 
-  void onChannelUpdate(ChannelUpdate c) {
+  private void onChannelUpdate(ChannelUpdate c) {
     this._channels[c.channel.id] = c.channel;
   }
 
-  void onChannelDelete(ChannelDelete c) {
+  private void onChannelDelete(ChannelDelete c) {
     if (this._channels.has(c.channel.id)) {
       destroy(this._channels[c.channel.id]);
       this._channels.remove(c.channel.id);
     }
   }
 
-  void onVoiceStateUpdate(VoiceStateUpdate u) {
+  private void onVoiceStateUpdate(VoiceStateUpdate u) {
     // TODO: shallow tracking, don't require guilds
     auto guild = this._guilds.get(u.state.guildID);
 
@@ -157,14 +163,17 @@ class State : Emitter {
     }
   }
 
+  /// GuildMap of all tracked guilds
   @property GuildMap guilds() {
     return this._guilds;
   }
 
+  /// ChannelMap of all tracked channels
   @property ChannelMap channels() {
     return this._channels;
   }
 
+  /// UserMap of all tracked users
   @property UserMap users() {
     return this._users;
   }
