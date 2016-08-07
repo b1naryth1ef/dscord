@@ -39,10 +39,10 @@ class VoiceState : IModel {
   }
 
   @property Guild guild() {
-    return this.client.state.guilds(this.guildID);
+    return this.client.state.guilds[this.guildID];
   }
 
   @property Channel channel() {
-    return this.client.state.channels(this.channelID);
+    return this.client.state.channels[this.channelID];
   }
 }

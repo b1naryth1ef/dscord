@@ -2,6 +2,7 @@ module dscord.state;
 
 import std.functional,
        std.stdio,
+       std.algorithm.iteration,
        std.experimental.logger;
 
 import dscord.client,
@@ -11,6 +12,18 @@ import dscord.client,
        dscord.gateway.packets,
        dscord.types.all,
        dscord.util.emitter;
+
+enum StateFeatures {
+  GUILDS = 1 << 0,
+  CHANNELS = 1 << 1,
+  VOICE = 1 << 2,
+}
+
+const StateFeatures DEFAULT_STATE_FEATURES =
+  StateFeatures.GUILDS |
+  StateFeatures.CHANNELS |
+  StateFeatures.VOICE;
+
 
 /**
   The State class is used to track and maintain client state.
@@ -23,44 +36,65 @@ class State : Emitter {
 
   // Storage
   User        me;
-  GuildMap    guilds;
-  ChannelMap  channels;
-  UserMap     users;
 
   private {
     Logger  log;
     ulong  onReadyGuildCount;
+    StateFeatures  features;
+    EventListenerArray  listeners;
+
+    UserMap     _users;
+    GuildMap    _guilds;
+    ChannelMap  _channels;
   }
 
-  this(Client client) {
-    this.log = client.log;
-
+  this(Client client, StateFeatures features = DEFAULT_STATE_FEATURES) {
+    this.features = features;
     this.client = client;
+    this.log = client.log;
     this.api = client.api;
     this.gw = client.gw;
 
-    this.guilds = new GuildMap;
-    this.channels = new ChannelMap;
-    this.users = new UserMap;
+    this._guilds = new GuildMap;
+    this._channels = new ChannelMap;
+    this._users = new UserMap;
 
-    this.bindEvents();
+    // Finally bind all events we want
+    this.bindListeners();
   }
 
-  void bindEvents() {
-    this.client.events.listen!Ready(&this.onReady);
+  void setFeatures(StateFeatures features) {
+    this.features = features;
+    this.bindListeners();
+  }
+
+  private void listen(Ty...)() {
+    foreach (T; Ty) {
+      this.listeners ~= this.client.events.listen!T(mixin("&this.on" ~ T.stringof));
+    }
+  }
+
+  private void bindListeners() {
+    // Unbind all listeners
+    this.listeners.each!((l) => l.unbind());
+
+    // Always listen for ready payload
+    this.listen!Ready;
 
     // Guilds
-    this.client.events.listen!GuildCreate(&this.onGuildCreate);
-    this.client.events.listen!GuildUpdate(&this.onGuildUpdate);
-    this.client.events.listen!GuildDelete(&this.onGuildDelete);
+    if (this.features & StateFeatures.GUILDS) {
+      this.listen!(GuildCreate, GuildUpdate, GuildDelete);
+    }
 
     // Channels
-    this.client.events.listen!ChannelCreate(&this.onChannelCreate);
-    this.client.events.listen!ChannelUpdate(&this.onChannelUpdate);
-    this.client.events.listen!ChannelDelete(&this.onChannelDelete);
+    if (this.features & StateFeatures.CHANNELS) {
+      this.listen!(ChannelCreate, ChannelUpdate, ChannelDelete);
+    }
 
     // Voice State
-    this.client.events.listen!VoiceStateUpdate(&this.onVoiceStateUpdate);
+    if (this.features & StateFeatures.VOICE) {
+      this.listen!VoiceStateUpdate;
+    }
   }
 
   void onReady(Ready r) {
@@ -69,15 +103,17 @@ class State : Emitter {
   }
 
   void onGuildCreate(GuildCreate c) {
-    this.guilds[c.guild.id] = c.guild;
+    this._guilds[c.guild.id] = c.guild;
 
-    if (this.guilds.length % 100 == 0)
+    if (this._guilds.length % 100 == 0)
       this.log.infof("GUILD_CREATE, now have %s guilds", this.guilds.length);
 
     // Add channels
-    c.guild.channels.each((c) {
-      this.channels[c.id] = c;
-    });
+    if (this.features & StateFeatures.CHANNELS) {
+      c.guild.channels.each((c) {
+        this._channels[c.id] = c;
+      });
+    }
   }
 
   void onGuildUpdate(GuildUpdate c) {
@@ -87,34 +123,49 @@ class State : Emitter {
   }
 
   void onGuildDelete(GuildDelete c) {
-    if (!this.guilds.has(c.guildID)) return;
+    if (!this._guilds.has(c.guildID)) return;
 
-    destroy(this.guilds[c.guildID]);
-    this.guilds.remove(c.guildID);
+    destroy(this._guilds[c.guildID]);
+    this._guilds.remove(c.guildID);
+
+    // TODO: channels?
   }
 
   void onChannelCreate(ChannelCreate c) {
-    this.channels[c.channel.id] = c.channel;
+    this._channels[c.channel.id] = c.channel;
   }
 
   void onChannelUpdate(ChannelUpdate c) {
-    this.channels[c.channel.id] = c.channel;
+    this._channels[c.channel.id] = c.channel;
   }
 
   void onChannelDelete(ChannelDelete c) {
-    if (this.channels.has(c.channel.id)) {
-      destroy(this.channels[c.channel.id]);
-      this.channels.remove(c.channel.id);
+    if (this._channels.has(c.channel.id)) {
+      destroy(this._channels[c.channel.id]);
+      this._channels.remove(c.channel.id);
     }
   }
 
   void onVoiceStateUpdate(VoiceStateUpdate u) {
-    auto guild = this.guilds.get(u.state.guildID);
+    // TODO: shallow tracking, don't require guilds
+    auto guild = this._guilds.get(u.state.guildID);
 
     if (!u.state.channelID) {
       guild.voiceStates.remove(u.state.sessionID);
     } else {
       guild.voiceStates[u.state.sessionID] = u.state;
     }
+  }
+
+  @property GuildMap guilds() {
+    return this._guilds;
+  }
+
+  @property ChannelMap channels() {
+    return this._channels;
+  }
+
+  @property UserMap users() {
+    return this._users;
   }
 }

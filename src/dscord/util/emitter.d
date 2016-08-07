@@ -46,6 +46,8 @@ class EventListener : BaseEventListener {
   }
 }
 
+alias EventListenerArray = EventListener[];
+
 class AllEventListener : BaseEventListener {
   void delegate(string, Variant)  func;
 
