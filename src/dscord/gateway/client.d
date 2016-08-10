@@ -5,7 +5,8 @@ import std.stdio,
        std.functional,
        std.zlib,
        std.datetime,
-       std.variant;
+       std.variant,
+       std.format;
 
 import vibe.core.core,
        vibe.inet.url,
@@ -20,6 +21,9 @@ import dscord.client,
 
 /** Maximum reconnects the GatewayClient will try before resetting session state */
 const ubyte MAX_RECONNECTS = 6;
+
+/** Current implemented Gateway version. */
+const ubyte GATEWAY_VERSION = 6;
 
 /**
   GatewayClient is the base abstraction for connecting to, and interacting with
@@ -39,7 +43,7 @@ class GatewayClient {
   uint    seq;
 
   /** Heartbeat interval */
-  uint    hb_interval;
+  uint    heartbeatInterval;
 
   /** Whether this GatewayClient is currently connected */
   bool    connected;
@@ -98,6 +102,7 @@ class GatewayClient {
     // If this is our first connection, get a gateway WS URL
     if (!this.cachedGatewayURL) {
       this.cachedGatewayURL = client.api.gateway();
+      this.cachedGatewayURL ~= format("/?v=%s&encoding=%s", GATEWAY_VERSION, "json");
     }
 
     // Start the main task
@@ -129,9 +134,8 @@ class GatewayClient {
 
   private void handleReadyEvent(Ready  r) {
     this.log.infof("Recieved READY payload, starting heartbeater");
-    this.hb_interval = r.heartbeatInterval;
+    // this.hb_interval = r.heartbeatInterval;
     this.sessionID = r.sessionID;
-    this.heartbeater = runTask(toDelegate(&this.heartbeat));
     this.reconnects = 0;
 
     if (this.eventTracking) {
@@ -150,7 +154,7 @@ class GatewayClient {
     v.destroy();
   }
 
-  private void handleDispatchPacket(uint seq, string type, ref JSON obj) {
+  private void handleDispatchPacket(uint seq, string type, ref JSON obj, size_t size) {
     // Update sequence number if it's larger than what we have
     if (seq > this.seq) {
       this.seq = seq;
@@ -162,6 +166,7 @@ class GatewayClient {
 
     switch (type) {
       case "READY":
+        this.log.infof("Recieved READY payload, size in bytes: %s", size);
         this.emitDispatchEvent!Ready(obj);
         break;
       case "RESUMED":
@@ -271,13 +276,27 @@ class GatewayClient {
           seq = json.read!uint;
           break;
         case "d":
-          if (type == "READY") {
-            this.log.infof("READY payload size: %s", rawData.length);
-          }
-
           switch (op) {
             case OPCode.DISPATCH:
-              this.handleDispatchPacket(seq, type, json);
+              this.handleDispatchPacket(seq, type, json, rawData.length);
+              break;
+            case OPCode.HEARTBEAT:
+              this.send(new HeartbeatPacket(this.seq));
+              break;
+            case OPCode.RECONNECT:
+              this.log.warningf("Recieved RECONNECT OPCode, resetting connection...");
+              this.sock.close();
+              break;
+            case OPCode.INVALID_SESSION:
+              this.log.warningf("Recieved INVALID_SESSION OPCode, resetting connection...");
+              this.sock.close();
+              break;
+            case OPCode.HELLO:
+              this.log.tracef("Recieved HELLO OPCode, starting heartbeatter...");
+              this.heartbeatInterval = json.heartbeat_interval.read!uint;
+              this.heartbeater = runTask(toDelegate(&this.heartbeat));
+              break;
+            case OPCode.HEARTBEAT_ACK:
               break;
             default:
               this.log.warningf("Unhandled gateway packet: %s", op);
@@ -294,7 +313,7 @@ class GatewayClient {
   private void heartbeat() {
     while (this.connected) {
       this.send(new HeartbeatPacket(this.seq));
-      sleep(this.hb_interval.msecs);
+      sleep(this.heartbeatInterval.msecs);
     }
   }
 

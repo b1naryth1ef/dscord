@@ -245,7 +245,7 @@ class APIClient {
   /**
     Returns a valid Gateway Websocket URL
   */
-  string gateway(int gatewayVersion = 5) {
-    return this.requestJSON(HTTPMethod.GET, U("gateway")("v", gatewayVersion.to!string)).ok().vibeJSON["url"].to!string;
+  string gateway() {
+    return this.requestJSON(HTTPMethod.GET, U("gateway")).ok().vibeJSON["url"].to!string;
   }
 }

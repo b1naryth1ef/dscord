@@ -15,6 +15,9 @@ enum OPCode : ushort {
   RECONNECT = 7,
   REQUEST_GUILD_MEMBERS = 8,
   INVALID_SESSION = 9,
+  HELLO = 10,
+  HEARTBEAT_ACK = 11,
+  GUILD_SYNC = 12,
 };
 
 interface Serializable {
@@ -65,13 +68,6 @@ class ResumePacket : BasePacket, Serializable {
     ]));
   }
 }
-
-/* class StatusUpdate : BasePacket, Deserializable {} */
-/* class VoiceServerPing : BasePacket, Deserializable {} */
-/* class Resume : BasePacket, Deserializable {} */
-/* class Reconnect : BasePacket, Deserializable {} */
-/* class RequestGuildMembers : BasePacket, Deserializable {} */
-/* class InvalidSession : BasePacket, Deserializable {} */
 
 class VoiceStateUpdatePacket : BasePacket, Serializable {
   Snowflake  guildID;
