@@ -79,7 +79,7 @@ class APIClient {
     auto res = new APIResponse(requestHTTP(this.baseURL ~ url.value,
       (scope req) {
         req.method = method;
-        req.headers["Authorization"] = this.token;
+        req.headers["Authorization"] = "Bot " ~ this.token;
         req.headers["Content-Type"] = "application/json";
         req.bodyWriter.write(data);
     }));
