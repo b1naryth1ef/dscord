@@ -9,25 +9,22 @@ import std.stdio,
        std.process,
        core.time;
 
-import std.experimental.logger;
-
 import vibe.core.core;
 import vibe.http.client;
 import dcad.types : DCAFile;
 
-import dscord.core;
+import dscord.core,
+       dscord.util.process;
 
 import core.sys.posix.signal;
 import etc.linux.memoryerror;
 
-import dscord.util.process;
 
 class BasicPlugin : Plugin {
   DCAFile sound;
 
   this() {
     super();
-
   }
 
   @Command("test")
@@ -84,7 +81,7 @@ class BasicPlugin : Plugin {
     auto chain = new ProcessChain().
       run(["youtube-dl", "-v", "-f", "bestaudio", "-o", "-", event.args[0]]).
       run(["ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "48000", "-ac", "2", "pipe:1"]).
-      run(["dca", "-raw", "-i", "pipe:0"]);
+      run(["dcad"]);
 
     // Create a DCAFile loader for the chain stream
     DCAFile result = DCAFile.fromRawDCA(chain.end);

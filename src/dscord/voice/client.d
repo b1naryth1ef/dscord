@@ -338,6 +338,7 @@ class VoiceClient {
               this.dispatchVoicePacket!VoiceSessionDescriptionPacket(json);
               break;
             case VoiceOPCode.VOICE_HEARTBEAT:
+            case VoiceOPCode.VOICE_SPEAKING:
               // We ignore these
               break;
             default:
