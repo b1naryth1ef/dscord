@@ -1,7 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"dcad": "0.0.1",
+		"dcad": "0.0.3",
 		"ddox": "0.13.5",
 		"experimental_allocator": "2.70.0-b1",
 		"fast": "~master",

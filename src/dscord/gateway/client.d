@@ -116,7 +116,9 @@ class GatewayClient {
   */
   void send(Serializable p) {
     string data = p.serialize().toString;
-    this.log.tracef("gateway-send: %s", data);
+    version (DEBUG_GATEWAY_DATA) {
+      this.log.tracef("GATEWAY SEND: %s", data);
+    }
     this.sock.send(data);
   }
 
@@ -151,7 +153,8 @@ class GatewayClient {
     T v = new T(this.client, obj);
     this.eventEmitter.emit!T(v);
     v.resolveDeferreds();
-    v.destroy();
+    // TODO: determine if we really need to destory things here
+    // v.destroy();
   }
 
   private void handleDispatchPacket(uint seq, string type, ref JSON obj, size_t size) {
@@ -263,6 +266,10 @@ class GatewayClient {
     string type;
     OPCode op;
 
+    version (DEBUG_GATEWAY_DATA) {
+      this.log.tracef("GATEWAY RECV: %s", rawData);
+    }
+
     // Scan over each key, store any extra information until we hit the data payload
     foreach (key; json.byKey) {
       switch (key) {
@@ -304,7 +311,7 @@ class GatewayClient {
           }
           break;
         default:
-          this.log.tracef("K: %s", key);
+          this.log.warning("Got unexepcted key for gateway OP %s: %s (%s)", op, key, json.peek);
           break;
       }
     }

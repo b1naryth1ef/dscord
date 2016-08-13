@@ -37,11 +37,20 @@ class VoiceIdentifyPacket : BasePacket, Serializable {
   }
 }
 
-class VoiceReadyPacket : BasePacket {
+class VoiceReadyPacket : BasePacket, Deserializable {
   ushort    ssrc;
   ushort    port;
   string[]  modes;
-  ushort    heartbeat_interval;
+  ushort    heartbeatInterval;
+
+  void deserialize(ref JSON obj) {
+    obj.keySwitch!("ssrc", "port", "modes", "heartbeat_interval")(
+      { this.ssrc = obj.read!ushort; },
+      { this.port = obj.read!ushort; },
+      { this.modes = obj.read!(string[]); },
+      { this.heartbeatInterval = obj.read!ushort; },
+    );
+  }
 }
 
 class VoiceSelectProtocolPacket : BasePacket, Serializable {
@@ -58,10 +67,15 @@ class VoiceSelectProtocolPacket : BasePacket, Serializable {
   }
 
   override VibeJSON serialize() {
-    return super.serialize(VoiceOPCode.VOICE_SELECT_PROTOCOL, VibeJSON([
+    auto data = VibeJSON([
       "port": VibeJSON(this.port),
       "address": VibeJSON(this.ip),
       "mode": VibeJSON(this.mode),
+    ]);
+
+    return super.serialize(VoiceOPCode.VOICE_SELECT_PROTOCOL, VibeJSON([
+      "protocol": VibeJSON(this.protocol),
+      "data": data,
     ]));
   }
 }
@@ -95,6 +109,12 @@ class VoiceSpeakingPacket : BasePacket, Serializable {
   }
 }
 
-class VoiceSessionDescriptionPacket : BasePacket {
+class VoiceSessionDescriptionPacket : BasePacket, Deserializable {
   string  secretKey;
+
+  void deserialize(ref JSON obj) {
+    obj.keySwitch!("secret_key")(
+      { this.secretKey = obj.read!string; }
+    );
+  }
 }

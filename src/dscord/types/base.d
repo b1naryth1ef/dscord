@@ -137,7 +137,7 @@ class IModel {
   void load(ref JSON obj) {};
 
   this(Client client, ref JSON obj) {
-    debug {
+    version (TIMING) {
       client.log.tracef("Starting creation of model %s", this.toString);
       auto sw = StopWatch(AutoStart.yes);
     }
@@ -146,7 +146,7 @@ class IModel {
     this.init();
     this.load(obj);
 
-    debug {
+    version (TIMING) {
       this.client.log.tracef("Finished creation of model %s in %sms", this.toString,
         sw.peek().to!("msecs", real));
     }

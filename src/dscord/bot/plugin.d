@@ -18,10 +18,10 @@ import dscord.client,
 */
 class PluginOptions {
   /** Does this plugin load/require a configuration file? */
-  bool useConfig = true;
+  bool useConfig = false;
 
   /** Does this plugin load/require a JSON storage file? */
-  bool useStorage = true;
+  bool useStorage = false;
 }
 
 /**
@@ -41,8 +41,14 @@ class PluginState {
 
   this(Plugin plugin, PluginOptions opts) {
     this.options = opts ? opts : new PluginOptions;
-    this.storage = new Storage(plugin.storagePath);
-    this.config = new Storage(plugin.configPath);
+
+    if (this.options.useStorage) {
+      this.storage = new Storage(plugin.storagePath);
+    }
+
+    if (this.options.useConfig) {
+      this.config = new Storage(plugin.configPath);
+    }
   }
 }
 
@@ -98,8 +104,8 @@ class Plugin {
     this.bot = bot;
 
     // Make sure our storage directory exists
-    if (!exists(this.storageDirectoryPath)) {
-      mkdir(this.storageDirectoryPath);
+    if (this.options.useStorage && !exists(this.storageDirectoryPath)) {
+      mkdirRecurse(this.storageDirectoryPath);
     }
 
     // If we got state, assume this was a plugin reload and replace

@@ -24,6 +24,10 @@ interface Serializable {
   VibeJSON serialize();
 }
 
+interface Deserializable {
+  void deserialize(ref JSON);
+}
+
 class BasePacket {
   OPCode      op;
   VibeJSON    data;

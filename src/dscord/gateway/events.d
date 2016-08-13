@@ -33,7 +33,7 @@ mixin template Event() {
   EventDeferredFunc[] deferred;
 
   this(Client c, ref JSON obj) {
-    debug {
+    version (TIMING) {
       auto sw = StopWatch(AutoStart.yes);
       c.log.tracef("Starting create event for %s", this.toString);
     }
@@ -41,7 +41,7 @@ mixin template Event() {
     this.client = c;
     this.load(obj);
 
-    debug {
+    version (TIMING) {
       this.client.log.tracef("Create event for %s took %sms", this.toString,
         sw.peek().to!("msecs", real));
     }

@@ -16,7 +16,7 @@ import vibe.core.core,
        vibe.inet.url,
        vibe.http.websockets;
 
-// import dcad.types : DCAFile;
+import dcad.types : DCAFile;
 
 import dscord.client,
        dscord.gateway.packets,
@@ -24,6 +24,13 @@ import dscord.client,
        dscord.voice.packets,
        dscord.types.all,
        dscord.util.emitter;
+
+enum VoiceState {
+  DISCONNECTED = 0,
+  CONNECTING = 1,
+  CONNECTED = 2,
+  READY = 3,
+}
 
 struct RTPHeader {
   ushort  seq;
@@ -51,23 +58,69 @@ class UDPVoiceClient {
   VoiceClient    vc;
   UDPConnection  conn;
 
-  // Local connection info
-  string  ip;
-  ushort  port;
+  private {
+    // Local connection info
+    string  ip;
+    ushort  port;
 
-  // Voice audio info
-  ushort  seq;
-  uint    ts;
+    // Voice audio info
+    ushort  seq;
+    uint    ts;
+
+    // Running state
+    bool         running;
+    bool         playing;
+
+    TaskMutex    playLock;
+    ManualEvent  pauseEvent;
+  }
 
   this(VoiceClient vc) {
     this.vc = vc;
+
+    this.playLock = new TaskMutex;
   }
 
   void run() {
-    while (true) {
+    this.running = true;
+
+    while (this.running) {
       auto data = this.conn.recv();
-      // this.vc.log.infof("got data %s", cast(string)data);
     }
+  }
+
+  void close() {
+    this.running = false;
+    this.playLock.lock();
+    try {
+      this.conn.close();
+    } catch (Error e) {}
+  }
+
+  @property bool paused() {
+    return (this.pauseEvent !is null);
+  }
+
+  bool pause(bool wait=false) {
+    if (this.pauseEvent) {
+      if (!wait) return false;
+      this.pauseEvent.wait();
+    }
+
+    this.pauseEvent = createManualEvent();
+    return true;
+  }
+
+  bool unpause() {
+    if (!this.pauseEvent) {
+      return false;
+    }
+
+    // Avoid a race here by nullifying before emit
+    auto e = this.pauseEvent;
+    this.pauseEvent = null;
+    e.emit();
+    return true;
   }
 
   bool connect(string hostname, ushort port, Duration timeout=5.seconds) {
@@ -92,28 +145,53 @@ class UDPVoiceClient {
     this.ip = data[4..(data[4..data.length].indexOf(0x00) + 4)];
     ubyte[2] portBytes = cast(ubyte[])(data)[data.length - 2..data.length];
     this.port = littleEndianToNative!(ushort, 2)(portBytes);
-    this.vc.log.tracef("voice hoststring is %s:%s", ip, port);
 
     // Finally actually start running the task
     runTask(toDelegate(&this.run));
     return true;
   }
 
-  /+
-  void playDCA(DCAFile obj) {
+  /**
+    Plays a DCAFile on the voice connection.
+  */
+  bool playDCA(DCAFile obj) {
+    // Take out the playing lock, and mark as playing
+    this.playLock.lock();
+    this.playing = true;
+
+    // Iterate over each frame and send it
     foreach (frame; obj.frames) {
+      // If we're not running, we can't play audio
+      if (!this.running) {
+        this.vc.log.warning("UDPVoiceClient lost connection while playing audio");
+        this.playLock.unlock();
+        this.playing = false;
+        return false;
+      }
+
+      // If we're paused, wait for the event to trigger
+      if (this.pauseEvent) {
+        this.vc.log.tracef("UDPVoiceClient has been paused");
+        this.pauseEvent.wait();
+        this.vc.log.tracef("UDPVoiceClient has been unpaused");
+      }
+
       RTPHeader header;
       header.seq = this.seq++;
-      header.ts = (this.ts += frame.size);
+      header.ts = this.ts;
       header.ssrc = this.vc.ssrc;
-      this.vc.log.tracef("s %s, t %s, ss %s", header.seq, header.ts, header.ssrc);
       ubyte[] raw = header.pack() ~ frame.data;
-      this.vc.log.tracef("sending frame (%s + %s)", header.pack().length, frame.data.length);
       this.conn.send(raw);
-      sleep((1.seconds / 1000) * 30);
+
+      // TODO: don't hardcode this
+      this.ts += 960;
+      sleep(1.msecs * (960 / (48000 / 1000)));
     }
+
+    this.playLock.unlock();
+    this.playing = false;
+    return true;
   }
-  +/
 }
 
 class VoiceClient {
@@ -129,10 +207,12 @@ class VoiceClient {
   // UDP Client
   UDPVoiceClient  udp;
 
+  // Current voice connection state
+  VoiceState state = VoiceState.DISCONNECTED;
+
   private {
-    Logger     log;
-    TaskMutex      waitForConnectedMutex;
-    TaskCondition  waitForConnected;
+    Logger       log;
+    ManualEvent  waitForConnected;
 
     // Voice websocket
     WebSocket  sock;
@@ -140,25 +220,24 @@ class VoiceClient {
     // Heartbeater task
     Task  heartbeater;
 
-    // Listener for VOICE_SERVER_UPDATE events
-    EventListener  l;
+    // Various connection attributes
+    string  token;
+    URL     endpoint;
+    // bool    connected = false;
+    ushort  ssrc;
+    ushort  port;
+    ushort  heartbeatInterval;
+    bool    mute;
+    bool    deaf;
+    bool    speaking = false;
+    EventListener  updateListener;
   }
-
-  // Various connection attributes
-  string  token;
-  URL     endpoint;
-  bool    connected = false;
-  ushort  ssrc;
-  ushort  port;
-  ushort  heartbeat_interval;
-  bool    mute;
-  bool    deaf;
-  bool    speaking = false;
 
   this(Channel c, bool mute=false, bool deaf=false) {
     this.channel = c;
     this.client = c.client;
     this.log = this.client.log;
+
     this.mute = mute;
     this.deaf = deaf;
 
@@ -175,64 +254,106 @@ class VoiceClient {
     this.send(new VoiceSpeakingPacket(value, 0));
   }
 
-  void handleVoiceReadyPacket(VoiceReadyPacket p) {
-    this.log.tracef("Got VoiceReadyPacket");
+  private void handleVoiceReadyPacket(VoiceReadyPacket p) {
     this.ssrc = p.ssrc;
     this.port = p.port;
-    this.heartbeat_interval = p.heartbeat_interval;
+    this.heartbeatInterval = p.heartbeatInterval;
 
     // Spawn the heartbeater
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
 
-    // Open up the UDP Connection and perform IP discovery
-    this.udp = new UDPVoiceClient(this);
+    // If we don't have a UDP connection open (e.g. not reconnecting), open one
+    //  now.
+    if (!this.udp) {
+      this.udp = new UDPVoiceClient(this);
+    }
+
+    // Then actually connect and perform IP discovery
     assert(this.udp.connect(this.endpoint.host, this.port), "Failed to UDPVoiceClient connect/discover");
 
     // Select the protocol
+    //  TODO: encryption/xsalsa
     this.send(new VoiceSelectProtocolPacket("udp", "plain", this.udp.ip, this.udp.port));
-
   }
 
-  void handleVoiceSessionDescription(VoiceSessionDescriptionPacket p) {
-    // Notify the waitForConnected condition
-    this.waitForConnected.notifyAll();
+  private void handleVoiceSessionDescription(VoiceSessionDescriptionPacket p) {
+    this.log.tracef("Recieved VoiceSessionDescription, finished connection sequence.");
+
+    // Toggle our voice speaking state so everyone learns our SSRC
+    this.send(new VoiceSpeakingPacket(true, 0));
+    this.send(new VoiceSpeakingPacket(false, 0));
+
+    // Set the state to READY, we can now send voice data
+    this.state = VoiceState.READY;
+
+    // Emit the connected event
+    this.waitForConnected.emit();
+
+    // If we where paused (e.g. in the process of reconnecting), unpause now
+    if (this.udp.paused) {
+      // For whatever reason, if we don't sleep here sometimes clients won't accept our audio
+      sleep(1.seconds);
+      this.udp.unpause();
+    }
   }
 
-  /+
+  /**
+    Plays a DCAFile on the connection.
+  */
   void playDCAFile(DCAFile f) {
+    assert(this.state == VoiceState.READY, "Must be connected to play audio");
     this.udp.playDCA(f);
   }
-  +/
 
-  void heartbeat() {
-    while (this.connected) {
+  private void heartbeat() {
+    while (this.state >= VoiceState.CONNECTED) {
       uint unixTime = cast(uint)core.stdc.time.time(null);
       this.send(new VoiceHeartbeatPacket(unixTime * 1000));
-      sleep(this.heartbeat_interval.msecs);
+      sleep(this.heartbeatInterval.msecs);
     }
   }
 
-  /*
-  void dispatch(JSONObject obj) {
-    this.log.tracef("voice-dispatch: %s %s", obj.get!VoiceOPCode("op"), obj.dumps);
+  private void dispatchVoicePacket(T)(ref JSON obj) {
+    T packet = new T;
+    packet.deserialize(obj);
+    this.packetEmitter.emit!T(packet);
+  }
 
-    switch (obj.get!VoiceOPCode("op")) {
-      case VoiceOPCode.VOICE_READY:
-        this.packetEmitter.emit!VoiceReadyPacket(new VoiceReadyPacket(obj));
-        break;
-      case VoiceOPCode.VOICE_SESSION_DESCRIPTION:
-        this.packetEmitter.emit!VoiceSessionDescriptionPacket(
-            new VoiceSessionDescriptionPacket(obj));
-        break;
-      default:
-        break;
+  private void parse(string rawData) {
+    auto json = parseTrustedJSON(rawData);
+
+    VoiceOPCode op;
+
+    foreach (key; json.byKey) {
+      switch (key) {
+        case "op":
+          op = cast(VoiceOPCode)json.read!ushort;
+          break;
+        case "d":
+          switch (op) {
+            case VoiceOPCode.VOICE_READY:
+              this.dispatchVoicePacket!VoiceReadyPacket(json);
+              break;
+            case VoiceOPCode.VOICE_SESSION_DESCRIPTION:
+              this.dispatchVoicePacket!VoiceSessionDescriptionPacket(json);
+              break;
+            case VoiceOPCode.VOICE_HEARTBEAT:
+              // We ignore these
+              break;
+            default:
+              this.log.warningf("Unhandled voice packet: %s", op);
+              break;
+          }
+          break;
+        default:
+          this.log.warningf("Got unexpected key for voice OP: %s: %s (%s)", op, key, json.peek);
+          break;
+      }
     }
   }
-  */
 
   void send(Serializable p) {
     string data = p.serialize().toString;
-    this.log.tracef("voice-send: %s", data);
     this.sock.send(data);
   }
 
@@ -253,24 +374,50 @@ class VoiceClient {
       }
 
       try {
-        // this.dispatch(new JSONObject(data));
+        this.parse(data);
       } catch (Exception e) {
-        this.log.warning("failed to handle voice dispatch: %s (%s)", e, data);
+        this.log.warningf("failed to handle %s (%s)", e, data);
+      } catch (Error e) {
+        this.log.warningf("failed to handle %s (%s)", e, data);
       }
     }
 
-    this.log.warning("voice websocket closed");
+    this.log.warningf("Lost voice websocket connection in state %s", this.state);
+
+    // If we where in state READY, reconnect fully
+    if (this.state == VoiceState.READY) {
+      this.log.warning("Attempting reconnection of voice connection");
+      this.disconnect();
+      this.connect();
+    }
   }
 
-  /*
-  void onVoiceServerUpdate(VoiceServerUpdate event) {
-    if (this.channel.guild_id != event.guild_id) {
+  private void onVoiceServerUpdate(VoiceServerUpdate event) {
+    if (this.channel.guild.id != event.guildID) {
       return;
     }
 
-    // TODO: handle server moving
-    this.token = event.token;
-    this.connected = true;
+    if (this.token && event.token != this.token) {
+      return;
+    } else {
+      this.token = event.token;
+    }
+
+    // If we're currently connected to voice, pause the UDP connection...
+    if (this.udp && !this.udp.paused) {
+      this.udp.pause();
+    }
+
+    // If we're connected (e.g. have a WS open), close it so we can reconnect
+    //  to the new voice endpoint.
+    if (this.state >= VoiceState.CONNECTED) {
+      // Set state before we close so we don't attempt to reconnect
+      this.state = VoiceState.CONNECTED;
+      this.sock.close();
+    }
+
+    // Make sure our state is now CONNECTED
+    this.state = VoiceState.CONNECTED;
 
     // Grab endpoint and create a proper URL out of it
     this.endpoint = URL("ws", event.endpoint.split(":")[0], 0, Path());
@@ -279,21 +426,26 @@ class VoiceClient {
 
     // Send identify
     this.send(new VoiceIdentifyPacket(
-      this.channel.guild_id,
+      this.channel.guild.id,
       this.client.state.me.id,
-      this.client.gw.session_id,
+      this.client.gw.sessionID,
       this.token
     ));
   }
+
+  /**
+    Attempt a connection to the voice channel this VoiceClient is attached to.
   */
-
   bool connect(Duration timeout=5.seconds) {
-    this.waitForConnectedMutex = new TaskMutex;
-    this.waitForConnected = new TaskCondition(this.waitForConnectedMutex);
+    this.state = VoiceState.CONNECTING;
+    this.waitForConnected = createManualEvent();
 
-    //this.l = this.client.gw.eventEmitter.listen!VoiceServerUpdate(toDelegate(
-    //  &this.onVoiceServerUpdate));
+    // Start listening for VoiceServerUpdates
+    this.updateListener = this.client.gw.eventEmitter.listen!VoiceServerUpdate(
+      toDelegate(&this.onVoiceServerUpdate)
+    );
 
+    // Send our VoiceStateUpdate
     this.client.gw.send(new VoiceStateUpdatePacket(
       this.channel.guild.id,
       this.channel.id,
@@ -301,26 +453,41 @@ class VoiceClient {
       this.deaf
    ));
 
-    // Wait for connection
-    synchronized (this.waitForConnectedMutex) {
-      if (this.waitForConnected.wait(timeout)) {
-        return true;
-      } else {
-        this.disconnect();
-        return false;
-      }
+    // Wait for connection event to be emitted (or timeout and disconnect)
+    if (this.waitForConnected.wait(timeout, 0)) {
+      return true;
+    } else {
+      this.disconnect();
+      return false;
     }
   }
 
   void disconnect() {
-    this.connected = false;
-    this.sock.close();
-    this.l.unbind();
+    // Send gateway update if we requested it
     this.client.gw.send(new VoiceStateUpdatePacket(
       this.channel.guild.id,
-      0, // TODO
+      0,
       this.mute,
       this.deaf
     ));
+
+    // Always make sure our updateListener is unbound
+    this.updateListener.unbind();
+
+    // If we're actually connected, close the voice socket
+    if (this.state >= VoiceState.CONNECTING) {
+      this.state = VoiceState.DISCONNECTED;
+      this.sock.close();
+    }
+
+    // If we have a UDP connection, close it
+    if (this.udp) {
+      this.udp.close();
+      this.udp.destroy();
+      this.udp = null;
+    }
+
+    // Finally set state to disconnected
+    this.state = VoiceState.DISCONNECTED;
   }
 }
