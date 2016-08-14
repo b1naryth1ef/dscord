@@ -18,6 +18,8 @@ import vibe.core.core,
 
 import dcad.types : DCAFile;
 
+public import dscord.voice.playable;
+
 import dscord.client,
        dscord.gateway.packets,
        dscord.gateway.events,
@@ -69,17 +71,11 @@ class UDPVoiceClient {
     uint    ts;
 
     // Running state
-    bool         running;
-    bool         playing;
-
-    TaskMutex    playLock;
-    ManualEvent  pauseEvent;
+    bool  running;
   }
 
   this(VoiceClient vc) {
     this.vc = vc;
-
-    this.playLock = new TaskMutex;
   }
 
   void run() {
@@ -92,36 +88,10 @@ class UDPVoiceClient {
 
   void close() {
     this.running = false;
-    this.playLock.lock();
+
     try {
       this.conn.close();
     } catch (Error e) {}
-  }
-
-  @property bool paused() {
-    return (this.pauseEvent !is null);
-  }
-
-  bool pause(bool wait=false) {
-    if (this.pauseEvent) {
-      if (!wait) return false;
-      this.pauseEvent.wait();
-    }
-
-    this.pauseEvent = createManualEvent();
-    return true;
-  }
-
-  bool unpause() {
-    if (!this.pauseEvent) {
-      return false;
-    }
-
-    // Avoid a race here by nullifying before emit
-    auto e = this.pauseEvent;
-    this.pauseEvent = null;
-    e.emit();
-    return true;
   }
 
   bool connect(string hostname, ushort port, Duration timeout=5.seconds) {
@@ -151,51 +121,6 @@ class UDPVoiceClient {
     runTask(&this.run);
     return true;
   }
-
-  /**
-    Plays a DCAFile on the voice connection.
-  */
-  bool playDCA(DCAFile obj) {
-    // Create a new ticker
-    Ticker t = new Ticker(20.msecs, true);
-
-    // Take out the playing lock, and mark as playing
-    this.playLock.lock();
-    this.playing = true;
-
-    // Iterate over each frame and send it
-    foreach (frame; obj.frames) {
-      // If we're not running, we can't play audio
-      if (!this.running) {
-        this.vc.log.warning("UDPVoiceClient lost connection while playing audio");
-        this.playLock.unlock();
-        this.playing = false;
-        return false;
-      }
-
-      // If we're paused, wait for the event to trigger
-      if (this.pauseEvent) {
-        this.vc.log.tracef("UDPVoiceClient has been paused");
-        this.pauseEvent.wait();
-        this.vc.log.tracef("UDPVoiceClient has been unpaused");
-      }
-
-      RTPHeader header;
-      header.seq = this.seq++;
-      header.ts = this.ts;
-      header.ssrc = this.vc.ssrc;
-      ubyte[] raw = header.pack() ~ frame.data;
-      this.conn.send(raw);
-
-      // TODO: don't hardcode this
-      this.ts += 960;
-      t.sleep();
-    }
-
-    this.playLock.unlock();
-    this.playing = false;
-    return true;
-  }
 }
 
 class VoiceClient {
@@ -213,6 +138,10 @@ class VoiceClient {
 
   // Current voice connection state
   VoiceState state = VoiceState.DISCONNECTED;
+
+  // Currently playing item + player task
+  Playable  playable;
+  Task      playerTask;
 
   private {
     Logger       log;
@@ -235,6 +164,9 @@ class VoiceClient {
     bool    deaf;
     bool    speaking = false;
     EventListener  updateListener;
+
+    // Used to control pausing state
+    ManualEvent pauseEvent;
   }
 
   this(Channel c, bool mute=false, bool deaf=false) {
@@ -275,7 +207,7 @@ class VoiceClient {
     // Then actually connect and perform IP discovery
     if (!this.udp.connect(this.endpoint.host, this.port)) {
       this.log.warning("VoiceClient failed to connect over UDP and perform IP discovery");
-      this.disconnect();
+      this.disconnect(false);
       return;
     }
 
@@ -290,6 +222,7 @@ class VoiceClient {
     // Toggle our voice speaking state so everyone learns our SSRC
     this.send(new VoiceSpeakingPacket(true, 0));
     this.send(new VoiceSpeakingPacket(false, 0));
+    sleep(250.msecs);
 
     // Set the state to READY, we can now send voice data
     this.state = VoiceState.READY;
@@ -298,19 +231,92 @@ class VoiceClient {
     this.waitForConnected.emit();
 
     // If we where paused (e.g. in the process of reconnecting), unpause now
-    if (this.udp.paused) {
+    if (this.paused) {
       // For whatever reason, if we don't sleep here sometimes clients won't accept our audio
       sleep(1.seconds);
-      this.udp.unpause();
+      this.resume();
     }
   }
 
-  /**
-    Plays a DCAFile on the connection.
-  */
-  void playDCAFile(DCAFile f) {
+  @property bool paused() {
+    return (this.pauseEvent !is null);
+  }
+
+  bool pause(bool wait=false) {
+    if (this.pauseEvent) {
+      if (!wait) return false;
+      this.pauseEvent.wait();
+    }
+
+    this.pauseEvent = createManualEvent();
+    return true;
+  }
+
+  bool resume() {
+    if (!this.paused) {
+      return false;
+    }
+
+    // Avoid race conditions by copying
+    auto e = this.pauseEvent;
+    this.pauseEvent = null;
+    e.emit();
+    return true;
+  }
+
+  private void runPlayer() {
+    // Create a new timing ticker at the frame duration interval
+    Ticker ticker = new Ticker(this.playable.getFrameDuration().msecs, true);
+
+    RTPHeader header;
+    header.ssrc = this.ssrc;
+
+    ubyte[] frame;
+
+    this.playable.start();
+
+    while (this.playable.hasMoreFrames()) {
+      // If the UDP connection isnt running, this is pointless
+      if (!this.udp || !this.udp.running) {
+        this.log.warning("UDPVoiceClient lost connection while playing audio");
+        return;
+      }
+
+      // If we're paused, wait until we unpause to continue playing
+      if (this.paused) {
+        this.pauseEvent.wait();
+      }
+
+      frame = this.playable.nextFrame();
+      header.seq++;
+      this.udp.conn.send(header.pack() ~ frame);
+      header.ts += this.playable.getFrameSize();
+
+      // Wait until its time to play the next frame
+      ticker.sleep();
+    }
+  }
+
+  @property bool playing() {
+    return (this.playerTask && this.playerTask.running);
+  }
+
+  VoiceClient play(DCAFile f) {
+    this.play(new DCAPlayable(f));
+    return this;
+  }
+
+  VoiceClient play(Playable p) {
     assert(this.state == VoiceState.READY, "Must be connected to play audio");
-    this.udp.playDCA(f);
+
+    // If we are currently playing something, kill it
+    if (this.playerTask && this.playerTask.running) {
+      this.playerTask.terminate();
+    }
+
+    this.playable = p;
+    this.playerTask = runTask(&this.runPlayer);
+    return this;
   }
 
   private void heartbeat() {
@@ -396,7 +402,7 @@ class VoiceClient {
     // If we where in state READY, reconnect fully
     if (this.state == VoiceState.READY) {
       this.log.warning("Attempting reconnection of voice connection");
-      this.disconnect();
+      this.disconnect(false);
       this.connect();
     }
   }
@@ -412,9 +418,9 @@ class VoiceClient {
       this.token = event.token;
     }
 
-    // If we're currently connected to voice, pause the UDP connection...
-    if (this.udp && !this.udp.paused) {
-      this.udp.pause();
+    // Pause the player until we reconnect
+    if (!this.paused) {
+      this.pause();
     }
 
     // If we're connected (e.g. have a WS open), close it so we can reconnect
@@ -466,12 +472,20 @@ class VoiceClient {
     if (this.waitForConnected.wait(timeout, 0)) {
       return true;
     } else {
-      this.disconnect();
+      this.disconnect(false);
       return false;
     }
   }
 
-  void disconnect() {
+  void disconnect(bool clean=true) {
+    if (this.playing) {
+      if (clean) {
+        this.log.tracef("Requested CLEAN voice disconnect, waiting...");
+        this.playerTask.join();
+        this.log.tracef("Executing previously requested CLEAN voice disconnect");
+      }
+    }
+
     // Send gateway update if we requested it
     this.client.gw.send(new VoiceStateUpdatePacket(
       this.channel.guild.id,

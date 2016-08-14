@@ -42,9 +42,7 @@ class BasicPlugin : Plugin {
 
     if (vc.connect()) {
       event.msg.replyf("OK: %s", vc);
-      vc.playDCAFile(sound);
-      sleep(1.seconds);
-      vc.disconnect();
+      vc.play(sound).disconnect();
     } else {
       event.msg.reply("it dont work");
     }
@@ -96,10 +94,7 @@ class BasicPlugin : Plugin {
 
     auto vc = chan.joinVoice();
     if (vc.connect()) {
-      sleep(1.seconds);
-      vc.playDCAFile(result);
-      sleep(1.seconds);
-      vc.disconnect();
+      vc.play(result).disconnect();
     }
   }
 
