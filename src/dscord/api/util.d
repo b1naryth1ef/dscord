@@ -82,10 +82,6 @@ struct U {
   }
 }
 
-unittest {
-  assert(U("this")("is")("a")("test")("key", "value").value == "/this/is/a/test/?key=value");
-}
-
 /**
   Wrapper for HTTP REST Responses.
 */

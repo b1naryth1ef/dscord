@@ -66,7 +66,7 @@ class Ticker {
 }
 
 unittest {
-  Timer t = new Timer(1.seconds);
+  Ticker t = new Ticker(1.seconds);
 
   for (int i = 0; i < 10; i++) {
     t.sleep();

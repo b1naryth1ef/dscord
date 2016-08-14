@@ -384,7 +384,13 @@ class PresenceUpdate {
       { this.user = new User(this.client, obj); },
       { this.guildID = readSnowflake(obj); },
       { this.roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
-      { this.game = obj.read!string; },
+      {
+        if (obj.peek == DataType.string) {
+          this.game = obj.read!string;
+        } else {
+          obj.skipValue;
+        }
+      },
       { this.status = obj.read!string; },
     );
   }

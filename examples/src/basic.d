@@ -14,7 +14,8 @@ import vibe.http.client;
 import dcad.types : DCAFile;
 
 import dscord.core,
-       dscord.util.process;
+       dscord.util.process,
+       dscord.voice.youtubedl;
 
 import core.sys.posix.signal;
 import etc.linux.memoryerror;
@@ -75,20 +76,7 @@ class BasicPlugin : Plugin {
 
     auto msg = event.msg.reply("Downloading and encoding link...");
 
-    // Create a download -> encode process chain
-    auto chain = new ProcessChain().
-      run(["youtube-dl", "-v", "-f", "bestaudio", "-o", "-", event.args[0]]).
-      run(["ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "48000", "-ac", "2", "pipe:1"]).
-      run(["dcad"]);
-
-    // Create a DCAFile loader for the chain stream
-    DCAFile result = DCAFile.fromRawDCA(chain.end);
-
-    // Wait for the chain to complete
-    if (chain.wait() != 0) {
-      msg.edit("Failed to download... :crying_cat_face:");
-      return;
-    }
+    DCAFile result = YoutubeDL.download(event.args[0]);
 
     msg.edit("OK! Playing jams...");
 

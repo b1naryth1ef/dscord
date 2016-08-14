@@ -15,7 +15,7 @@ struct Process {
   std.process.Pipe pipe;
 
   /**
-   Creates a new process in the chain (and spawns it).
+   Creates a new process (and spawns it).
 
     Params:
       args = args for the process
@@ -27,10 +27,25 @@ struct Process {
   }
 
   /**
+    Creates a new process (and spawns it)
+
+    Params:
+      args = args for the process
+  */
+  this(string[] args) {
+    this(args, std.stdio.stdin);
+  }
+
+  /**
     Waits for this process to complete and returns the exit code.
   */
   int wait() {
     return std.process.wait(this.pid);
+  }
+
+  /// File object of this processes stdout
+  @property std.stdio.File stdout() {
+    return this.pipe.readEnd;
   }
 }
 
