@@ -12,20 +12,33 @@ import dscord.util.process,
        dscord.types.all;
 
 class YoutubeDL {
+  static void infoWorker(Task parent) {
+    string url = receiveOnlyCompat!string();
+
+    auto proc = new Process(["youtube-dl", "-i", "-j", "--youtube-skip-dash-manifest", url]);
+    if (proc.wait() != 0) {
+      parent.sendCompat("");
+    }
+
+    string buffer;
+    while (!proc.stdout.eof()) {
+      buffer ~= proc.stdout.readln();
+    }
+    parent.sendCompat(buffer);
+  }
+
   /**
     Returns a VibeJSON object with information for a given URL.
   */
   static VibeJSON getInfo(string url) {
-    auto proc = new Process(["youtube-dl", "-i", "-j", "--youtube-skip-dash-manifest", url]);
-    assert(proc.wait() == 0, "getAssetInfo non-zero exit code");
+    Task worker = runWorkerTaskH(&YoutubeDL.infoWorker, Task.getThis);
+    worker.sendCompat(url);
 
-    string buffer;
-
-    while (!proc.stdout.eof()) {
-      buffer ~= proc.stdout.readln();
+    try {
+      return parseJsonString(receiveOnlyCompat!(string));
+    } catch (Exception e) {
+      return VibeJSON.emptyObject;
     }
-
-    return parseJsonString(buffer);
   }
 
   static void downloadWorker(Task parent) {
