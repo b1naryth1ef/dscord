@@ -1,3 +1,6 @@
+/**
+  Manages the Discord websocket client.
+*/
 module dscord.gateway.client;
 
 import std.stdio,

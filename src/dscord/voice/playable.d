@@ -1,15 +1,33 @@
+/**
+  Implementation of types that can be played on a VoiceClient
+*/
 module dscord.voice.playable;
 
 import dcad.types : DCAFile;
 
+/**
+  An interface representing a type which can be played over a VoiceClient.
+*/
 interface Playable {
+  /// Duration of the frame in milliseconds
   const short getFrameDuration();
+
+  /// Size of the frame in bytes
   const short getFrameSize();
+
+  /// Returns the next frame to be played
   ubyte[] nextFrame();
+
+  /// Returns true while there are more frames to be played
   bool hasMoreFrames();
+
+  /// Called when the Playable begins to be played
   void start();
 }
 
+/**
+  Playable implementation for DCAFiles
+*/
 class DCAPlayable : Playable {
   private {
     DCAFile file;
@@ -42,6 +60,9 @@ class DCAPlayable : Playable {
   void start() {}
 }
 
+/**
+  Simple Playlist for DCAPlayables
+*/
 class DCAPlaylist : Playable {
   private {
     DCAPlayable[]  playlist;

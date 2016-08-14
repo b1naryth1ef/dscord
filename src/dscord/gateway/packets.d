@@ -1,3 +1,6 @@
+/**
+  Implementations of packets sent over the Gateway websocket.
+*/
 module dscord.gateway.packets;
 
 import std.stdio;

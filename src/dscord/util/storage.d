@@ -1,3 +1,6 @@
+/**
+  A simple JSON storage wrapper.
+*/
 module dscord.util.storage;
 
 import std.file : dirSeparator, read, write, exists;

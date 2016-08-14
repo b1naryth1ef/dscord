@@ -1,3 +1,7 @@
+/**
+  Implementations of Discord events.
+*/
+
 module dscord.gateway.events;
 
 import std.algorithm,

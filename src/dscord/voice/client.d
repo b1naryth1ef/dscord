@@ -1,3 +1,6 @@
+/**
+  Manages Discord voice connections.
+*/
 module dscord.voice.client;
 
 import core.time,

@@ -1,3 +1,6 @@
+/**
+  Utility class for keeping a count of items.
+*/
 module dscord.util.counter;
 
 import std.algorithm;

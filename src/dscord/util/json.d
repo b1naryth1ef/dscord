@@ -1,3 +1,6 @@
+/**
+  Utilities releated to JSON processing.
+*/
 module dscord.util.json;
 
 public import fast.json : FastJson = Json, parseTrustedJSON, DataType;

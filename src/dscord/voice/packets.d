@@ -1,3 +1,6 @@
+/**
+  Implementations of packets sent over the Voice websocket.
+*/
 module dscord.voice.packets;
 
 import std.stdio;
