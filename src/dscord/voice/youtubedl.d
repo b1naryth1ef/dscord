@@ -16,30 +16,37 @@ class YoutubeDL {
     string url = receiveOnlyCompat!string();
 
     auto proc = new Process(["youtube-dl", "-i", "-j", "--youtube-skip-dash-manifest", url]);
-    if (proc.wait() != 0) {
-      parent.sendCompat("");
-      return;
+
+    shared string[] lines;
+    while (!proc.stdout.eof()) {
+      lines ~= proc.stdout.readln();
     }
 
-    string buffer;
-    while (!proc.stdout.eof()) {
-      buffer ~= proc.stdout.readln();
-    }
-    parent.sendCompat(buffer);
+    parent.sendCompat(lines);
   }
 
   /**
     Returns a VibeJSON object with information for a given URL.
   */
-  static VibeJSON getInfo(string url) {
+  static VibeJSON[] getInfo(string url) {
+    VibeJSON[] result;
+
     Task worker = runWorkerTaskH(&YoutubeDL.infoWorker, Task.getThis);
     worker.sendCompat(url);
 
-    try {
-      return parseJsonString(receiveOnlyCompat!(string));
-    } catch (Exception e) {
-      return VibeJSON.emptyObject;
+    shared string[] lines = receiveOnlyCompat!(shared string[]);
+
+    if (!lines.length) {
+      return result;
+    } else {
+      foreach (line; lines) {
+        try {
+          result ~= parseJsonString(line);
+        } catch (Exception e) {}
+      }
     }
+
+    return result;
   }
 
   static void downloadWorker(Task parent) {

@@ -120,6 +120,11 @@ class DCAPlaylist : Playable {
     }
   }
 
+  void empty() {
+    this.playlist = [];
+    this.next();
+  }
+
   void start() {
     if (this.playlist.length) {
       this.next();

@@ -31,6 +31,12 @@ class MessageBuffer {
     this._maxLength = maxLength;
   }
 
+  string popBack() {
+    string line = this.lines[$-1];
+    this.lines = this.lines[0..$-2];
+    return line;
+  }
+
   /**
     Max length of this message (subtracting for formatting)
   */
