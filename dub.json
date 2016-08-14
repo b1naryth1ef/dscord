@@ -8,7 +8,7 @@
   "dependencies": {
     "shaker": "~>0.0.7",
     "vibe-d": "~>0.7.29",
-    "dcad": "~>0.0.3",
+    "dcad": "~>0.0.6",
     "fast": "~master"
   },
   "-ddoxTool": "scod",

@@ -4,12 +4,12 @@ import core.time,
        core.stdc.time,
        std.stdio,
        std.zlib,
-       std.functional,
        std.array,
        std.stdio,
        std.bitmanip,
        std.outbuffer,
-       std.string;
+       std.string,
+       std.algorithm.comparison;
 
 import vibe.core.core,
        vibe.core.net,
@@ -23,7 +23,8 @@ import dscord.client,
        dscord.gateway.events,
        dscord.voice.packets,
        dscord.types.all,
-       dscord.util.emitter;
+       dscord.util.emitter,
+       dscord.util.ticker;
 
 enum VoiceState {
   DISCONNECTED = 0,
@@ -147,7 +148,7 @@ class UDPVoiceClient {
     this.port = littleEndianToNative!(ushort, 2)(portBytes);
 
     // Finally actually start running the task
-    runTask(toDelegate(&this.run));
+    runTask(&this.run);
     return true;
   }
 
@@ -155,6 +156,9 @@ class UDPVoiceClient {
     Plays a DCAFile on the voice connection.
   */
   bool playDCA(DCAFile obj) {
+    // Create a new ticker
+    Ticker t = new Ticker(20.msecs, true);
+
     // Take out the playing lock, and mark as playing
     this.playLock.lock();
     this.playing = true;
@@ -185,7 +189,7 @@ class UDPVoiceClient {
 
       // TODO: don't hardcode this
       this.ts += 960;
-      sleep(1.msecs * (960 / (48000 / 1000)));
+      t.sleep();
     }
 
     this.playLock.unlock();
@@ -242,9 +246,9 @@ class VoiceClient {
     this.deaf = deaf;
 
     this.packetEmitter = new Emitter;
-    this.packetEmitter.listen!VoiceReadyPacket(toDelegate(&this.handleVoiceReadyPacket));
+    this.packetEmitter.listen!VoiceReadyPacket(&this.handleVoiceReadyPacket);
     this.packetEmitter.listen!VoiceSessionDescriptionPacket(
-        toDelegate(&this.handleVoiceSessionDescription));
+      &this.handleVoiceSessionDescription);
   }
 
   void setSpeaking(bool value) {
@@ -260,7 +264,7 @@ class VoiceClient {
     this.heartbeatInterval = p.heartbeatInterval;
 
     // Spawn the heartbeater
-    this.heartbeater = runTask(toDelegate(&this.heartbeat));
+    this.heartbeater = runTask(&this.heartbeat);
 
     // If we don't have a UDP connection open (e.g. not reconnecting), open one
     //  now.
@@ -269,7 +273,11 @@ class VoiceClient {
     }
 
     // Then actually connect and perform IP discovery
-    assert(this.udp.connect(this.endpoint.host, this.port), "Failed to UDPVoiceClient connect/discover");
+    if (!this.udp.connect(this.endpoint.host, this.port)) {
+      this.log.warning("VoiceClient failed to connect over UDP and perform IP discovery");
+      this.disconnect();
+      return;
+    }
 
     // Select the protocol
     //  TODO: encryption/xsalsa
@@ -423,7 +431,7 @@ class VoiceClient {
     // Grab endpoint and create a proper URL out of it
     this.endpoint = URL("ws", event.endpoint.split(":")[0], 0, Path());
     this.sock = connectWebSocket(this.endpoint);
-    runTask(toDelegate(&this.run));
+    runTask(&this.run);
 
     // Send identify
     this.send(new VoiceIdentifyPacket(
@@ -443,7 +451,7 @@ class VoiceClient {
 
     // Start listening for VoiceServerUpdates
     this.updateListener = this.client.gw.eventEmitter.listen!VoiceServerUpdate(
-      toDelegate(&this.onVoiceServerUpdate)
+      &this.onVoiceServerUpdate
     );
 
     // Send our VoiceStateUpdate

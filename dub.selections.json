@@ -1,7 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"dcad": "0.0.3",
+		"dcad": "0.0.6",
 		"ddox": "0.13.5",
 		"experimental_allocator": "2.70.0-b1",
 		"fast": "~master",
@@ -12,6 +12,7 @@
 		"libevent": "2.0.1+2.0.16",
 		"memutils": "0.4.6",
 		"openssl": "1.1.4+1.0.1g",
+		"opus": "0.0.1",
 		"scod": {"path":"../scod"},
 		"shaker": "0.0.7",
 		"vibe-d": "0.7.29"
