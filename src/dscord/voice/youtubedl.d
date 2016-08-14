@@ -18,6 +18,7 @@ class YoutubeDL {
     auto proc = new Process(["youtube-dl", "-i", "-j", "--youtube-skip-dash-manifest", url]);
     if (proc.wait() != 0) {
       parent.sendCompat("");
+      return;
     }
 
     string buffer;
