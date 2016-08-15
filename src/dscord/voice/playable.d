@@ -105,7 +105,11 @@ class Playlist : Playable {
   }
 
   void next() {
-    this.current = this.provider.getNext();
+    if (this.provider.hasNext()) {
+      this.current = this.provider.getNext();
+    } else {
+      this.current = null;
+    }
   }
 }
 

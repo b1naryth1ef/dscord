@@ -219,6 +219,13 @@ class Message : IModel {
   }
 
   /**
+    Edits this message contents with a MessageBuffer.
+  */
+  Message edit(MessageBuffer msg) {
+    return this.edit(msg.contents);
+  }
+
+  /**
     Deletes this message.
   */
   void del() {

@@ -268,8 +268,14 @@ class VoiceClient {
   }
 
   private void runPlayer() {
-    this.setSpeaking(true);
     this.playable.start();
+
+    if (!this.playable.hasMoreFrames()) {
+      this.log.warning("Playable ran out of frames before playing");
+      return;
+    }
+
+    this.setSpeaking(true);
 
     // Create a new timing ticker at the frame duration interval
     Ticker ticker = new Ticker(this.playable.getFrameDuration().msecs, true);

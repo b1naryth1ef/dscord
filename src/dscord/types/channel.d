@@ -1,6 +1,7 @@
 module dscord.types.channel;
 
 import std.stdio,
+       std.format,
        std.variant,
        core.vararg;
 
@@ -110,8 +111,12 @@ class Channel : IModel {
     return this.id;
   }
 
-  void sendMessage(string content, string nonce=null, bool tts=false) {
-    this.client.api.sendMessage(this.id, content, nonce, tts);
+  Message sendMessage(string content, string nonce=null, bool tts=false) {
+    return this.client.api.sendMessage(this.id, content, nonce, tts);
+  }
+
+  Message sendMessagef(T...)(string content, T args) {
+    return this.client.api.sendMessage(this.id, format(content, args), null, false);
   }
 
   @property bool DM() {
