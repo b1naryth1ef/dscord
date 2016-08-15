@@ -60,74 +60,87 @@ class DCAPlayable : Playable {
   void start() {}
 }
 
-/**
-  Simple Playlist for DCAPlayables
-*/
-class DCAPlaylist : Playable {
-  private {
-    DCAPlayable[]  playlist;
-    DCAPlayable    current;
-  }
+interface PlaylistProvider {
+  bool hasNext();
+  Playable getNext();
+}
 
-  this(DCAPlayable[] playlist) {
-    this.playlist = playlist;
-  }
+class Playlist : Playable {
+  PlaylistProvider provider;
+  Playable current;
 
-  void add(DCAPlayable p) {
-    this.playlist ~= p;
-  }
-
-  @property size_t length() {
-    return this.playlist.length;
+  this(PlaylistProvider provider) {
+    this.provider = provider;
   }
 
   const short getFrameDuration() {
-    return 20;
+    return this.current.getFrameDuration();
   }
 
   const short getFrameSize() {
-    return 960;
+    return this.current.getFrameSize();
   }
 
   bool hasMoreFrames() {
     if (!this.current) return false;
     if (this.current.hasMoreFrames()) return true;
-    if (this.playlist.length) return true;
+    if (this.provider.hasNext()) return true;
     return false;
   }
 
   ubyte[] nextFrame() {
     if (!this.current.hasMoreFrames()) {
-      if (this.playlist.length) {
-        this.next();
+      if (this.provider.hasNext()) {
+        this.current = this.provider.getNext();
+      } else{
+        this.current = null;
       }
     }
 
     return this.current.nextFrame();
   }
 
-  void next() {
-    if (!this.playlist.length) {
-      this.current = null;
-      return;
-    }
+  void start() {
+    this.next();
+  }
 
-    this.current = this.playlist[0];
-    if (this.playlist.length > 1) {
-      this.playlist = this.playlist[1..$];
-    } else {
-      this.playlist = [];
-    }
+  void next() {
+    this.current = this.provider.getNext();
+  }
+}
+
+/**
+  Simple Playlist provider.
+*/
+class SimplePlaylistProvider : PlaylistProvider {
+  private {
+    Playable[] playlist;
+  }
+
+  this(Playable[] playlist) {
+    this.playlist = playlist;
+  }
+
+  bool hasNext() {
+    return (this.playlist.length > 0);
+  }
+
+  Playable getNext() {
+    assert(this.hasNext());
+    Playable next = this.playlist[0];
+    this.playlist = this.playlist[1..$];
+    return next;
+  }
+
+  @property size_t length() {
+    return this.playlist.length;
+  }
+
+  void add(Playable p) {
+    this.playlist ~= p;
   }
 
   void empty() {
     this.playlist = [];
-    this.next();
-  }
-
-  void start() {
-    if (this.playlist.length) {
-      this.next();
-    }
   }
 }

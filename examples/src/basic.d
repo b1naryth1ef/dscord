@@ -76,7 +76,7 @@ class BasicPlugin : Plugin {
 
     auto msg = event.msg.reply("Downloading and encoding link...");
 
-    DCAFile result = YoutubeDL.download(event.args[0]);
+    DCAFile result = YoutubeDL.download(event.args[1]);
 
     msg.edit("OK! Playing jams...");
 

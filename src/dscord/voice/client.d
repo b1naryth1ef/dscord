@@ -268,6 +268,9 @@ class VoiceClient {
   }
 
   private void runPlayer() {
+    this.setSpeaking(true);
+    this.playable.start();
+
     // Create a new timing ticker at the frame duration interval
     Ticker ticker = new Ticker(this.playable.getFrameDuration().msecs, true);
 
@@ -276,12 +279,11 @@ class VoiceClient {
 
     ubyte[] frame;
 
-    this.playable.start();
-
     while (this.playable.hasMoreFrames()) {
       // If the UDP connection isnt running, this is pointless
       if (!this.udp || !this.udp.running) {
         this.log.warning("UDPVoiceClient lost connection while playing audio");
+        this.setSpeaking(false);
         return;
       }
 
@@ -298,6 +300,8 @@ class VoiceClient {
       // Wait until its time to play the next frame
       ticker.sleep();
     }
+
+    this.setSpeaking(false);
   }
 
   @property bool playing() {

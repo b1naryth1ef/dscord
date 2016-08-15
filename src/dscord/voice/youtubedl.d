@@ -54,7 +54,7 @@ class YoutubeDL {
 
     auto chain = new ProcessChain().
       run(["youtube-dl", "-v", "-f", "bestaudio", "-o", "-", url]).
-      run(["ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "48000", "-ac", "2", "pipe:1"]).
+      run(["ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "48000", "-ac", "2", "pipe:1", "-vol", "100"]).
       run(["dcad"]);
 
     shared ubyte[][] frames = cast(shared ubyte[][])rawReadFramesFromFile(chain.end);
