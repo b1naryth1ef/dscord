@@ -1,7 +1,8 @@
 module dscord.bot.plugin;
 
 import std.path,
-       std.file;
+       std.file,
+       std.variant;
 
 import std.experimental.logger,
        vibe.d : runTask;
@@ -36,8 +37,11 @@ class PluginState {
   /** Plugin JSON Config file */
   Storage        config;
 
-  /** PluginOptions struct **/
+  /** PluginOptions struct */
   PluginOptions  options;
+
+  /** Custom state data stored by the plugin */
+  Variant custom;
 
   this(Plugin plugin, PluginOptions opts) {
     this.options = opts ? opts : new PluginOptions;
