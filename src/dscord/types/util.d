@@ -107,3 +107,73 @@ class MessageBuffer {
     return this.append(format(fmt, args));
   }
 }
+
+/**
+  Utility class for constructing tabulated messages.
+*/
+class MessageTable {
+  private {
+    string[][] entries;
+    size_t[] sizes;
+    string delim;
+    bool wrapped;
+  }
+
+  /**
+    Creates a new MessageTable
+
+    Params:
+      delim = deliminator to use between table columns
+      wrapped = whether to place a deliminator at the left/right margins
+  */
+  this(string delim=" | ", bool wrapped=true) {
+    this.delim = delim;
+    this.wrapped = wrapped;
+  }
+
+  /**
+    Add a row.
+
+    Params:
+      args = sorted columns
+  */
+  void add(string[] args...) {
+    // Duplicate the args (its a reference) and append to our rows
+    this.entries ~= args.dup;
+
+    // Iterate over all the columns and update our sizes storage
+    size_t pos = 0;
+    foreach (part; args) {
+      if (this.sizes.length <= pos) {
+        this.sizes ~= part.length;
+      } else if (this.sizes[pos] < part.length) {
+        this.sizes[pos] = part.length;
+      }
+      pos++;
+    }
+  }
+
+  /**
+    Appends the output of this table to a message buffer
+  */
+  void appendToBuffer(MessageBuffer buffer) {
+    // Iterate over each row
+    foreach (entry; this.entries) {
+      size_t pos;
+      string line;
+
+      // If we're wrapped, add left margin deliminator
+      if (this.wrapped) line ~= this.delim;
+
+      // Iterate over each column in the row
+      foreach (part; entry) {
+        line ~= part ~ " ".replicate(this.sizes[pos] - part.length) ~ this.delim;
+        pos++;
+      }
+
+      // If we're not wrapped, remove the end deliminator
+      if (!this.wrapped) line = line[0..($ - this.delim.length)];
+      buffer.append(line);
+    }
+  }
+}
