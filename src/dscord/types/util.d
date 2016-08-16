@@ -151,7 +151,7 @@ class MessageTable : Sendable {
     Params:
       column = column index to sort by (0 based)
   */
-  void sort(ulong column, int delegate(string) conv) {
+  void sort(ulong column, int delegate(string) conv=null) {
     if (conv) {
       this.entries = std.algorithm.sorting.sort!(
         (a, b) => conv(a[column]) < conv(b[column])
