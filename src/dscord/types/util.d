@@ -4,14 +4,17 @@
 */
 module dscord.types.util;
 
+import dscord.types.message;
+
 import std.format,
-       std.array;
+       std.array,
+       std.algorithm.sorting;
 
 /**
   Utility class for constructing messages that can be sent over discord, allowing
   for inteligent limiting of size and stripping of formatting characters.
 */
-class MessageBuffer {
+class MessageBuffer : Sendable {
   private {
     bool codeBlock;
     bool filter;
@@ -31,15 +34,18 @@ class MessageBuffer {
     this._maxLength = maxLength;
   }
 
+  immutable(string) toSendableString() {
+    return this.contents;
+  }
+
+  /// Remove the last line in the buffer
   string popBack() {
     string line = this.lines[$-1];
     this.lines = this.lines[0..$-2];
     return line;
   }
 
-  /**
-    Max length of this message (subtracting for formatting)
-  */
+  /// Max length of this message (subtracting for formatting)
   @property size_t maxLength() {
     size_t value = this._maxLength;
 
@@ -73,7 +79,8 @@ class MessageBuffer {
   @property string contents() {
     string contents = this.lines.join("\n");
 
-    if (this.codeBlock) {
+    // Only format as a codeblock if we actually have contents
+    if (this.codeBlock && contents.length) {
       return "```" ~ contents ~ "```";
     }
 
@@ -111,8 +118,9 @@ class MessageBuffer {
 /**
   Utility class for constructing tabulated messages.
 */
-class MessageTable {
+class MessageTable : Sendable {
   private {
+    string[] header;
     string[][] entries;
     size_t[] sizes;
     string delim;
@@ -131,19 +139,41 @@ class MessageTable {
     this.wrapped = wrapped;
   }
 
+  immutable(string) toSendableString() {
+    MessageBuffer buffer = new MessageBuffer;
+    this.appendToBuffer(buffer);
+    return buffer.toSendableString();
+  }
+
   /**
-    Add a row.
+    Sort entries by column. Column must be integral.
 
     Params:
-      args = sorted columns
+      column = column index to sort by (0 based)
   */
-  void add(string[] args...) {
-    // Duplicate the args (its a reference) and append to our rows
-    this.entries ~= args.dup;
+  void sort(ulong column, int delegate(string) conv) {
+    if (conv) {
+      this.entries = std.algorithm.sorting.sort!(
+        (a, b) => conv(a[column]) < conv(b[column])
+      )(this.entries.dup).array;
+    } else {
+      this.entries = std.algorithm.sorting.sort!(
+        (a, b) => a[column] < b[column])(this.entries.dup).array;
+    }
+  }
 
-    // Iterate over all the columns and update our sizes storage
+  /**
+    Set a header row. Will not be sorted or modified.
+  */
+  void setHeader(string[] args...) {
+    this.header = args.dup;
+    this.indexSizes(args);
+  }
+
+  /// Resets sizes index for a given row
+  private string[] indexSizes(string[] row) {
     size_t pos = 0;
-    foreach (part; args) {
+    foreach (part; row) {
       if (this.sizes.length <= pos) {
         this.sizes ~= part.length;
       } else if (this.sizes[pos] < part.length) {
@@ -151,14 +181,24 @@ class MessageTable {
       }
       pos++;
     }
+    return row;
   }
 
   /**
-    Appends the output of this table to a message buffer
+    Add a row to the table.
+
+    Params:
+      args = sorted columns
   */
+  void add(string[] args...) {
+    // Duplicate the args (its a reference) and append to our rows
+    this.entries ~= this.indexSizes(args.dup);
+  }
+
+  /// Appends the output of this table to a message buffer
   void appendToBuffer(MessageBuffer buffer) {
     // Iterate over each row
-    foreach (entry; this.entries) {
+    foreach (entry; this.header ~ this.entries) {
       size_t pos;
       string line;
 

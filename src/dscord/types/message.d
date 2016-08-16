@@ -11,6 +11,14 @@ import std.stdio,
 import dscord.client,
        dscord.types.all;
 
+/**
+  An interface implementting something that can be sent as a message.
+*/
+interface Sendable {
+  /// Returns a string that will NEVER be greater than 2000 characters
+  immutable(string) toSendableString();
+}
+
 class MessageEmbed : IModel {
   mixin Model;
 
@@ -191,38 +199,38 @@ class Message : IModel {
       nonce = the message nonce
       tts = whether this is a TTS message
   */
-  Message reply(string content, string nonce=null, bool tts=false) {
+  Message reply(inout(string) content, string nonce=null, bool tts=false) {
     return this.client.api.sendMessage(this.channel.id, content, nonce, tts);
   }
 
   /**
-    Sends a new MessageBuffer message to the same channel as this message.
+    Sends a Sendable to the same channel as this message.
   */
-  Message reply(MessageBuffer msg) {
-    return this.client.api.sendMessage(this.channel.id, msg.contents, null, false);
+  Message reply(Sendable obj) {
+    return this.client.api.sendMessage(this.channel.id, obj.toSendableString(), null, false);
   }
 
   /**
     Sends a new formatted message to the same channel as this message.
   */
-  Message replyf(T...)(string content, T args) {
+  Message replyf(T...)(inout(string) content, T args) {
     return this.client.api.sendMessage(this.channel.id, format(content, args), null, false);
   }
 
   /**
     Edits this message contents.
   */
-  Message edit(string content) {
+  Message edit(inout(string) content) {
     // We can only edit messages we sent
     assert(this.client.me.id == this.author.id);
     return this.client.api.editMessage(this.channel.id, this.id, content);
   }
 
   /**
-    Edits this message contents with a MessageBuffer.
+    Edits this message contents with a Sendable.
   */
-  Message edit(MessageBuffer msg) {
-    return this.edit(msg.contents);
+  Message edit(Sendable obj) {
+    return this.edit(obj.toSendableString());
   }
 
   /**

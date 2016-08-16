@@ -198,7 +198,7 @@ class APIClient {
   /**
     Sends a message to a channel.
   */
-  Message sendMessage(Snowflake chan, string content, string nonce, bool tts) {
+  Message sendMessage(Snowflake chan, inout(string) content, string nonce, bool tts) {
     VibeJSON payload = VibeJSON.emptyObject;
     payload["content"] = VibeJSON(content);
     payload["nonce"] = VibeJSON(nonce);
@@ -213,7 +213,7 @@ class APIClient {
   /**
     Edits a messages contents.
   */
-  Message editMessage(Snowflake chan, Snowflake msg, string content) {
+  Message editMessage(Snowflake chan, Snowflake msg, inout(string) content) {
     VibeJSON payload = VibeJSON.emptyObject;
     payload["content"] = content;
 
