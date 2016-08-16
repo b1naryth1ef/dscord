@@ -1,3 +1,7 @@
+/**
+  Base class for creating plugins the Bot can load/unload.
+*/
+
 module dscord.bot.plugin;
 
 import std.path,
@@ -14,15 +18,19 @@ import dscord.client,
        dscord.util.storage;
 
 /**
-  PluginOptions is a class that can be used to configure the base functionality
-  and utilties in use by a plugin.
+  Sentinel for @Synced attributes
+  TODO: this is messy. Better way to achieve a sentinel?
 */
-class PluginOptions {
-  /** Does this plugin load/require a configuration file? */
-  bool useConfig = false;
+struct SyncedAttribute {
+  string syncedAttributeSentinel;
+};
 
-  /** Does this plugin load/require a JSON storage file? */
-  bool useStorage = false;
+/**
+  UDA which tells StateSyncable that a member attribute should be synced into
+  the state on plugin load/unload.
+*/
+SyncedAttribute Synced() {
+  return SyncedAttribute();
 }
 
 /**
@@ -41,7 +49,7 @@ class PluginState {
   PluginOptions  options;
 
   /** Custom state data stored by the plugin */
-  Variant custom;
+  Variant[string] custom;
 
   this(Plugin plugin, PluginOptions opts) {
     this.options = opts ? opts : new PluginOptions;
@@ -54,6 +62,51 @@ class PluginState {
       this.config = new Storage(plugin.configPath);
     }
   }
+}
+
+/**
+  The StateSyncable template is an implementation which handles the syncing of
+  member attributes into are PluginState.custom store during plugin load/unload.
+  This allows plugin developers to simply attach the @Synced UDA to any attributes
+  they wish to be stored, and then call stateLoad and stateUnload in the plugin
+  load/unload functions.
+*/
+mixin template StateSyncable() {
+  /// Loads all custom attribute state from a PluginState.
+  void stateLoad(T)(PluginState state) {
+    foreach (mem; __traits(allMembers, T)) {
+      foreach (attr; __traits(getAttributes, __traits(getMember, T, mem))) {
+        static if(__traits(hasMember, attr, "syncedAttributeSentinel")) {
+          if (mem in state.custom && state.custom[mem].hasValue()) {
+            mixin("(cast(T)this)." ~ mem ~ " = " ~ "state.custom[\"" ~ mem ~ "\"].get!(typeof(__traits(getMember, T, mem)));");
+          }
+        }
+      }
+    }
+  }
+
+  /// Unloads all custom attributes into a PluginState.
+  void stateUnload(T)(PluginState state) {
+    foreach (mem; __traits(allMembers, T)) {
+      foreach (attr; __traits(getAttributes, __traits(getMember, T, mem))) {
+        static if(__traits(hasMember, attr, "syncedAttributeSentinel")) {
+          mixin("state.custom[\"" ~ mem ~ "\"] = " ~  "Variant((cast(T)this)." ~ mem ~ ");");
+        }
+      }
+    }
+  }
+}
+
+/**
+  PluginOptions is a class that can be used to configure the base functionality
+  and utilties in use by a plugin.
+*/
+class PluginOptions {
+  /** Does this plugin load/require a configuration file? */
+  bool useConfig = false;
+
+  /** Does this plugin load/require a JSON storage file? */
+  bool useStorage = false;
 }
 
 /**
@@ -71,6 +124,7 @@ class Plugin {
 
   mixin Listenable;
   mixin Commandable;
+  mixin StateSyncable;
 
   /**
     The path to the dynamic library this plugin was loaded from. If set, this
