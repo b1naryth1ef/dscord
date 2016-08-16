@@ -54,13 +54,8 @@ struct BotConfig {
   /** Whether the bot requires mentioning to respond */
   bool    cmdRequireMention = true;
 
-  /** Function which should be used to determine a given users level */
-  int delegate(User)  lvlGetter;
-
-  /** Returns true if user levels are enabled (e.g. lvlGetter is set) */
-  @property bool lvlEnabled() {
-    return this.lvlGetter != null;
-  }
+  /** Whether the bot should use permission levels */
+  bool    levelsEnabled = false;
 
   @property ShardInfo* shardInfo() {
     return new ShardInfo(this.shard, this.numShards);
@@ -243,9 +238,9 @@ class Bot {
       event.args = event.args[1..event.args.length];
     }
 
-    // Check permissions
-    if (this.config.lvlEnabled) {
-      if (this.config.lvlGetter(event.msg.author) < event.cmd.level) {
+    // Check permissions (if enabled)
+    if (this.config.levelsEnabled) {
+      if (this.getLevel(event.msg.author) < event.cmd.level) {
         return;
       }
     }
@@ -264,5 +259,10 @@ class Bot {
   */
   void run() {
     client.gw.start();
+  }
+
+  /// Base implementation for getting a level from a user. Override this.
+  int getLevel(User user) {
+    return 0;
   }
 };

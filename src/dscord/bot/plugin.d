@@ -173,11 +173,13 @@ class Plugin {
       // If plugin uses storage, load the storage from disk
       if (this.options.useStorage) {
         this.storage.load();
+        this.storage.save();
       }
 
       // If plugin uses config, load the config from disk
       if (this.options.useConfig) {
         this.config.load();
+        this.config.save();
       }
     }
   }

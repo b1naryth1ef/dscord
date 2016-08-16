@@ -23,6 +23,15 @@ struct Command {
 }
 
 /**
+  Base set of levels plugins can use.
+*/
+enum Level : int {
+  NORMAL = 1,
+  MOD = 50,
+  ADMIN = 100,
+}
+
+/**
   A delegate type which can be used in UDA's to adjust a CommandObjects settings
   or behavior.
 */
@@ -55,7 +64,6 @@ CommandObjectUpdate CommandRegex(bool rgx) {
 CommandObjectUpdate CommandLevel(int level) {
   return (c) {c.level = level;};
 }
-
 
 /**
   A delegate type which represents a function used for handling commands.
