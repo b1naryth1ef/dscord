@@ -293,11 +293,15 @@ class VoiceClient {
         return;
       }
 
-      // If we're paused, wait until we unpause to continue playing
+      // If we're paused, wait until we unpause to continue playing. Make sure
+      //  to set speaking here in case users connect during this period.
       if (this.paused) {
+        this.setSpeaking(false);
         this.pauseEvent.wait();
+        this.setSpeaking(true);
       }
 
+      // Get the next frame from the playable, and send it
       frame = this.playable.nextFrame();
       header.seq++;
       this.udp.conn.send(header.pack() ~ frame);
