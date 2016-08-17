@@ -16,12 +16,11 @@ import vibe.core.core,
        vibe.stream.operations;
 
 import dscord.types.all,
+       dscord.info,
        dscord.api.routes,
        dscord.api.ratelimit,
        dscord.api.util;
 
-immutable string GITHUB_REPO = "https://github.com/b1naryth1ef/dscord";
-immutable string VERSION = "0.0.7";
 
 /**
   APIClient is the base abstraction for interacting with the Discord API.
