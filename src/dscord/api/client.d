@@ -4,25 +4,31 @@
 
 module dscord.api.client;
 
-import std.array,
+import std.conv,
+       std.array,
+       std.format,
        std.variant,
-       std.conv,
        std.algorithm.iteration,
        core.time;
 
-import vibe.http.client,
+import vibe.core.core,
+       vibe.http.client,
        vibe.stream.operations;
 
 import dscord.types.all,
+       dscord.api.routes,
        dscord.api.ratelimit,
        dscord.api.util;
 
+immutable string GITHUB_REPO = "https://github.com/b1naryth1ef/dscord";
+immutable string VERSION = "0.0.7";
 
 /**
   APIClient is the base abstraction for interacting with the Discord API.
 */
 class APIClient {
   string       baseURL = "https://discordapp.com/api";
+  string       userAgent;
   string       token;
   RateLimiter  ratelimit;
   Client       client;
@@ -33,65 +39,76 @@ class APIClient {
     this.log = client.log;
     this.token = client.token;
     this.ratelimit = new RateLimiter;
+
+    this.userAgent = format("DiscordBot (%s %s) %s",
+        GITHUB_REPO, VERSION,
+        "vibe.d/" ~ vibeVersionString);
   }
 
   /**
     Makes a HTTP request to the API (with empty body), returning an APIResponse
 
     Params:
-      method = HTTPMethod to use when requesting
-      url = URL to make the request on
+      route = route to make the request for
   */
-  APIResponse requestJSON(HTTPMethod method, U url) {
-    return requestJSON(method, url, "");
+  APIResponse requestJSON(CompiledRoute route) {
+    return requestJSON(route, VibeJSON.emptyObject);
   }
 
   /**
     Makes a HTTP request to the API (with JSON body), returning an APIResponse
 
     Params:
-      method = HTTPMethod to use when requesting
-      url = URL to make the request on
-      obj = VibeJSON object for the body
+      route = route to make the request for
+      obj = VibeJSON object for the JSON body
   */
-  APIResponse requestJSON(HTTPMethod method, U url, VibeJSON obj) {
-    return requestJSON(method, url, obj.toString);
+  APIResponse requestJSON(CompiledRoute route, VibeJSON obj) {
+    return requestJSON(route, obj.toString);
   }
 
   /**
     Makes a HTTP request to the API (with string body), returning an APIResponse
 
     Params:
-      method = HTTPMethod to use when requesting
-      url = URL to make the request on
-      data = string contents of the body
-      timeout = HTTP timeout (default is 15 seconds)
+      route = route to make the request for
+      content = body content as a string
   */
-  APIResponse requestJSON(HTTPMethod method, U url, string data,
-      Duration timeout=15.seconds) {
+  APIResponse requestJSON(CompiledRoute route, string content) {
+    // High timeout, we should never hit this
+    Duration timeout = 15.seconds;
 
-    // Grab the rate limit lock
-    if (!this.ratelimit.wait(url.getBucket(), timeout)) {
-      throw new APIError(-1, "Request expired before rate-limit");
+    // Check the rate limit for the route (this may sleep)
+    if (!this.ratelimit.check(route.route, timeout)) {
+      throw new APIError(-1, "Request expired before rate-limit cooldown.");
     }
 
-    this.log.tracef("API Request: [%s] %s: %s", method, this.baseURL ~ url.value, data);
-    auto res = new APIResponse(requestHTTP(this.baseURL ~ url.value,
+    this.log.tracef("API Request: [%s] %s: %s", route.method, this.baseURL ~ route.compiled, content);
+    auto res = new APIResponse(requestHTTP(this.baseURL ~ route.compiled,
       (scope req) {
-        req.method = method;
+        req.method = route.method;
         req.headers["Authorization"] = "Bot " ~ this.token;
         req.headers["Content-Type"] = "application/json";
-        req.bodyWriter.write(data);
+        req.headers["User-Agent"] = this.userAgent;
+        req.bodyWriter.write(content);
     }));
 
-    // If we got a 429, cooldown and recurse
+    // If we returned ratelimit headers, update our ratelimit states
+    if (res.header("X-RateLimit-Limit", "") != "") {
+      this.ratelimit.update(route.route,
+            res.header("X-RateLimit-Remaining"),
+            res.header("X-RateLimit-Reset"),
+            res.header("Retry-After", ""));
+    }
+
+    // We ideally should never hit 429s, but in the case we do just retry the
+    /// request fully.
     if (res.statusCode == 429) {
-      this.ratelimit.cooldown(url.getBucket(),
-          dur!"seconds"(res.header("Retry-After", "1").to!int));
-      return this.requestJSON(method, url, data, timeout);
-    // If we got a 502, just retry immedietly
+      this.log.error("Request returned 429. This should not happen.");
+      return this.requestJSON(route, content);
+    // If we got a 502, just retry after a random backoff
     } else if (res.statusCode == 502) {
-      return this.requestJSON(method, url, data, timeout);
+      sleep(randomBackoff());
+      return this.requestJSON(route, content);
     }
 
     return res;
@@ -101,7 +118,7 @@ class APIClient {
     Return the User object for the currently logged in user.
   */
   User me() {
-    auto json = this.requestJSON(HTTPMethod.GET, U("users")("@me")).ok().fastJSON;
+    auto json = this.requestJSON(Routes.GET_ME()).ok().fastJSON;
     return new User(this.client, json);
   }
 
@@ -109,7 +126,7 @@ class APIClient {
     Return a User object for a Snowflake ID.
   */
   User user(Snowflake id) {
-    auto json = this.requestJSON(HTTPMethod.GET, U("users")(id)).ok().fastJSON;
+    auto json = this.requestJSON(Routes.GET_USER(id)).fastJSON;
     return new User(this.client, json);
   }
 
@@ -117,7 +134,8 @@ class APIClient {
     Modifies the current users settings. Returns a User object.
   */
   User meSettings(string username, string avatar) {
-    auto json = this.requestJSON(HTTPMethod.PATCH, U("users")("@me")).ok().fastJSON;
+    VibeJSON data = VibeJSON(["username": VibeJSON(username), "avatar": VibeJSON(avatar)]);
+    auto json = this.requestJSON(Routes.PATCH_ME(), data).fastJSON;
     return new User(this.client, json);
   }
 
@@ -125,7 +143,7 @@ class APIClient {
     Returns a list of Guild objects for the current user.
   */
   Guild[] meGuilds() {
-    auto json = this.requestJSON(HTTPMethod.GET, U("users")("@me")("guilds")).ok().fastJSON;
+    auto json = this.requestJSON(Routes.GET_ME_GUILDS()).ok().fastJSON;
     return loadManyArray!Guild(this.client, json);
   }
 
@@ -133,14 +151,14 @@ class APIClient {
     Leaves a guild.
   */
   void meGuildLeave(Snowflake id) {
-    this.requestJSON(HTTPMethod.DELETE, U("users")("@me")("guilds")(id)).ok();
+    this.requestJSON(Routes.LEAVE_GUILD(id)).ok();
   }
 
   /**
     Returns a list of Channel objects for the current user.
   */
   Channel[] meDMChannels() {
-    auto json = this.requestJSON(HTTPMethod.GET, U("users")("@me")("channels")).ok().fastJSON;
+    auto json = this.requestJSON(Routes.GET_ME_CHANNELS()).ok().fastJSON;
     return loadManyArray!Channel(this.client, json);
   }
 
@@ -148,10 +166,8 @@ class APIClient {
     Creates a new DM for a recipient (user) ID. Returns a Channel object.
   */
   Channel meDMCreate(Snowflake recipientID) {
-    VibeJSON payload = VibeJSON.emptyObject;
-    payload["recipient_id"] = VibeJSON(recipientID);
-    auto json = this.requestJSON(HTTPMethod.POST,
-        U("users")("@me")("channels"), payload).ok().fastJSON;
+    VibeJSON payload = VibeJSON(["recipient_id": VibeJSON(recipientID)]);
+    auto json = this.requestJSON(Routes.CREATE_DM()).ok().fastJSON;
     return new Channel(this.client, json);
   }
 
@@ -159,7 +175,7 @@ class APIClient {
     Returns a Guild for a Snowflake ID.
   */
   Guild guild(Snowflake id) {
-    auto json = this.requestJSON(HTTPMethod.GET, U("guilds")(id)).ok().fastJSON;
+    auto json = this.requestJSON(Routes.GET_GUILD(id)).ok().fastJSON;
     return new Guild(this.client, json);
   }
 
@@ -167,14 +183,14 @@ class APIClient {
     Deletes a guild.
   */
   void guildDelete(Snowflake id) {
-    this.requestJSON(HTTPMethod.DELETE, U("guilds")(id)).ok();
+    this.requestJSON(Routes.DELETE_GUILD(id)).ok();
   }
 
   /**
     Returns a list of channels for a Guild.
   */
   Channel[] guildChannels(Snowflake id) {
-    auto json = this.requestJSON(HTTPMethod.GET, U("guilds")(id)("channels")).ok().fastJSON;
+    auto json = this.requestJSON(Routes.GET_GUILD_CHANNELS(id)).ok().fastJSON;
     return loadManyArray!Channel(this.client, json);
   }
 
@@ -182,7 +198,7 @@ class APIClient {
     Removes (kicks) a user from a Guild.
   */
   void guildRemoveMember(Snowflake id, Snowflake user) {
-    this.requestJSON(HTTPMethod.DELETE, U("guilds")(id)("members")(user)).ok();
+    this.requestJSON(Routes.DELETE_MEMBER(id, user)).ok();
   }
 
   /*
@@ -199,14 +215,14 @@ class APIClient {
     Sends a message to a channel.
   */
   Message sendMessage(Snowflake chan, inout(string) content, string nonce, bool tts) {
-    VibeJSON payload = VibeJSON.emptyObject;
-    payload["content"] = VibeJSON(content);
-    payload["nonce"] = VibeJSON(nonce);
-    payload["tts"] = VibeJSON(tts);
+    VibeJSON payload = VibeJSON([
+      "content": VibeJSON(content),
+      "nonce": VibeJSON(nonce),
+      "tts": VibeJSON(tts),
+    ]);
 
     // Send payload and return message object
-    auto json = this.requestJSON(HTTPMethod.POST,
-        U("channels")(chan)("messages").bucket("send-message"), payload).ok().fastJSON;
+    auto json = this.requestJSON(Routes.SEND_MESSAGE(chan), payload).ok().fastJSON;
     return new Message(this.client, json);
   }
 
@@ -214,11 +230,9 @@ class APIClient {
     Edits a messages contents.
   */
   Message editMessage(Snowflake chan, Snowflake msg, inout(string) content) {
-    VibeJSON payload = VibeJSON.emptyObject;
-    payload["content"] = content;
+    VibeJSON payload = VibeJSON(["content": VibeJSON(content)]);
 
-    auto json = this.requestJSON(HTTPMethod.PATCH,
-        U("channels")(chan)("messages")(msg).bucket("edit-message"), payload).ok().fastJSON;
+    auto json = this.requestJSON(Routes.EDIT_MESSAGE(chan, msg)).ok().fastJSON;
     return new Message(this.client, json);
   }
 
@@ -226,26 +240,21 @@ class APIClient {
     Deletes a message.
   */
   void deleteMessage(Snowflake chan, Snowflake msg) {
-    this.requestJSON(HTTPMethod.DELETE,
-        U("channels")(chan)("messages")(msg).bucket("del-message")).ok().fastJSON;
+    this.requestJSON(Routes.DELETE_MESSAGE(chan, msg)).ok();
   }
 
   /**
     Deletes messages in bulk.
   */
   void bulkDeleteMessages(Snowflake chan, Snowflake[] msgs) {
-    VibeJSON payload = VibeJSON.emptyObject;
-    payload["messages"] = VibeJSON(array(map!((m) => VibeJSON(m))(msgs)));
-
-    this.requestJSON(HTTPMethod.POST,
-        U("channels")(chan)("messages")("bulk_delete").bucket("bulk-del-messages"),
-        payload).ok();
+    VibeJSON payload = VibeJSON(["messages": VibeJSON(array(map!((m) => VibeJSON(m))(msgs)))]);
+    this.requestJSON(Routes.BULK_DELETE_MESSAGES(chan)).ok();
   }
 
   /**
     Returns a valid Gateway Websocket URL
   */
   string gateway() {
-    return this.requestJSON(HTTPMethod.GET, U("gateway")).ok().vibeJSON["url"].to!string;
+    return this.requestJSON(Routes.GET_GATEWAY()).ok().vibeJSON["url"].to!string;
   }
 }

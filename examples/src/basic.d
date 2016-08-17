@@ -59,33 +59,6 @@ class BasicPlugin : Plugin {
     }
   }
 
-  @Command("play")
-  @CommandDescription("Play audio from a URL")
-  void onPlayCommand(CommandEvent event) {
-    auto chan = this.userVoiceChannel(event.msg.guild, event.msg.author);
-
-    if (!chan) {
-      event.msg.reply("You are not in a voice channel!");
-      return;
-    }
-
-    if (event.args.length < 1) {
-      event.msg.reply("Usage: play <url>");
-      return;
-    }
-
-    auto msg = event.msg.reply("Downloading and encoding link...");
-
-    DCAFile result = YoutubeDL.download(event.args[1]);
-
-    msg.edit("OK! Playing jams...");
-
-    auto vc = chan.joinVoice();
-    if (vc.connect()) {
-      vc.play(result).disconnect();
-    }
-  }
-
   Channel userVoiceChannel(Guild guild, User user) {
     auto state = guild.voiceStates.pick(s => s.userID == user.id);
     if (!state) return null;

@@ -4,18 +4,11 @@
 
 module dscord.util.ticker;
 
-import core.time;
-import vibe.core.core : vibeSleep = sleep;
-import core.sys.posix.sys.time;
+import core.time,
+       std.algorithm.comparison;
 
-/**
-  Returns UTC time in milliseconds.
-*/
-long getUnixTimeMilli() {
-  timeval t;
-  gettimeofday(&t, null);
-  return t.tv_sec * 1000 + t.tv_usec / 100;
-}
+import dscord.util.time;
+import vibe.core.core : vibeSleep = sleep;
 
 /**
   Ticker which can be used for interval-based timing. Operates at millisecond
@@ -60,7 +53,8 @@ class Ticker {
       return;
     }
 
-    vibeSleep((this.next - now).msecs);
+    long delay = min(this.interval, this.next - now);
+    vibeSleep(delay.msecs);
     this.setNext();
   }
 }
