@@ -485,3 +485,20 @@ class ChannelPinsUpdate {
     );
   }
 }
+
+/**
+  Sent when a bulk set of messages gets deleted from a channel.
+*/
+class MessageDeleteBulk {
+  mixin Event;
+
+  Snowflake channelID;
+  Snowflake[] ids;
+
+  void load(ref JSON obj) {
+    obj.keySwitch!("channel_id", "ids")(
+      { this.channelID = readSnowflake(obj); },
+      { this.ids = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
+    );
+  }
+}
