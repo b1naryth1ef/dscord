@@ -127,6 +127,9 @@ class MessageTable : Sendable {
     bool wrapped;
   }
 
+  // Message buffer used to compile the message
+  MessageBuffer buffer;
+
   /**
     Creates a new MessageTable
 
@@ -134,14 +137,15 @@ class MessageTable : Sendable {
       delim = deliminator to use between table columns
       wrapped = whether to place a deliminator at the left/right margins
   */
-  this(string delim=" | ", bool wrapped=true) {
+  this(string delim=" | ", bool wrapped=true, MessageBuffer buffer=null) {
     this.delim = delim;
     this.wrapped = wrapped;
+    this.buffer = buffer;
   }
 
   immutable(string) toSendableString() {
-    MessageBuffer buffer = new MessageBuffer;
-    this.appendToBuffer(buffer);
+    if (!this.buffer) this.buffer = new MessageBuffer;
+    if (!this.buffer.length) this.appendToBuffer(this.buffer);
     return buffer.toSendableString();
   }
 
@@ -166,8 +170,7 @@ class MessageTable : Sendable {
     Set a header row. Will not be sorted or modified.
   */
   void setHeader(string[] args...) {
-    this.header = args.dup;
-    this.indexSizes(args);
+    this.header = this.indexSizes(args.dup);
   }
 
   /// Resets sizes index for a given row
@@ -191,29 +194,35 @@ class MessageTable : Sendable {
       args = sorted columns
   */
   void add(string[] args...) {
-    // Duplicate the args (its a reference) and append to our rows
     this.entries ~= this.indexSizes(args.dup);
+  }
+
+  string compileEntry(string[] entry) {
+    size_t pos;
+    string line;
+
+    // If we're wrapped, add left margin deliminator
+    if (this.wrapped) line ~= this.delim;
+
+    foreach (part; entry) {
+      line ~= part ~ " ".replicate(this.sizes[pos] - part.length) ~ this.delim;
+      pos++;
+    }
+
+    // If we're not wrapped, remove the end deliminator
+    if (!this.wrapped) line = line[0..($ - this.delim.length)];
+
+    return line;
   }
 
   /// Appends the output of this table to a message buffer
   void appendToBuffer(MessageBuffer buffer) {
-    // Iterate over each row
     foreach (entry; this.header ~ this.entries) {
-      size_t pos;
-      string line;
-
-      // If we're wrapped, add left margin deliminator
-      if (this.wrapped) line ~= this.delim;
-
-      // Iterate over each column in the row
-      foreach (part; entry) {
-        line ~= part ~ " ".replicate(this.sizes[pos] - part.length) ~ this.delim;
-        pos++;
-      }
-
-      // If we're not wrapped, remove the end deliminator
-      if (!this.wrapped) line = line[0..($ - this.delim.length)];
-      buffer.append(line);
+      buffer.append(this.compileEntry(entry));
     }
+  }
+
+  string[][] iterEntries() {
+    return this.header ~ this.entries;
   }
 }

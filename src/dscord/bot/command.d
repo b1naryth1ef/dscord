@@ -11,15 +11,13 @@ import std.regex,
 import dscord.gateway.events,
        dscord.types.all;
 
-/**
-  A UDA that can be used to flag a function as a command handler.
-*/
-struct Command {
-  string  trigger;
-  string  description = "";
-  string  group = "";
-  bool    regex = false;
-  int     level = 0;
+static struct CommandDefinition {
+  string[]  triggers;
+}
+
+/// A UDA that can be used to flag a function as a command handler.
+CommandDefinition Command(string[] args...) {
+  return CommandDefinition(args.dup);
 }
 
 /**
@@ -74,22 +72,22 @@ alias CommandHandler = void delegate(CommandEvent);
   A CommandObject represents the configuration/state for  a single command.
 */
 class CommandObject {
-  /** The command "trigger" or name */
-  string  trigger;
-
-  /** The description / help text for the command */
+  /// The description / help text for the command
   string  description;
 
-  /** The permissions level required for the command */
+  /// The permissions level required for the command
   int     level;
 
-  /** Whether this command is enabled */
+  /// Whether this command is enabled
   bool  enabled = true;
 
-  /** The function handler for this command */
+  /// The function handler for this command
   CommandHandler  func;
 
   private {
+    /// Triggers for this command
+    string[]  triggers;
+
     // Compiled matching regex
     Regex!char  rgx;
 
@@ -97,49 +95,57 @@ class CommandObject {
     bool        useRegex;
   }
 
-  this(Command cmd, CommandHandler func) {
+  this(string[] triggers, CommandHandler func) {
     this.func = func;
-    this.trigger = cmd.trigger;
-    this.description = cmd.description;
-    this.level = cmd.level;
-    this.setGroup(cmd.group);
-    this.setRegex(cmd.regex);
+    this.triggers = triggers;
+    this.level = 0;
+    this.setGroup("");
+    this.setRegex(false);
   }
 
-  /**
-    Sets this commands group.
-  */
+  /// Sets this commands triggers
+  void setTriggers(string[] triggers) {
+    this.triggers = triggers;
+    this.rebuild();
+  }
+
+  /// Adds a trigger for this command
+  void addTrigger(string trigger) {
+    this.triggers ~= trigger;
+    this.rebuild();
+  }
+
+  /// Sets this commands group
   void setGroup(string group) {
     this.group = group;
     this.rebuild();
   }
 
-  /**
-    Sets whether this command uses regex matching.
-  */
+  /// Sets whether this command uses regex matching
   void setRegex(bool rgx) {
     this.useRegex = rgx;
     this.rebuild();
   }
 
-  /**
-    Rebuilds the locally cached regex.
-  */
-  void rebuild() {
+  /// Rebuilds the locally cached regex
+  private void rebuild() {
     if (this.useRegex) {
-      this.rgx = regex(this.trigger);
+      this.rgx = regex(this.triggers.join("|"));
     } else {
       // Append space to grouping
       group = (this.group != "" ? this.group ~ " " : "");
-      this.rgx = regex("^" ~ group ~ this.trigger);
+      this.rgx = regex(this.triggers.map!((x) => "^" ~ group ~ x).join("|"));
     }
   }
 
-  /**
-    Returns a Regex capture group matched against the commands regex.
-  */
+  /// Returns a Regex capture group matched against the commands regex.
   Captures!string match(string msg) {
     return msg.matchFirst(this.rgx);
+  }
+
+  /// Returns the command name (always the first trigger in the list).
+  @property string name() {
+    return this.triggers[0];
   }
 }
 
@@ -187,8 +193,8 @@ mixin template Commandable() {
     CommandObject obj;
     foreach (mem; __traits(allMembers, T)) {
       foreach(attr; __traits(getAttributes, __traits(getMember, T, mem))) {
-        static if (is(typeof(attr) == Command)) {
-          obj = this.registerCommand(new CommandObject(attr, mixin("&(cast(T)this)." ~ mem)));
+        static if (is(typeof(attr) == CommandDefinition)) {
+          obj = this.registerCommand(new CommandObject(attr.triggers, mixin("&(cast(T)this)." ~ mem)));
         }
         static if (is(typeof(attr) == CommandObjectUpdate)) {
           attr(obj);
@@ -201,7 +207,7 @@ mixin template Commandable() {
     Registers a command from a CommandObject
   */
   CommandObject registerCommand(CommandObject obj) {
-    this.commands[obj.trigger] = obj;
+    this.commands[obj.name] = obj;
     return obj;
   }
 }

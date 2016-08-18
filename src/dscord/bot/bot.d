@@ -240,7 +240,7 @@ class Bot {
 
     // Check permissions (if enabled)
     if (this.config.levelsEnabled) {
-      if (this.getLevel(event.msg.author) < event.cmd.level) {
+      if (this.getLevel(event) < event.cmd.level) {
         return;
       }
     }
@@ -264,5 +264,10 @@ class Bot {
   /// Base implementation for getting a level from a user. Override this.
   int getLevel(User user) {
     return 0;
+  }
+
+  /// Override implementation for getting a level from a user (for command handling)
+  int getLevel(CommandEvent event) {
+    return this.getLevel(event.msg.author);
   }
 };

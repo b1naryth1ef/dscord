@@ -34,8 +34,8 @@ class Ticker {
   }
 
   /// Sets when the next tick occurs
-  private void setNext(long now = 0) {
-    this.next = (now ? now : getUnixTimeMilli()) + this.interval;
+  void setNext() {
+    this.next = getUnixTimeMilli() + this.interval;
   }
 
   /// Starts the ticker
@@ -59,10 +59,26 @@ class Ticker {
   }
 }
 
-unittest {
-  Ticker t = new Ticker(1.seconds);
+/**
+  Ticker which ticks at accurate offsets from a starting point.
+*/
+class StaticTicker : Ticker {
+  private {
+    long iter;
+    long startTime;
+  }
 
-  for (int i = 0; i < 10; i++) {
-    t.sleep();
+  this(Duration interval, bool autoStart=false) {
+    super(interval, autoStart);
+  }
+
+  override void start() {
+    super.start();
+    this.startTime = getUnixTimeMilli();
+  }
+
+  override void setNext() {
+    this.iter += 1;
+    this.next = this.startTime + (this.interval * this.iter);
   }
 }

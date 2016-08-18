@@ -12,6 +12,7 @@ import std.experimental.logger,
        vibe.d : runTask;
 
 import dscord.client,
+       dscord.types.user,
        dscord.bot.command,
        dscord.bot.listener,
        dscord.bot.bot,
@@ -116,10 +117,10 @@ class PluginOptions {
   into a Bot.
 */
 class Plugin {
-  /** Bot instance for this plugin. Should always be set */
+  /// Bot instance for this plugin. Should always be set
   Bot     bot;
 
-  /** Current runtime state for this plugin */
+  /// Current runtime state for this plugin
   PluginState  state;
 
   mixin Listenable;
@@ -133,14 +134,10 @@ class Plugin {
   */
   string dynamicLibraryPath;
 
-  /**
-    Pointer to the dynamic library, used for cleaning up on shutdown.
-  */
+  /// Pointer to the dynamic library, used for cleaning up on shutdown.
   void* dynamicLibrary;
 
-  /**
-    Constructor for initial load. Usually called from the inherited constructor.
-  */
+  /// Constructor for initial load. Usually called from the inherited constructor.
   this(this T)(PluginOptions opts = null) {
     this.state = new PluginState(this, opts);
 
@@ -148,16 +145,12 @@ class Plugin {
     this.loadListeners!T();
   }
 
-  /**
-    Plugin log instance.
-  */
+  /// Plugin log instance.
   @property Logger log() {
     return this.bot.log;
   }
 
-  /**
-    Used to load the Plugin, initially loading state if requred.
-  */
+  /// Used to load the Plugin, initially loading state if requred.
   void load(Bot bot, PluginState state = null) {
     this.bot = bot;
 
@@ -184,9 +177,7 @@ class Plugin {
     }
   }
 
-  /**
-    Used to unload the Plugin. Saves config/storage if required.
-  */
+  /// Used to unload the Plugin. Saves config/storage if required.
   void unload(Bot bot) {
     if (this.options.useStorage) {
       this.storage.save();
@@ -197,58 +188,47 @@ class Plugin {
     }
   }
 
-  /**
-    Returns path to this plugins storage directory.
-  */
+  /// Returns path to this plugins storage directory.
   @property string storageDirectoryPath() {
     return "storage" ~ dirSeparator ~ this.name;
   }
 
-  /**
-    Returns path to this plugins storage file.
-  */
+  /// Returns path to this plugins storage file.
   @property string storagePath() {
     return this.storageDirectoryPath ~ dirSeparator ~ "storage.json";
   }
 
-  /**
-    Returns path to this plugins config file.
-  */
+  /// Returns path to this plugins config file.
   @property string configPath() {
     return "config" ~ dirSeparator ~ this.name ~ ".json";
   }
 
-  /**
-   Storage instance for the plugin.
-  */
+  /// Storage instance for this plugin.
   @property Storage storage() {
     return this.state.storage;
   }
 
-  /**
-    Config instance for the plugin.
-   */
+  /// Config instance for this plugin
   @property Storage config() {
     return this.state.config;
   }
 
-  /**
-    PluginOptions instance for the plugin.
-  */
+  /// PluginOptions for this plugin
   @property PluginOptions options() {
     return this.state.options;
   }
 
-  /**
-    Client instance for the plugin.
-  */
+  /// Client instance for the Bot running this plugin
   @property Client client() {
     return this.bot.client;
   }
 
-  /**
-    Returns the name of this plugin.
-  */
+  /// User instance for the account this bot is running under
+  @property User me() {
+    return this.client.state.me;
+  }
+
+  /// Returns the name of this plugin.
   string name() {
     return typeof(this).toString;
   }

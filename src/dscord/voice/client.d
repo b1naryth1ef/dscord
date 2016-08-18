@@ -278,7 +278,7 @@ class VoiceClient {
     this.setSpeaking(true);
 
     // Create a new timing ticker at the frame duration interval
-    Ticker ticker = new Ticker(this.playable.getFrameDuration().msecs, true);
+    StaticTicker ticker = new StaticTicker(this.playable.getFrameDuration().msecs, true);
 
     RTPHeader header;
     header.ssrc = this.ssrc;
