@@ -31,6 +31,7 @@ import dscord.client,
        dscord.util.emitter,
        dscord.util.ticker;
 
+/// VoiceClient connection states
 enum VoiceState {
   DISCONNECTED = 0,
   CONNECTING = 1,
@@ -38,9 +39,15 @@ enum VoiceState {
   READY = 3,
 }
 
+/// RTPHeader used for sending RTP data
 struct RTPHeader {
+  /// Sequence number of the current frame
   ushort  seq;
+
+  /// Timestamp of the current frame
   uint    ts;
+
+  /// Source ID of the current sender
   uint    ssrc;
 
   this(ushort seq, uint ts, uint ssrc) {
@@ -49,6 +56,7 @@ struct RTPHeader {
     this.ssrc = ssrc;
   }
 
+  /// Returns a packed (in bytes) version of this header
   ubyte[] pack() {
     OutBuffer b = new OutBuffer();
     b.write('\x80');
@@ -60,18 +68,18 @@ struct RTPHeader {
   }
 }
 
+/// UDP Connection wrapper for the VoiceClient
 class UDPVoiceClient {
+  /// Parent VoiceClient reference
   VoiceClient    vc;
+
+  // UDP Connection
   UDPConnection  conn;
 
   private {
     // Local connection info
     string  ip;
     ushort  port;
-
-    // Voice audio info
-    ushort  seq;
-    uint    ts;
 
     // Running state
     bool  running;
@@ -127,16 +135,16 @@ class UDPVoiceClient {
 }
 
 class VoiceClient {
-  // Global client
+  /// Global client which owns this VoiceClient
   Client     client;
 
-  // Voice channel we're for
+  /// The channel this VoiceClient is attached to
   Channel    channel;
 
-  // Packet emitter
+  /// Packet emitter
   Emitter  packetEmitter;
 
-  // UDP Client
+  /// UDP Client connection
   UDPVoiceClient  udp;
 
   // Current voice connection state
@@ -144,11 +152,16 @@ class VoiceClient {
 
   // Currently playing item + player task
   Playable  playable;
-  Task      playerTask;
 
   private {
-    Logger       log;
+    // Logger reference
+    Logger  log;
+
+    // Event triggered when connection is complete
     ManualEvent  waitForConnected;
+
+    // Player task
+    Task  playerTask;
 
     // Voice websocket
     WebSocket  sock;
@@ -159,13 +172,16 @@ class VoiceClient {
     // Various connection attributes
     string  token;
     URL     endpoint;
-    // bool    connected = false;
     ushort  ssrc;
     ushort  port;
-    ushort  heartbeatInterval;
-    bool    mute;
-    bool    deaf;
+
+    // Track mute/deaf states
+    bool    mute, deaf;
+
+    // Track the current speaking state
     bool    speaking = false;
+
+    // Used to track VoiceServerUpdates
     EventListener  updateListener;
 
     // Used to control pausing state
@@ -186,6 +202,7 @@ class VoiceClient {
       &this.handleVoiceSessionDescription);
   }
 
+  /// Set the speaking state
   void setSpeaking(bool value) {
     if (this.speaking == value) return;
 
@@ -196,10 +213,9 @@ class VoiceClient {
   private void handleVoiceReadyPacket(VoiceReadyPacket p) {
     this.ssrc = p.ssrc;
     this.port = p.port;
-    this.heartbeatInterval = p.heartbeatInterval;
 
     // Spawn the heartbeater
-    this.heartbeater = runTask(&this.heartbeat);
+    this.heartbeater = runTask(&this.heartbeat, p.heartbeatInterval);
 
     // If we don't have a UDP connection open (e.g. not reconnecting), open one
     //  now.
@@ -241,10 +257,12 @@ class VoiceClient {
     }
   }
 
+  /// Whether the player is currently paused
   @property bool paused() {
     return (this.pauseEvent !is null);
   }
 
+  /// Pause the player
   bool pause(bool wait=false) {
     if (this.pauseEvent) {
       if (!wait) return false;
@@ -255,6 +273,7 @@ class VoiceClient {
     return true;
   }
 
+  /// Resume the player
   bool resume() {
     if (!this.paused) {
       return false;
@@ -299,6 +318,9 @@ class VoiceClient {
         this.setSpeaking(false);
         this.pauseEvent.wait();
         this.setSpeaking(true);
+
+        // Reset the ticker so we don't fast forward it to catch up
+        ticker.reset();
       }
 
       // Get the next frame from the playable, and send it
@@ -314,15 +336,12 @@ class VoiceClient {
     this.setSpeaking(false);
   }
 
+  /// Whether the player is currently active
   @property bool playing() {
     return (this.playerTask && this.playerTask.running);
   }
 
-  VoiceClient play(DCAFile f) {
-    this.play(new DCAPlayable(f));
-    return this;
-  }
-
+  /// Plays a Playable
   VoiceClient play(Playable p) {
     assert(this.state == VoiceState.READY, "Must be connected to play audio");
 
@@ -336,11 +355,11 @@ class VoiceClient {
     return this;
   }
 
-  private void heartbeat() {
+  private void heartbeat(ushort heartbeatInterval) {
     while (this.state >= VoiceState.CONNECTED) {
       uint unixTime = cast(uint)core.stdc.time.time(null);
       this.send(new VoiceHeartbeatPacket(unixTime * 1000));
-      sleep(this.heartbeatInterval.msecs);
+      sleep(heartbeatInterval.msecs);
     }
   }
 
@@ -384,11 +403,13 @@ class VoiceClient {
     }
   }
 
+  /// Sends a payload to the websocket
   void send(Serializable p) {
     string data = p.serialize().toString;
     this.sock.send(data);
   }
 
+  // Runs this voice client
   void run() {
     string data;
 
@@ -465,9 +486,7 @@ class VoiceClient {
     ));
   }
 
-  /**
-    Attempt a connection to the voice channel this VoiceClient is attached to.
-  */
+  /// Attempt a connection to the voice channel this VoiceClient is attached to.
   bool connect(Duration timeout=5.seconds) {
     this.state = VoiceState.CONNECTING;
     this.waitForConnected = createManualEvent();
@@ -494,6 +513,7 @@ class VoiceClient {
     }
   }
 
+  /// Disconnects from the voice channel. If clean is true, waits to finish playing.
   void disconnect(bool clean=true) {
     if (this.playing) {
       if (clean) {

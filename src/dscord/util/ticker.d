@@ -72,9 +72,14 @@ class StaticTicker : Ticker {
     super(interval, autoStart);
   }
 
+  void reset() {
+    this.iter = 0;
+    this.start();
+  }
+
   override void start() {
-    super.start();
     this.startTime = getUnixTimeMilli();
+    super.start();
   }
 
   override void setNext() {
