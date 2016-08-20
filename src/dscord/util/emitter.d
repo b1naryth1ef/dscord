@@ -15,6 +15,18 @@ import std.stdio,
 
 import dscord.util.errors;
 
+enum EmitterOrder {
+  BEFORE = 1,
+  UNSPECIFIED = 2,
+  AFTER = 3,
+}
+
+immutable EmitterOrder[] EmitterOrderAll = [
+  EmitterOrder.BEFORE,
+  EmitterOrder.UNSPECIFIED,
+  EmitterOrder.AFTER,
+];
+
 /**
   Special exception used to stop the emission of an event.
 */
@@ -31,14 +43,15 @@ interface BoundEmitter {
   Base event listener implementation.
 */
 class BaseEventListener : BoundEmitter {
-  string     name;
-  Emitter    e;
+  EmitterOrder  order;
+  Emitter  e;
+  string  name;
 
   /**
     Unbinds this listener forever.
   */
   void unbind() {
-    this.e.listeners[this.name] = this.e.listeners[this.name].filter!(
+    this.e.listeners[this.order][this.name] = this.e.listeners[this.order][this.name].filter!(
       (li) => li != this).array;
   }
 
@@ -53,9 +66,10 @@ class BaseEventListener : BoundEmitter {
 class EventListener : BaseEventListener {
   void delegate(Variant arg)  func;
 
-  this(Emitter e, string name, void delegate(Variant) f) {
+  this(Emitter e, string name, EmitterOrder order, void delegate(Variant) f) {
     this.e = e;
     this.name = name;
+    this.order = order;
     this.func = f;
   }
 
@@ -75,8 +89,9 @@ alias EventListenerArray = EventListener[];
 class AllEventListener : BaseEventListener {
   void delegate(string, Variant)  func;
 
-  this(Emitter e, void delegate(string, Variant) f) {
+  this(Emitter e, EmitterOrder order, void delegate(string, Variant) f) {
     this.e = e;
+    this.order = order;
     this.func = f;
   }
 
@@ -89,47 +104,47 @@ class AllEventListener : BaseEventListener {
   Event emitter which allows the emission and subscription of events.
 */
 class Emitter {
-  BoundEmitter[][string]  listeners;
+  BoundEmitter[][string][EmitterOrder]  listeners;
 
   /**
     Listen to an event by string, ignoring the actual event in the callback.
   */
-  EventListener on(string event, void delegate() f) {
-    auto li = new EventListener(this, event, (arg) {
+  EventListener on(string event, void delegate() f, EmitterOrder order=EmitterOrder.UNSPECIFIED) {
+    auto li = new EventListener(this, event, order, (arg) {
       try { f(); } catch (EmitterStop) { return; }
     });
 
-    this.listeners[event] ~= li;
+    this.listeners[order][event] ~= li;
     return li;
   }
 
   /**
     Listen to an event based on its type.
   */
-  EventListener listen(T)(void delegate(T) f) {
-    auto li = new EventListener(this, T.stringof, (arg) {
+  EventListener listen(T)(void delegate(T) f, EmitterOrder order=EmitterOrder.UNSPECIFIED) {
+    auto li = new EventListener(this, T.stringof, order, (arg) {
       try { f(arg.get!T); } catch (EmitterStop) { return; }
     });
 
-    this.listeners[T.stringof] ~= li;
+    this.listeners[order][T.stringof] ~= li;
     return li;
   }
 
   /**
     Listen to an event based on its name.
   */
-  EventListener listenRaw(string event, void delegate(Variant) f) {
-    auto li = new EventListener(this, event, f);
-    this.listeners[event] ~= li;
+  EventListener listenRaw(string event, void delegate(Variant) f, EmitterOrder order=EmitterOrder.UNSPECIFIED) {
+    auto li = new EventListener(this, event, order, f);
+    this.listeners[order][event] ~= li;
     return li;
   }
 
   /**
     Listen to all events.
   */
-  AllEventListener listenAll(void delegate(string, Variant) f) {
-    auto li = new AllEventListener(this, f);
-    this.listeners[""] ~= li;
+  AllEventListener listenAll(void delegate(string, Variant) f, EmitterOrder order=EmitterOrder.UNSPECIFIED) {
+    auto li = new AllEventListener(this, order, f);
+    this.listeners[order][""] ~= li;
     return li;
   }
 
@@ -142,20 +157,24 @@ class Emitter {
   }
 
   private void emitByName(T)(string name, T obj, bool all) {
-    if (!((all ? "" : name) in this.listeners)) {
-      return;
-    }
+    Variant v;
 
-    auto v = Variant(obj);
+    if (all) name = "";
 
-    foreach (func; this.listeners[all ? "" : name]) {
-      runTask({
-        try {
-          func.call(name, v);
-        } catch (Exception e) {
-          writeln(e.toString);
-        }
-      });
+    foreach (order; EmitterOrderAll) {
+      if (!(order in this.listeners)) continue;
+      if (!(name in this.listeners[order])) continue;
+      if (!v.hasValue()) v = Variant(obj);
+
+      foreach (func; this.listeners[order][name]) {
+        runTask({
+          try {
+            func.call(name, v);
+          } catch (Exception e) {
+            writeln(e.toString);
+          }
+        });
+      }
     }
   }
 }

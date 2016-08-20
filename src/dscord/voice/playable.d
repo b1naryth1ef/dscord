@@ -49,7 +49,7 @@ class DCAPlayable : Playable {
   }
 
   bool hasMoreFrames() {
-    return this.frameIndex < this.file.frames.length;
+    return this.frameIndex + 1 < this.file.frames.length;
   }
 
   ubyte[] nextFrame() {

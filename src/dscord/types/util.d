@@ -8,6 +8,7 @@ import dscord.types.message;
 
 import std.format,
        std.array,
+       std.conv,
        std.algorithm.sorting;
 
 /**
@@ -176,11 +177,14 @@ class MessageTable : Sendable {
   /// Resets sizes index for a given row
   private string[] indexSizes(string[] row) {
     size_t pos = 0;
+
     foreach (part; row) {
+      ulong size = to!wstring(part).length;
+
       if (this.sizes.length <= pos) {
-        this.sizes ~= part.length;
-      } else if (this.sizes[pos] < part.length) {
-        this.sizes[pos] = part.length;
+        this.sizes ~= size;
+      } else if (this.sizes[pos] < size) {
+        this.sizes[pos] = size;
       }
       pos++;
     }
@@ -205,7 +209,8 @@ class MessageTable : Sendable {
     if (this.wrapped) line ~= this.delim;
 
     foreach (part; entry) {
-      line ~= part ~ " ".replicate(this.sizes[pos] - part.length) ~ this.delim;
+      ulong size = to!wstring(part).length;
+      line ~= part ~ " ".replicate(this.sizes[pos] - size) ~ this.delim;
       pos++;
     }
 

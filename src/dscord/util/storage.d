@@ -41,4 +41,15 @@ class Storage {
   bool has(string key) {
     return !((key in this.obj) is null);
   }
+
+  T get(T)(string key) {
+    return this.obj[key].get!T;
+  }
+
+  T get(T)(string key, T def) {
+    if (this.has(key)) {
+      return this.get!T(key);
+    }
+    return def;
+  }
 }

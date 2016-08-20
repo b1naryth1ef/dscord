@@ -16,6 +16,7 @@ import dscord.client,
        dscord.bot.plugin,
        dscord.types.all,
        dscord.gateway.events,
+       dscord.util.emitter,
        dscord.util.errors;
 
 version (linux) {
@@ -80,7 +81,7 @@ class Bot {
     this.log = this.client.log;
 
     if (this.feature(BotFeatures.COMMANDS)) {
-      this.client.events.listen!MessageCreate(&this.onMessageCreate);
+      this.client.events.listen!MessageCreate(&this.onMessageCreate, EmitterOrder.BEFORE);
     }
   }
 
@@ -94,7 +95,7 @@ class Bot {
     // Bind listeners
     foreach (ref listener; p.listeners) {
       this.log.infof("Registering listener for event %s", listener.clsName);
-      listener.listener = this.client.events.listenRaw(listener.clsName, toDelegate(listener.func));
+      listener.listener = this.client.events.listenRaw(listener.clsName, toDelegate(listener.func), listener.order);
     }
   }
 
@@ -245,6 +246,8 @@ class Bot {
       }
     }
 
+    // Set the command event so other people can introspect it
+    event.event.commandEvent = event;
     event.cmd.func(event);
   }
 

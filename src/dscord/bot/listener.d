@@ -19,8 +19,8 @@ import dscord.gateway.events,
   Params:
     T = Event type to listen for
 */
-ListenerDef!T Listener(T)() {
-  return ListenerDef!(T)(T.stringof, (event, func) {
+ListenerDef!T Listener(T)(EmitterOrder order = EmitterOrder.UNSPECIFIED) {
+  return ListenerDef!(T)(T.stringof, order, (event, func) {
     func(event.get!(T));
   });
 }
@@ -30,6 +30,7 @@ ListenerDef!T Listener(T)() {
 */
 struct ListenerDef(T) {
   string clsName;
+  EmitterOrder order;
   void delegate(Variant, void delegate(T)) func;
 }
 
@@ -40,13 +41,16 @@ class ListenerObject {
   /** The class name of the event this listener is for */
   string  clsName;
 
+  /// Emitter order for this event listener
+  EmitterOrder order;
+
   /** EventListener function for this Listener */
   EventListener  listener;
 
   /** Utility variant caller for converting event type */
   void delegate(Variant v) func;
 
-  this(string clsName, void delegate(Variant v) func) {
+  this(string clsName, EmitterOrder order, void delegate(Variant v) func) {
     this.clsName = clsName;
     this.func = func;
   }
@@ -63,7 +67,7 @@ mixin template Listenable() {
     foreach (mem; __traits(allMembers, T)) {
       foreach(attr; __traits(getAttributes, __traits(getMember, T, mem))) {
         static if (__traits(hasMember, attr, "clsName")) {
-          this.registerListener(new ListenerObject(attr.clsName, (v) {
+          this.registerListener(new ListenerObject(attr.clsName, attr.order, (v) {
             attr.func(v, mixin("&(cast(T)this)." ~ mem));
           }));
         }

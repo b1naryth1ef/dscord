@@ -13,6 +13,7 @@ import std.algorithm,
 
 import dscord.gateway.client,
        dscord.gateway.packets,
+       dscord.bot.command,
        dscord.types.all;
 
 /**
@@ -335,6 +336,9 @@ class MessageCreate {
   mixin Event;
 
   Message  message;
+
+  // Reference to the command event
+  CommandEvent commandEvent;
 
   void load(ref JSON obj) {
     this.message = new Message(this.client, obj);
