@@ -12,7 +12,7 @@ import std.experimental.logger,
        vibe.d : runTask;
 
 import dscord.client,
-       dscord.types.user,
+       dscord.types.all,
        dscord.bot.command,
        dscord.bot.listener,
        dscord.bot.bot,
@@ -108,6 +108,12 @@ class PluginOptions {
 
   /** Does this plugin load/require a JSON storage file? */
   bool useStorage = false;
+
+  /** Does this plugin auto-load level/command overrides from its config? */
+  bool useOverrides = false;
+
+  /** Default command group to use */
+  string commandGroup = "";
 }
 
 /**
@@ -173,6 +179,24 @@ class Plugin {
       if (this.options.useConfig) {
         this.config.load();
         this.config.save();
+      }
+    }
+
+    if (this.options.useOverrides) {
+      if (this.config.has("levels")) {
+        auto levels = this.config.get!(VibeJSON[string])("levels");
+
+        foreach (name, level; levels) {
+          auto cmd = this.commands[name];
+          cmd.level = level.get!int;
+        }
+      }
+
+      string group = this.config.get!string("group", this.options.commandGroup);
+      if (group != "") {
+        foreach (command; this.commands.values) {
+          command.setGroup(group);
+        }
       }
     }
   }

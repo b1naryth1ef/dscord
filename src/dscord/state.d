@@ -86,7 +86,7 @@ class State : Emitter {
 
     // Guilds
     if (this.features & StateFeatures.GUILDS) {
-      this.listen!(GuildCreate, GuildUpdate, GuildDelete);
+      this.listen!(GuildCreate, GuildUpdate, GuildDelete, GuildMemberUpdate);
     }
 
     // Channels
@@ -135,6 +135,11 @@ class State : Emitter {
 
     destroy(this._guilds[c.guildID]);
     this._guilds.remove(c.guildID);
+  }
+
+  private void onGuildMemberUpdate(GuildMemberUpdate c) {
+    if (!this._guilds.has(c.guildID)) return;
+    this._guilds[c.guildID].members[c.user.id].fromUpdate(c);
   }
 
   private void onChannelCreate(ChannelCreate c) {

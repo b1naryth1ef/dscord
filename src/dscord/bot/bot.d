@@ -269,8 +269,26 @@ class Bot {
     return 0;
   }
 
+  /// Base implementation for getting a level from a role. Override this.
+  int getLevel(Role role) {
+    return 0;
+  }
+
   /// Override implementation for getting a level from a user (for command handling)
   int getLevel(CommandEvent event) {
-    return this.getLevel(event.msg.author);
+    // If we where sent in a guild, check role permissions
+    int roleLevel = 0;
+    if (event.msg.guild) {
+      auto guild = event.msg.guild;
+      auto member = guild.getMember(event.msg.author);
+
+      if (member.roles) {
+        roleLevel = member.roles.map!((rid) =>
+          this.getLevel(guild.roles.get(rid))
+        ).reduce!max;
+      }
+    }
+
+    return max(roleLevel, this.getLevel(event.msg.author));
   }
 };

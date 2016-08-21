@@ -6,6 +6,7 @@ import std.stdio,
        std.conv;
 
 import dscord.client,
+       dscord.gateway.events,
        dscord.types.all;
 
 alias GuildMap = ModelMap!(Snowflake, Guild);
@@ -126,6 +127,11 @@ class GuildMember : IModel {
   this(Guild guild, ref JSON obj) {
     this.guild = guild;
     super(guild.client, obj);
+  }
+
+  void fromUpdate(GuildMemberUpdate update) {
+    this.user = update.user;
+    this.roles = update.roles;
   }
 
   override void load(ref JSON obj) {
