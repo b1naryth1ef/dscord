@@ -340,4 +340,13 @@ class ModelMap(TKey, TValue) {
   auto values() {
     return this.data.values;
   }
+
+  int opApply(int delegate(ref TKey, ref TValue) dg) {
+    int result = 0;
+    foreach (a, b; this.data) {
+      result = dg(a, b);
+      if (result) break;
+    }
+    return result;
+  }
 }
