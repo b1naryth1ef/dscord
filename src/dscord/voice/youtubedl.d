@@ -13,7 +13,17 @@ import dscord.util.process,
 
 class YoutubeDL {
   static void infoWorker(Task parent, string url) {
-    auto proc = new Process(["youtube-dl", "-i", "-j", "--youtube-skip-dash-manifest", url]);
+    auto proc = new Process([
+      "youtube-dl",
+      "-i",
+      "-j",
+      "-4",
+      "--quiet",
+      "--no-check-certificate",
+      "--no-warnings",
+      "--audio-format", "mp3",
+      "--youtube-skip-dash-manifest",
+      url]);
 
     shared string[] lines;
     while (!proc.stdout.eof()) {
