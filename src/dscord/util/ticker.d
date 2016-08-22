@@ -74,6 +74,7 @@ class StaticTicker : Ticker {
 
   void reset() {
     this.iter = 0;
+    this.next = 0;
     this.start();
   }
 
