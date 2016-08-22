@@ -298,11 +298,11 @@ class GatewayClient {
               break;
             case OPCode.RECONNECT:
               this.log.warningf("Recieved RECONNECT OPCode, resetting connection...");
-              this.sock.close();
+              if (this.sock && this.sock.connected) this.sock.close();
               break;
             case OPCode.INVALID_SESSION:
               this.log.warningf("Recieved INVALID_SESSION OPCode, resetting connection...");
-              this.sock.close();
+              if (this.sock && this.sock.connected) this.sock.close();
               break;
             case OPCode.HELLO:
               this.log.tracef("Recieved HELLO OPCode, starting heartbeatter...");
