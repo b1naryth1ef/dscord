@@ -86,7 +86,13 @@ class State : Emitter {
 
     // Guilds
     if (this.features & StateFeatures.GUILDS) {
-      this.listen!(GuildCreate, GuildUpdate, GuildDelete, GuildMemberUpdate);
+      this.listen!(
+        GuildCreate,
+        GuildUpdate,
+        GuildDelete,
+        GuildMemberAdd,
+        GuildMemberRemove,
+        GuildMemberUpdate);
     }
 
     // Channels
@@ -135,6 +141,17 @@ class State : Emitter {
 
     destroy(this._guilds[c.guildID]);
     this._guilds.remove(c.guildID);
+  }
+
+  private void onGuildMemberAdd(GuildMemberAdd c) {
+    Snowflake guildID = c.member.guild.id;
+    if (!this._guilds.has(guildID)) return;
+    this._guilds[guildID].members[c.member.user.id] = c.member;
+  }
+
+  private void onGuildMemberRemove(GuildMemberRemove c) {
+    if (!this._guilds.has(c.guildID)) return;
+    this._guilds[c.guildID].members.remove(c.user.id);
   }
 
   private void onGuildMemberUpdate(GuildMemberUpdate c) {
