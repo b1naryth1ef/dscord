@@ -317,14 +317,15 @@ class ModelMap(TKey, TValue) {
 
     Params:
       f = a delegate which returns true if the value passed in matches.
+      def = default value to return if nothing matches.
   */
-  TValue pick(bool delegate(TValue) f) {
+  TValue pick(bool delegate(TValue) f, TValue def=null) {
     foreach (value; this.data.values) {
       if (f(value)) {
         return value;
       }
     }
-    return null;
+    return def;
   }
 
   /**

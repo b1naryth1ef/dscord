@@ -181,6 +181,7 @@ class Guild : IModel {
   uint       afkTimeout;
   bool       embedEnabled;
   ushort     verificationLevel;
+  ushort     mfaLevel;
   string[]   features;
 
   bool  unavailable;
@@ -191,6 +192,23 @@ class Guild : IModel {
   ChannelMap      channels;
   RoleMap         roles;
   EmojiMap        emojis;
+
+  void fromUpdate(GuildUpdate update) {
+    auto guild = update.guild;
+    assert(this.id == guild.id, "Cannot update from mismatched GuildUpdate");
+
+    this.ownerID = guild.ownerID;
+    this.afkChannelID = guild.afkChannelID;
+    this.embedChannelID = guild.embedChannelID;
+    this.name = guild.name;
+    this.icon = guild.icon;
+    this.splash = guild.splash;
+    this.afkTimeout = guild.afkTimeout;
+    this.embedEnabled = guild.embedEnabled;
+    this.verificationLevel = guild.verificationLevel;
+    this.mfaLevel = guild.mfaLevel;
+    this.features = guild.features;
+  }
 
   override void init() {
     this.members = new GuildMemberMap;
@@ -205,7 +223,7 @@ class Guild : IModel {
       "id", "unavailable", "owner_id", "name", "icon",
       "region", "verification_level", "afk_channel_id",
       "splash", "afk_timeout", "channels", "roles", "members",
-      "voice_states", "emojis", "features",
+      "voice_states", "emojis", "features", "mfa_level",
     )(
       { this.id = readSnowflake(obj); },
       { this.unavailable = obj.read!bool; },
@@ -232,7 +250,9 @@ class Guild : IModel {
       {
         loadManyComplex!(Guild, Emoji)(this, obj, (e) { this.emojis[e.id] = e; });
       },
-      { this.features = obj.read!(string[]); });
+      { this.features = obj.read!(string[]); },
+      { this.mfaLevel = obj.read!ushort; },
+    );
   }
 
   GuildMember getMember(User obj) {
@@ -253,5 +273,17 @@ class Guild : IModel {
 
   void kick(User user) {
     this.client.api.guildRemoveMember(this.id, user.id);
+  }
+
+  @property Role defaultRole() {
+    return this.roles.pick((r) {
+      return r.id == this.id;
+    });
+  }
+
+  @property Channel defaultChannel() {
+    return this.channels.pick((c) {
+      return c.id == this.id;
+    });
   }
 }

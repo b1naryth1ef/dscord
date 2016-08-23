@@ -17,12 +17,16 @@ enum StateFeatures {
   GUILDS = 1 << 0,
   CHANNELS = 1 << 1,
   VOICE = 1 << 2,
+  GUILD_MEMBERS = 1 << 3,
+  GUILD_ROLES = 1 << 4,
 }
 
 const StateFeatures DEFAULT_STATE_FEATURES =
   StateFeatures.GUILDS |
   StateFeatures.CHANNELS |
-  StateFeatures.VOICE;
+  StateFeatures.VOICE |
+  StateFeatures.GUILD_MEMBERS |
+  StateFeatures.GUILD_ROLES;
 
 
 /**
@@ -86,13 +90,7 @@ class State : Emitter {
 
     // Guilds
     if (this.features & StateFeatures.GUILDS) {
-      this.listen!(
-        GuildCreate,
-        GuildUpdate,
-        GuildDelete,
-        GuildMemberAdd,
-        GuildMemberRemove,
-        GuildMemberUpdate);
+      this.listen!(GuildCreate, GuildUpdate, GuildDelete);
     }
 
     // Channels
@@ -103,6 +101,16 @@ class State : Emitter {
     // Voice State
     if (this.features & StateFeatures.VOICE) {
       this.listen!VoiceStateUpdate;
+    }
+
+    // Guild Members
+    if (this.features & StateFeatures.GUILD_MEMBERS) {
+      this.listen!(GuildMemberAdd, GuildMemberRemove, GuildMemberUpdate);
+    }
+
+    // Guild Roles
+    if (this.features & StateFeatures.GUILD_ROLES) {
+      this.listen!(GuildRoleCreate, GuildRoleDelete, GuildRoleUpdate);
     }
   }
 
@@ -126,9 +134,8 @@ class State : Emitter {
   }
 
   private void onGuildUpdate(GuildUpdate c) {
-    this.log.warning("Hit onGuildUpdate leaving state stale");
-    // TODO: handle state changes in here
-    // this.guilds[c.guild.id].load(c.payload);
+    if (!this._guilds.has(c.guild.id)) return;
+    this.guilds[c.guild.id].fromUpdate(c);
   }
 
   private void onGuildDelete(GuildDelete c) {
@@ -157,6 +164,21 @@ class State : Emitter {
   private void onGuildMemberUpdate(GuildMemberUpdate c) {
     if (!this._guilds.has(c.guildID)) return;
     this._guilds[c.guildID].members[c.user.id].fromUpdate(c);
+  }
+
+  private void onGuildRoleCreate(GuildRoleCreate c) {
+    if (!this._guilds.has(c.guildID)) return;
+    this._guilds[c.guildID].roles[c.role.id] = c.role;
+  }
+
+  private void onGuildRoleDelete(GuildRoleDelete c) {
+    if (!this._guilds.has(c.guildID)) return;
+    this._guilds[c.guildID].roles.remove(c.role.id);
+  }
+
+  private void onGuildRoleUpdate(GuildRoleUpdate c) {
+    if (!this._guilds.has(c.guildID)) return;
+    this._guilds[c.guildID].roles[c.role.id] = c.role;
   }
 
   private void onChannelCreate(ChannelCreate c) {
