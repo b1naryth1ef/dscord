@@ -3,6 +3,7 @@ module dscord.types.base;
 import std.conv,
        std.typecons,
        std.stdio,
+       std.array,
        std.algorithm,
        std.traits,
        std.functional;
@@ -340,6 +341,11 @@ class ModelMap(TKey, TValue) {
   */
   auto values() {
     return this.data.values;
+  }
+
+  /// Return the set-union for an array of keys
+  TKey[] keyUnion(TKey[] other) {
+    return setUnion(this.keys, other).array;
   }
 
   int opApply(int delegate(ref TKey, ref TValue) dg) {

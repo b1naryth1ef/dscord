@@ -14,13 +14,6 @@ alias RoleMap = ModelMap!(Snowflake, Role);
 alias GuildMemberMap = ModelMap!(Snowflake, GuildMember);
 alias EmojiMap = ModelMap!(Snowflake, Emoji);
 
-bool memberHasRoleWithin(RoleMap map, GuildMember mem) {
-  foreach (ref role; map.values) {
-    if (mem.hasRole(role)) return true;
-  }
-  return false;
-}
-
 class Role : IModel {
   mixin Model;
 
@@ -255,32 +248,34 @@ class Guild : IModel {
     );
   }
 
+  /// Returns a GuildMember for a given user object
   GuildMember getMember(User obj) {
     return this.getMember(obj.id);
   }
 
+  /// Returns a GuildMember for a given user/member id
   GuildMember getMember(Snowflake id) {
     return this.members[id];
   }
 
-  Snowflake getID() {
-    return this.id;
-  }
-
+  /// Kick a given GuildMember
   void kick(GuildMember member) {
     this.kick(member.user);
   }
 
+  /// Kick a given User
   void kick(User user) {
     this.client.api.guildRemoveMember(this.id, user.id);
   }
 
+  /// Default role for this Guild
   @property Role defaultRole() {
     return this.roles.pick((r) {
       return r.id == this.id;
     });
   }
 
+  /// Default channel for this Guild
   @property Channel defaultChannel() {
     return this.channels.pick((c) {
       return c.id == this.id;

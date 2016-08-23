@@ -245,12 +245,11 @@ class Message : IModel {
     True if this message mentions the current user in any way (everyone, direct mention, role mention)
   */
   @property bool mentioned() {
-    this.client.log.tracef("M: %s", this.mentions.keys);
-
     return this.mentionEveryone ||
       this.mentions.has(this.client.state.me.id) ||
-      this.roleMentions.memberHasRoleWithin(
-        this.guild.getMember(this.client.state.me));
+      this.roleMentions.keyUnion(
+        this.guild.getMember(this.client.state.me).roles
+      ).length != 0;
   }
 
   /**
