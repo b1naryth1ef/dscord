@@ -9,12 +9,13 @@ public import std.experimental.logger;
 
 import std.algorithm.iteration;
 
-import dscord.state,
-       dscord.api.client,
-       dscord.gateway.client,
-       dscord.voice.client,
-       dscord.types.all,
+import dscord.api,
+       dscord.types,
+       dscord.state,
+       dscord.voice,
+       dscord.gateway,
        dscord.util.emitter;
+
 
 /**
   Struct containing configuration for Gateway sharding.
@@ -83,5 +84,9 @@ class Client {
     } else {
       this.api.bulkDeleteMessages(channelID, messages);
     }
+  }
+
+  void updateStatus(uint idleSince, Game game=null) {
+    this.gw.send(new StatusUpdate(idleSince, game));
   }
 }

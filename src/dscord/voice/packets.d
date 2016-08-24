@@ -5,8 +5,8 @@ module dscord.voice.packets;
 
 import std.stdio;
 
-import dscord.types.all,
-       dscord.gateway.packets;
+import dscord.types,
+       dscord.gateway;
 
 enum VoiceOPCode {
   VOICE_IDENTIFY = 0,

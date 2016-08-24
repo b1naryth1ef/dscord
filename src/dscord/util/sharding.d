@@ -3,7 +3,7 @@
 */
 module dscord.util.sharding;
 
-import dscord.types.all;
+import dscord.types;
 
 /// Returns the shard number a given snowflake is on (given the number of shards)
 ushort shardNumber(Snowflake id, ushort numShards) {

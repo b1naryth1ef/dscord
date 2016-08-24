@@ -15,12 +15,11 @@ import vibe.core.core,
        vibe.http.client,
        vibe.stream.operations;
 
-import dscord.types.all,
+import dscord.api,
        dscord.info,
+       dscord.types,
        dscord.api.routes,
-       dscord.api.ratelimit,
-       dscord.api.util;
-
+       dscord.api.ratelimit;
 
 /**
   APIClient is the base abstraction for interacting with the Discord API.

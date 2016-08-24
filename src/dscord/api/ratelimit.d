@@ -11,6 +11,7 @@ import std.conv,
        core.sync.mutex;
 
 import vibe.core.core;
+
 import dscord.api.routes,
        dscord.util.time;
 

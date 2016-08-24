@@ -5,12 +5,10 @@ import std.functional,
        std.algorithm.iteration,
        std.experimental.logger;
 
-import dscord.client,
-       dscord.api.client,
-       dscord.gateway.client,
-       dscord.gateway.events,
-       dscord.gateway.packets,
-       dscord.types.all,
+import dscord.api,
+       dscord.types,
+       dscord.client,
+       dscord.gateway,
        dscord.util.emitter;
 
 enum StateFeatures {
@@ -131,6 +129,11 @@ class State : Emitter {
         this._channels[c.id] = c;
       });
     }
+
+    if (this.features & StateFeatures.GUILD_MEMBERS) {
+      // Request offline members
+      c.guild.requestOfflineMembers();
+    }
   }
 
   private void onGuildUpdate(GuildUpdate c) {
@@ -163,6 +166,7 @@ class State : Emitter {
 
   private void onGuildMemberUpdate(GuildMemberUpdate c) {
     if (!this._guilds.has(c.guildID)) return;
+    if (!this._guilds[c.guildID].members.has(c.user.id)) return;
     this._guilds[c.guildID].members[c.user.id].fromUpdate(c);
   }
 

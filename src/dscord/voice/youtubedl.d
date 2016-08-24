@@ -8,8 +8,8 @@ import dcad.types : DCAFile, rawReadFramesFromFile;
 import vibe.core.core,
        vibe.core.concurrency;
 
-import dscord.util.process,
-       dscord.types.all;
+import dscord.types,
+       dscord.util.process;
 
 class YoutubeDL {
   static void infoWorker(Task parent, string url) {

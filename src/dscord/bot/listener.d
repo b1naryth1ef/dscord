@@ -8,8 +8,8 @@ import std.variant,
        std.string,
        std.array;
 
-import dscord.gateway.events,
-       dscord.types.all,
+import dscord.types,
+       dscord.gateway,
        dscord.util.emitter;
 
 /**

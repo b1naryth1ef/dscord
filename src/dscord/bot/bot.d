@@ -11,11 +11,10 @@ import std.algorithm,
        std.functional,
        std.string : strip, toStringz, fromStringz;
 
-import dscord.client,
-       dscord.bot.command,
-       dscord.bot.plugin,
-       dscord.types.all,
-       dscord.gateway.events,
+import dscord.bot,
+       dscord.types,
+       dscord.client,
+       dscord.gateway,
        dscord.util.emitter,
        dscord.util.errors;
 

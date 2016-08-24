@@ -5,7 +5,7 @@ module dscord.gateway.packets;
 
 import std.stdio;
 
-import dscord.types.all;
+import dscord.types;
 
 enum OPCode : ushort {
   DISPATCH = 0,
@@ -127,5 +127,54 @@ class IdentifyPacket : BasePacket, Serializable {
       "large_threshold": VibeJSON(this.largeThreshold),
       "shard": VibeJSON([VibeJSON(this.shard[0]), VibeJSON(this.shard[1])]),
     ]));
+  }
+}
+
+class RequestGuildMembers : BasePacket, Serializable {
+  Snowflake guildID;
+  string query;
+  uint limit;
+
+  this(Snowflake guildID, string query="", uint limit=0) {
+    this.guildID = guildID;
+    this.query = query;
+    this.limit = limit;
+  }
+
+  override VibeJSON serialize() {
+    return super.serialize(OPCode.REQUEST_GUILD_MEMBERS, VibeJSON([
+      "guild_id": VibeJSON(this.guildID.toString),
+      "query": VibeJSON(this.query),
+      "limit": VibeJSON(this.limit),
+    ]));
+  }
+}
+
+class StatusUpdate : BasePacket, Serializable {
+  uint idleSince;
+  Game game;
+
+  this(uint idleSince=0, Game game=null) {
+    this.idleSince = idleSince;
+    this.game = game;
+
+  }
+
+  override VibeJSON serialize() {
+    VibeJSON obj = VibeJSON.emptyObject;
+
+    if (this.idleSince > 0) {
+      obj["idle_since"] = VibeJSON(this.idleSince);
+    } else {
+      obj["idle_since"] = VibeJSON(null);
+    }
+
+    if (this.game) {
+      obj["game"] = this.game.dump();
+    } else {
+      obj["game"] = VibeJSON.emptyObject;
+    }
+
+    return super.serialize(OPCode.STATUS_UPDATE, obj);
   }
 }

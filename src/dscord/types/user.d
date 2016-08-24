@@ -2,10 +2,40 @@ module dscord.types.user;
 
 import std.stdio;
 
-import dscord.client,
-       dscord.types.all;
+import dscord.types,
+       dscord.client;
 
 alias UserMap = ModelMap!(Snowflake, User);
+
+enum GameType : ushort {
+  DEFAULT = 0,
+  STREAMING = 1,
+}
+
+class Game {
+  string name;
+  string url;
+  GameType type;
+
+  this(string name, string url="", GameType type=GameType.DEFAULT) {
+    this.name = name;
+    this.url = url;
+    this.type = type;
+  }
+
+  VibeJSON dump() {
+    VibeJSON obj = VibeJSON.emptyObject;
+
+    obj["name"] = VibeJSON(this.name);
+
+    if (this.url != "") {
+      obj["url"] = VibeJSON(this.url);
+      obj["type"] = VibeJSON(cast(ushort)this.type);
+    }
+
+    return obj;
+  }
+}
 
 class User : IModel {
   mixin Model;

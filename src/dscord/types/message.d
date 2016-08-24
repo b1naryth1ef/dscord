@@ -8,8 +8,8 @@ import std.stdio,
        std.array,
        std.algorithm.iteration;
 
-import dscord.client,
-       dscord.types.all;
+import dscord.types,
+       dscord.client;
 
 /**
   An interface implementting something that can be sent as a message.

@@ -16,8 +16,7 @@ import vibe.core.core,
        vibe.http.websockets;
 
 import dscord.client,
-       dscord.gateway.packets,
-       dscord.gateway.events,
+       dscord.gateway,
        dscord.util.emitter,
        dscord.util.json,
        dscord.util.counter;
@@ -207,6 +206,9 @@ class GatewayClient {
         break;
       case "GUILD_INTEGRATIONS_UPDATE":
         this.emitDispatchEvent!GuildIntegrationsUpdate(obj);
+        break;
+      case "GUILD_MEMBERS_CHUNK":
+        this.emitDispatchEvent!GuildMembersChunk(obj);
         break;
       case "GUILD_MEMBER_ADD":
         this.emitDispatchEvent!GuildMemberAdd(obj);

@@ -11,10 +11,9 @@ import std.algorithm,
        std.array,
        std.conv;
 
-import dscord.gateway.client,
-       dscord.gateway.packets,
-       dscord.bot.command,
-       dscord.types.all;
+import dscord.types,
+       dscord.gateway,
+       dscord.bot.command;
 
 /**
   A wrapper type for delegates that can be attached to an event, and run after
@@ -227,6 +226,24 @@ class GuildIntegrationsUpdate {
   mixin Event;
 
   void load(ref JSON obj) {}
+}
+
+/**
+  Sent in response to RequestGuildMembers.
+*/
+
+class GuildMembersChunk {
+  mixin Event;
+
+  Snowflake guildID;
+  GuildMember[] members;
+
+  void load(ref JSON obj) {
+    obj.keySwitch!("guild_id", "members")(
+      { this.guildID = readSnowflake(obj); },
+      { loadMany!GuildMember(this.client, obj, (m) { this.members ~= m; }); },
+    );
+  }
 }
 
 /**

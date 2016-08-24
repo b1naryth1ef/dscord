@@ -2,8 +2,8 @@ module dscord.types.voice;
 
 import std.stdio;
 
-import dscord.client,
-       dscord.types.all;
+import dscord.types,
+       dscord.client;
 
 
 alias VoiceStateMap = ModelMap!(string, VoiceState);

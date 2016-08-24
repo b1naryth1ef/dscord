@@ -5,9 +5,9 @@ import std.stdio,
        std.array,
        std.conv;
 
-import dscord.client,
-       dscord.gateway.events,
-       dscord.types.all;
+import dscord.types,
+       dscord.client,
+       dscord.gateway;
 
 alias GuildMap = ModelMap!(Snowflake, Guild);
 alias RoleMap = ModelMap!(Snowflake, Role);
@@ -280,5 +280,10 @@ class Guild : IModel {
     return this.channels.pick((c) {
       return c.id == this.id;
     });
+  }
+
+  /// Request offline members for this guild
+  void requestOfflineMembers() {
+    this.client.gw.send(new RequestGuildMembers(this.id));
   }
 }

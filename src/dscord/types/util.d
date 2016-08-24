@@ -1,6 +1,8 @@
 /**
   Utility types that wrap specific utility functionality, without directly
   representing data/modeling from Discord.
+
+  TODO: moveme
 */
 module dscord.types.util;
 

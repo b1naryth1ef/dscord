@@ -8,7 +8,7 @@ import std.uri,
 import vibe.http.client,
        vibe.stream.operations;
 
-import dscord.types.all,
+import dscord.types,
        dscord.util.errors;
 
 /**

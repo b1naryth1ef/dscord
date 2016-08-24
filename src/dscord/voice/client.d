@@ -21,13 +21,11 @@ import vibe.core.core,
 
 import dcad.types : DCAFile;
 
-public import dscord.voice.playable;
 
-import dscord.client,
-       dscord.gateway.packets,
-       dscord.gateway.events,
-       dscord.voice.packets,
-       dscord.types.all,
+import dscord.types,
+       dscord.voice,
+       dscord.client,
+       dscord.gateway,
        dscord.util.emitter,
        dscord.util.ticker;
 

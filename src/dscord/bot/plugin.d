@@ -11,11 +11,9 @@ import std.path,
 import std.experimental.logger,
        vibe.d : runTask;
 
-import dscord.client,
-       dscord.types.all,
-       dscord.bot.command,
-       dscord.bot.listener,
-       dscord.bot.bot,
+import dscord.bot,
+       dscord.types,
+       dscord.client,
        dscord.util.storage;
 
 /**

@@ -8,8 +8,8 @@ import std.regex,
        std.array,
        std.algorithm;
 
-import dscord.gateway.events,
-       dscord.types.all;
+import dscord.types,
+       dscord.gateway;
 
 static struct CommandDefinition {
   string[]  triggers;

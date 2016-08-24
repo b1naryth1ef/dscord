@@ -1,4 +1,4 @@
-module dscord.types.all;
+module dscord.types;
 
 public import dscord.types.base;
 public import dscord.types.channel;

@@ -7,8 +7,9 @@ module dscord.util.ticker;
 import core.time,
        std.algorithm.comparison;
 
-import dscord.util.time;
 import vibe.core.core : vibeSleep = sleep;
+
+import dscord.util.time;
 
 /**
   Ticker which can be used for interval-based timing. Operates at millisecond
