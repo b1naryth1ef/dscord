@@ -14,7 +14,8 @@ static import std.stdio,
 */
 struct Process {
   std.process.Pid pid;
-  std.process.Pipe pipe;
+  std.process.Pipe _stdout;
+  std.process.Pipe _stderr;
 
   /**
    Creates a new process (and spawns it).
@@ -24,8 +25,9 @@ struct Process {
       upstream = file object used as stdin for the process
   */
   this(string[] args, std.stdio.File upstream) {
-    this.pipe = std.process.pipe();
-    this.pid = std.process.spawnProcess(args, upstream, this.pipe.writeEnd);
+    this._stdout = std.process.pipe();
+    this._stderr = std.process.pipe();
+    this.pid = std.process.spawnProcess(args, upstream, this._stdout.writeEnd, this._stderr.writeEnd);
   }
 
   /**
@@ -45,7 +47,12 @@ struct Process {
 
   /// File object of this processes stdout
   @property std.stdio.File stdout() {
-    return this.pipe.readEnd;
+    return this._stdout.readEnd;
+  }
+
+  /// File object of this processes stderr
+  @property std.stdio.File stderr() {
+    return this._stderr.readEnd;
   }
 }
 
@@ -59,7 +66,7 @@ class ProcessChain {
   /// Adds a new process in the chain.
   ProcessChain run(string[] args) {
     members ~= new Process(args,
-      this.members.length ? this.members[$-1].pipe.readEnd : std.stdio.stdin);
+      this.members.length ? this.members[$-1]._stdout.readEnd : std.stdio.stdin);
     return this;
   }
 
@@ -72,6 +79,6 @@ class ProcessChain {
   /// Returns stdout for the last process in the chain.
   std.stdio.File end() {
     assert(this.members.length);
-    return this.members[$-1].pipe.readEnd;
+    return this.members[$-1]._stdout.readEnd;
   }
 }
