@@ -135,7 +135,7 @@ class CommandObject {
     } else {
       // Append space to grouping
       group = (this.group != "" ? this.group ~ " " : "");
-      this.rgx = regex(this.triggers.map!((x) => "^" ~ group ~ x).join("|"));
+      this.rgx = regex(this.triggers.map!((x) => "^" ~ group ~ x).join("|") ~ "( (.*)$|$)");
     }
   }
 

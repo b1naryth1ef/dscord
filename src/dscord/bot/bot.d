@@ -231,7 +231,7 @@ class Bot {
     }
 
     // Extract some stuff for the CommandEvent
-    event.contents = strip(capture.post());
+    event.contents = strip(capture.back);
     event.args = event.contents.split(" ");
 
     if (event.args.length && event.args[0] == "") {
