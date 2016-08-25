@@ -6,7 +6,7 @@ import dscord.types;
 
 alias Permission = ulong;
 
-enum PermissionBits : Permission {
+enum Permissions : Permission {
   NONE,
   CREATE_INSTANT_INVITE = 1 << 0,
   KICK_MEMBERS = 1 << 1,
@@ -42,7 +42,7 @@ mixin template Permissible() {
     auto perms = this.getPermissions(user);
 
     return
-      ((perms & PermissionBits.ADMINISTRATOR) == PermissionBits.ADMINISTRATOR) ||
+      ((perms & Permissions.ADMINISTRATOR) == Permissions.ADMINISTRATOR) ||
       ((this.getPermissions(user) & perm) == perm);
   }
 

@@ -289,7 +289,7 @@ class Guild : IModel, IPermissible {
   override Permission getPermissions(Snowflake user) {
     // If we're the owner, we have alllll the permissions
     if (this.ownerID == user) {
-      return PermissionBits.ADMINISTRATOR;
+      return Permissions.ADMINISTRATOR;
     }
 
     // Otherwise grab the member object
