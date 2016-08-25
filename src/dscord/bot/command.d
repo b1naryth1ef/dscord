@@ -170,18 +170,20 @@ class CommandEvent {
     this.msg = event.message;
   }
 
+  /// Returns arguments as a single string
   @property string cleanedContents() {
     return this.args.join(" ");
   }
 
-  bool has(ushort index) {
+  @deprecated bool has(ushort index) {
     return (index < this.args.length);
   }
 
-  string arg(ushort index) {
+  @deprecated string arg(ushort index) {
     return this.args[index];
   }
 
+  /// Returns mentions for this command, sans the bot
   @property UserMap mentions() {
     return this.msg.mentions.filter((k, v) => k != this.event.client.me.id);
   }
