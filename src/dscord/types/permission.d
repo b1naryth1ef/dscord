@@ -1,8 +1,18 @@
 module dscord.types.permission;
 
-import std.algorithm.iteration;
+import std.format,
+       std.algorithm.iteration;
 
 import dscord.types;
+
+class PermissionsError : Exception {
+  Permissions perm;
+
+  this(T...)(Permissions perm, T args) {
+    this.perm = perm;
+    super(format("Permission required: %s", perm));
+  }
+}
 
 alias Permission = ulong;
 
@@ -48,5 +58,13 @@ mixin template Permissible() {
 
   bool can(Snowflake user, Permission[] some...) {
     return some.map!((p) => this.can(user, p)).all();
+  }
+
+  bool can(User user, Permission perm) {
+    return can(user.id, perm);
+  }
+
+  bool can(User user, Permission[] some...) {
+    return can(user.id, some);
   }
 }

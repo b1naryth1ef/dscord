@@ -221,8 +221,10 @@ class Message : IModel {
     Edits this message contents.
   */
   Message edit(inout(string) content) {
-    // We can only edit messages we sent
-    assert(this.client.me.id == this.author.id);
+    if (!this.canEdit()) {
+      throw new PermissionsError(Permissions.MANAGE_MESSAGES);
+    }
+
     return this.client.api.editMessage(this.channel.id, this.id, content);
   }
 
@@ -237,7 +239,10 @@ class Message : IModel {
     Deletes this message.
   */
   void del() {
-    // TODO: permissions check
+    if (!this.canDelete()) {
+      throw new PermissionsError(Permissions.MANAGE_MESSAGES);
+    }
+
     return this.client.api.deleteMessage(this.channel.id, this.id);
   }
 
@@ -265,5 +270,16 @@ class Message : IModel {
   */
   @property Snowflake[] customEmojiByID() {
     return matchAll(this.content, regex("<:\\w+:(\\d+)>")).map!((m) => m.back.to!Snowflake).array;
+  }
+
+  /// Whether the bot can edit this message
+  bool canDelete() {
+    return (this.author.id == this.client.state.me.id ||
+      this.channel.can(this.client.state.me, Permissions.MANAGE_MESSAGES));
+  }
+
+  /// Whether the bot can edit this message
+  bool canEdit() {
+    return (this.author.id == this.client.state.me.id);
   }
 }
