@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<title>Class Message</title>
+		<link rel="stylesheet" href="../../../css/style.min.css"/>
+		<script type="text/javascript" src="../../../js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header>
+		</header>
+		<nav id="main-nav">
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<input id="symbolSearch" type="text" placeholder="Search" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus="autofocus"/>
+					<ul id="symbolSearchResults" style="display: none"></ul>
+					<script type="application/javascript" src="../../../symbols.js"></script>
+					<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+document.getElementById('symbolSearchPane').style.display = 'block';
+					</script>
+				</div>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">dscord</a>
+						<ul class="tree-view">
+							<li class="collapsed tree-view">
+								<a href="#" class="package">api</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/api.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/ratelimit.html" class=" module">ratelimit</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/routes.html" class=" module">routes</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/util.html" class=" module">util</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">bot</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/bot.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/bot.html" class=" module">bot</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/command.html" class=" module">command</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/listener.html" class=" module">listener</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/plugin.html" class=" module">plugin</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">gateway</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/gateway.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/events.html" class=" module">events</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/packets.html" class=" module">packets</a>
+							</li>
+						</ul>
+							</li>
+							<li class="tree-view">
+								<a href="#" class="package">types</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/types.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/base.html" class=" module">base</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/channel.html" class=" module">channel</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/guild.html" class=" module">guild</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/message.html" class="selected module">message</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/permission.html" class=" module">permission</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/user.html" class=" module">user</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/util.html" class=" module">util</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/voice.html" class=" module">voice</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">util</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/util/counter.html" class=" module">counter</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/emitter.html" class=" module">emitter</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/errors.html" class=" module">errors</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/json.html" class=" module">json</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/process.html" class=" module">process</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/queue.html" class=" module">queue</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/sharding.html" class=" module">sharding</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/storage.html" class=" module">storage</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/ticker.html" class=" module">ticker</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/time.html" class=" module">time</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">voice</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/voice.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/packets.html" class=" module">packets</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/playable.html" class=" module">playable</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/youtubedl.html" class=" module">youtubedl</a>
+							</li>
+						</ul>
+							</li>
+							<li>
+								<a href="../../../dscord/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/core.html" class=" module">core</a>
+							</li>
+							<li>
+								<a href="../../../dscord/info.html" class=" module">info</a>
+							</li>
+							<li>
+								<a href="../../../dscord/state.html" class=" module">state</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+			<p id="main-nav-footer">
+ Built with
+				<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<h1>Class Message</h1>
+			<section>
+				<p></p>
+
+					<section>
+						<h3>Inherits from</h3>
+						<ul>
+							<li>
+								<code class="prettyprint lang-d"><a href="../../../dscord/types/base/IModel.html"><span class="typ">IModel</span></a></code>
+ (base class)
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Constructors</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.attachments.html" class="public"><code>attachments</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/message/MessageAttachment.html"><span class="typ">MessageAttachment</span></a><span class="pun">[]</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.author.html" class="public"><code>author</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/user/User.html"><span class="typ">User</span></a></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.channel.html" class="public"><code>channel</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/channel/Channel.html"><span class="typ">Channel</span></a></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.channelID.html" class="public"><code>channelID</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.content.html" class="public"><code>content</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.editedTimestamp.html" class="public"><code>editedTimestamp</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.embeds.html" class="public"><code>embeds</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/message/MessageEmbed.html"><span class="typ">MessageEmbed</span></a><span class="pun">[]</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.id.html" class="public"><code>id</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.mentionEveryone.html" class="public"><code>mentionEveryone</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.mentions.html" class="public"><code>mentions</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/base/ModelMap.html"><span class="typ">ModelMap</span></a>!(ulong,dscord.types.user.User)</code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.nonce.html" class="public"><code>nonce</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.pinned.html" class="public"><code>pinned</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.roleMentions.html" class="public"><code>roleMentions</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/base/ModelMap.html"><span class="typ">ModelMap</span></a>!(ulong,dscord.types.guild.Role)</code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.timestamp.html" class="public"><code>timestamp</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.tts.html" class="public"><code>tts</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/base/IModel.client.html" class="public inherited"><code>client</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/client/Client.html"><span class="typ">Client</span></a></code></td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.customEmojiByID.html" class="public property"><code>customEmojiByID</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span><span class="pun">[]</span></code></td>
+								<td>Returns an array of emoji IDs for all custom emoji used in this message.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.guild.html" class="public property"><code>guild</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/guild/Guild.html"><span class="typ">Guild</span></a></code></td>
+								<td>Guild this message was sent in (if applicable).
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.mentioned.html" class="public property"><code>mentioned</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.canDelete.html" class="public">
+										<code>canDelete</code>
+									</a>
+								</td>
+								<td>Whether the bot can <a href="../../../dscord/types/message/Message.edit.html"><code class="lang-d"><span class="pln"><a href="../../../dscord/types/message/Message.edit.html"><span class="pln">edit</span></a></span></code></a> this message
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.canEdit.html" class="public">
+										<code>canEdit</code>
+									</a>
+								</td>
+								<td>Whether the bot can <a href="../../../dscord/types/message/Message.edit.html"><code class="lang-d"><span class="pln"><a href="../../../dscord/types/message/Message.edit.html"><span class="pln"><a href="../../../dscord/types/message/Message.edit.html"><span class="pln">edit</span></a></span></a></span></code></a> this message
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.del.html" class="public">
+										<code>del</code>
+									</a>
+								</td>
+								<td>Deletes this message.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.edit.html" class="public">
+										<code>edit</code>
+									</a>
+								</td>
+								<td>Edits this message contents with a <a href="../../../dscord/types/message/Sendable.html"><code class="lang-d"><span class="typ">Sendable</span></code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.edit.html" class="public">
+										<code>edit</code>
+									</a>
+								</td>
+								<td>Edits this message contents.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.init.html" class="public">
+										<code>init</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.load.html" class="public">
+										<code>load</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.replaceMentions.html" class="public">
+										<code>replaceMentions</code>
+									</a>
+								</td>
+								<td>Returns the message contents, replacing all <a href="../../../dscord/types/message/Message.mentions.html"><code class="lang-d"><span class="pln">mentions</span></code></a> with the result from the
+    specified delegate.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.reply.html" class="public">
+										<code>reply</code>
+									</a>
+								</td>
+								<td>Sends a new message to the same <a href="../../../dscord/types/message/Message.channel.html"><code class="lang-d"><span class="pln">channel</span></code></a> as this message.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.reply.html" class="public">
+										<code>reply</code>
+									</a>
+								</td>
+								<td>Sends a <a href="../../../dscord/types/message/Sendable.html"><code class="lang-d"><span class="typ">Sendable</span></code></a> to the same <a href="../../../dscord/types/message/Message.channel.html"><code class="lang-d"><span class="pln">channel</span></code></a> as this message.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.replyf.html" class="public">
+										<code>replyf</code>
+									</a>
+								</td>
+								<td>Sends a new formatted message to the same <a href="../../../dscord/types/message/Message.channel.html"><code class="lang-d"><span class="pln">channel</span></code></a> as this message.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.withoutMentions.html" class="public">
+										<code>withoutMentions</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/message/Message.withProperMentions.html" class="public">
+										<code>withProperMentions</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<footer>
+				<hr/>
+				<div id="license-info">
+
+
+
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

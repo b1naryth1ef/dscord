@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<title>Class Guild</title>
+		<link rel="stylesheet" href="../../../css/style.min.css"/>
+		<script type="text/javascript" src="../../../js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header>
+		</header>
+		<nav id="main-nav">
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<input id="symbolSearch" type="text" placeholder="Search" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus="autofocus"/>
+					<ul id="symbolSearchResults" style="display: none"></ul>
+					<script type="application/javascript" src="../../../symbols.js"></script>
+					<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+document.getElementById('symbolSearchPane').style.display = 'block';
+					</script>
+				</div>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">dscord</a>
+						<ul class="tree-view">
+							<li class="collapsed tree-view">
+								<a href="#" class="package">api</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/api.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/ratelimit.html" class=" module">ratelimit</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/routes.html" class=" module">routes</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/util.html" class=" module">util</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">bot</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/bot.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/bot.html" class=" module">bot</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/command.html" class=" module">command</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/listener.html" class=" module">listener</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/plugin.html" class=" module">plugin</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">gateway</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/gateway.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/events.html" class=" module">events</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/packets.html" class=" module">packets</a>
+							</li>
+						</ul>
+							</li>
+							<li class="tree-view">
+								<a href="#" class="package">types</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/types.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/base.html" class=" module">base</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/channel.html" class=" module">channel</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/guild.html" class="selected module">guild</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/message.html" class=" module">message</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/permission.html" class=" module">permission</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/user.html" class=" module">user</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/util.html" class=" module">util</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/voice.html" class=" module">voice</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">util</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/util/counter.html" class=" module">counter</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/emitter.html" class=" module">emitter</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/errors.html" class=" module">errors</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/json.html" class=" module">json</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/process.html" class=" module">process</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/queue.html" class=" module">queue</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/sharding.html" class=" module">sharding</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/storage.html" class=" module">storage</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/ticker.html" class=" module">ticker</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/time.html" class=" module">time</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">voice</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/voice.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/packets.html" class=" module">packets</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/playable.html" class=" module">playable</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/youtubedl.html" class=" module">youtubedl</a>
+							</li>
+						</ul>
+							</li>
+							<li>
+								<a href="../../../dscord/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/core.html" class=" module">core</a>
+							</li>
+							<li>
+								<a href="../../../dscord/info.html" class=" module">info</a>
+							</li>
+							<li>
+								<a href="../../../dscord/state.html" class=" module">state</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+			<p id="main-nav-footer">
+ Built with
+				<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<h1>Class Guild</h1>
+			<section>
+				<p></p>
+
+					<section>
+						<h3>Inherits from</h3>
+						<ul>
+							<li>
+								<code class="prettyprint lang-d"><a href="../../../dscord/types/base/IModel.html"><span class="typ">IModel</span></a></code>
+ (base class)
+							</li>
+							<li>
+								<code class="prettyprint lang-d"><a href="../../../dscord/types/permission/IPermissible.html"><span class="typ">IPermissible</span></a></code>
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.afkChannelID.html" class="public"><code>afkChannelID</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.afkTimeout.html" class="public"><code>afkTimeout</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.channels.html" class="public"><code>channels</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/base/ModelMap.html"><span class="typ">ModelMap</span></a>!(ulong,dscord.types.channel.Channel)</code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.embedChannelID.html" class="public"><code>embedChannelID</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.embedEnabled.html" class="public"><code>embedEnabled</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.emojis.html" class="public"><code>emojis</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/base/ModelMap.html"><span class="typ">ModelMap</span></a>!(ulong,dscord.types.guild.Emoji)</code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.features.html" class="public"><code>features</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span><span class="pun">[]</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.icon.html" class="public"><code>icon</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.id.html" class="public"><code>id</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.members.html" class="public"><code>members</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/base/ModelMap.html"><span class="typ">ModelMap</span></a>!(ulong,dscord.types.guild.GuildMember)</code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.mfaLevel.html" class="public"><code>mfaLevel</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ushort</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.name.html" class="public"><code>name</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.ownerID.html" class="public"><code>ownerID</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.region.html" class="public"><code>region</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.roles.html" class="public"><code>roles</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/base/ModelMap.html"><span class="typ">ModelMap</span></a>!(ulong,dscord.types.guild.Role)</code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.splash.html" class="public"><code>splash</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.unavailable.html" class="public"><code>unavailable</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.verificationLevel.html" class="public"><code>verificationLevel</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ushort</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.voiceStates.html" class="public"><code>voiceStates</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/base/ModelMap.html"><span class="typ">ModelMap</span></a>!(string,dscord.types.voice.VoiceState)</code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/base/IModel.client.html" class="public inherited"><code>client</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/client/Client.html"><span class="typ">Client</span></a></code></td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.defaultChannel.html" class="public property"><code>defaultChannel</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/channel/Channel.html"><span class="typ">Channel</span></a></code></td>
+								<td>Default channel for this <a href="../../../dscord/types/guild/Guild.html"><code class="lang-d"><span class="typ"><a href="../../../dscord/types/guild/Guild.html"><span class="typ">Guild</span></a></span></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.defaultRole.html" class="public property"><code>defaultRole</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/types/guild/Role.html"><span class="typ">Role</span></a></code></td>
+								<td>Default role for this <a href="../../../dscord/types/guild/Guild.html"><code class="lang-d"><span class="typ"><a href="../../../dscord/types/guild/Guild.html"><span class="typ">Guild</span></a></span></code></a>
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.fromUpdate.html" class="public">
+										<code>fromUpdate</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.getMember.html" class="public">
+										<code>getMember</code>
+									</a>
+								</td>
+								<td>Returns a <a href="../../../dscord/types/guild/GuildMember.html"><code class="lang-d"><span class="typ"><a href="../../../dscord/types/guild/GuildMember.html"><span class="typ">GuildMember</span></a></span></code></a> for a given user/member <a href="../../../dscord/types/guild/Guild.getMember.html#id"><code class="lang-d"><span class="pln"><a href="../../../dscord/types/guild/Guild.getMember.html#id"><span class="pln">id</span></a></span></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.getMember.html" class="public">
+										<code>getMember</code>
+									</a>
+								</td>
+								<td>Returns a <a href="../../../dscord/types/guild/GuildMember.html"><code class="lang-d"><span class="typ"><a href="../../../dscord/types/guild/GuildMember.html"><span class="typ">GuildMember</span></a></span></code></a> for a given user object
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.getPermissions.html" class="public">
+										<code>getPermissions</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.init.html" class="public">
+										<code>init</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.kick.html" class="public">
+										<code>kick</code>
+									</a>
+								</td>
+								<td>Kick a given User
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.kick.html" class="public">
+										<code>kick</code>
+									</a>
+								</td>
+								<td>Kick a given <a href="../../../dscord/types/guild/GuildMember.html"><code class="lang-d"><span class="typ"><a href="../../../dscord/types/guild/GuildMember.html"><span class="typ">GuildMember</span></a></span></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.load.html" class="public">
+										<code>load</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/types/guild/Guild.requestOfflineMembers.html" class="public">
+										<code>requestOfflineMembers</code>
+									</a>
+								</td>
+								<td>Request offline <a href="../../../dscord/types/guild/Guild.members.html"><code class="lang-d"><span class="pln"><a href="../../../dscord/types/guild/Guild.members.html"><span class="pln">members</span></a></span></code></a> for this guild
+</td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<footer>
+				<hr/>
+				<div id="license-info">
+
+
+
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

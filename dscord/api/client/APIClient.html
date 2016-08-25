@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<title>Class APIClient</title>
+		<link rel="stylesheet" href="../../../css/style.min.css"/>
+		<script type="text/javascript" src="../../../js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header>
+		</header>
+		<nav id="main-nav">
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<input id="symbolSearch" type="text" placeholder="Search" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus="autofocus"/>
+					<ul id="symbolSearchResults" style="display: none"></ul>
+					<script type="application/javascript" src="../../../symbols.js"></script>
+					<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+document.getElementById('symbolSearchPane').style.display = 'block';
+					</script>
+				</div>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">dscord</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">api</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/api.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/client.html" class="selected module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/ratelimit.html" class=" module">ratelimit</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/routes.html" class=" module">routes</a>
+							</li>
+							<li>
+								<a href="../../../dscord/api/util.html" class=" module">util</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">bot</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/bot.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/bot.html" class=" module">bot</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/command.html" class=" module">command</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/listener.html" class=" module">listener</a>
+							</li>
+							<li>
+								<a href="../../../dscord/bot/plugin.html" class=" module">plugin</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">gateway</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/gateway.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/events.html" class=" module">events</a>
+							</li>
+							<li>
+								<a href="../../../dscord/gateway/packets.html" class=" module">packets</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">types</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/types.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/base.html" class=" module">base</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/channel.html" class=" module">channel</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/guild.html" class=" module">guild</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/message.html" class=" module">message</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/permission.html" class=" module">permission</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/user.html" class=" module">user</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/util.html" class=" module">util</a>
+							</li>
+							<li>
+								<a href="../../../dscord/types/voice.html" class=" module">voice</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">util</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/util/counter.html" class=" module">counter</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/emitter.html" class=" module">emitter</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/errors.html" class=" module">errors</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/json.html" class=" module">json</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/process.html" class=" module">process</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/queue.html" class=" module">queue</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/sharding.html" class=" module">sharding</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/storage.html" class=" module">storage</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/ticker.html" class=" module">ticker</a>
+							</li>
+							<li>
+								<a href="../../../dscord/util/time.html" class=" module">time</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">voice</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../dscord/voice.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/packets.html" class=" module">packets</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/playable.html" class=" module">playable</a>
+							</li>
+							<li>
+								<a href="../../../dscord/voice/youtubedl.html" class=" module">youtubedl</a>
+							</li>
+						</ul>
+							</li>
+							<li>
+								<a href="../../../dscord/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../../dscord/core.html" class=" module">core</a>
+							</li>
+							<li>
+								<a href="../../../dscord/info.html" class=" module">info</a>
+							</li>
+							<li>
+								<a href="../../../dscord/state.html" class=" module">state</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+			<p id="main-nav-footer">
+ Built with
+				<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<h1>Class APIClient</h1>
+			<section>
+				<p><code class="lang-d"><span class="typ"><span class="typ">APIClient</span></span></code> is the base abstraction for interacting with the Discord API.
+</p>
+
+					<section>
+						<h3>Inherits from</h3>
+						<ul>
+							<li>
+								<code class="prettyprint lang-d"><span class="typ">Object</span></code>
+ (base class)
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Constructors</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.baseURL.html" class="public"><code>baseURL</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.client.html" class="public"><code>client</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/client/Client.html"><span class="typ">Client</span></a></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.log.html" class="public"><code>log</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">logger<wbr/></span><span class="pun">.</span><span class="pln">core<wbr/></span><span class="pun">.</span><span class="typ">Logger</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.ratelimit.html" class="public"><code>ratelimit</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../dscord/api/ratelimit/RateLimiter.html"><span class="typ">RateLimiter</span></a></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.token.html" class="public"><code>token</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.userAgent.html" class="public"><code>userAgent</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.bulkDeleteMessages.html" class="public">
+										<code>bulkDeleteMessages</code>
+									</a>
+								</td>
+								<td>Deletes messages in bulk.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.deleteMessage.html" class="public">
+										<code>deleteMessage</code>
+									</a>
+								</td>
+								<td>Deletes a message.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.editMessage.html" class="public">
+										<code>editMessage</code>
+									</a>
+								</td>
+								<td>Edits a messages contents.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.gateway.html" class="public">
+										<code>gateway</code>
+									</a>
+								</td>
+								<td>Returns a valid Gateway Websocket URL
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.guild.html" class="public">
+										<code>guild</code>
+									</a>
+								</td>
+								<td>Returns a Guild for a Snowflake ID.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.guildChannels.html" class="public">
+										<code>guildChannels</code>
+									</a>
+								</td>
+								<td>Returns a list of channels for a Guild.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.guildDelete.html" class="public">
+										<code>guildDelete</code>
+									</a>
+								</td>
+								<td>Deletes a <a href="../../../dscord/api/client/APIClient.guild.html"><code class="lang-d"><span class="pln"><a href="../../../dscord/api/client/APIClient.guild.html"><span class="pln">guild</span></a></span></code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.guildRemoveMember.html" class="public">
+										<code>guildRemoveMember</code>
+									</a>
+								</td>
+								<td>Removes (kicks) a <a href="../../../dscord/api/client/APIClient.guildRemoveMember.html#user"><code class="lang-d"><span class="pln"><a href="../../../dscord/api/client/APIClient.guildRemoveMember.html#user"><span class="pln">user</span></a></span></code></a> from a Guild.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.me.html" class="public">
+										<code>me</code>
+									</a>
+								</td>
+								<td>Return the User object for the currently logged in <a href="../../../dscord/api/client/APIClient.user.html"><code class="lang-d"><span class="pln"><a href="../../../dscord/api/client/APIClient.user.html"><span class="pln">user</span></a></span></code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.meDMChannels.html" class="public">
+										<code>meDMChannels</code>
+									</a>
+								</td>
+								<td>Returns a list of Channel objects for the current <a href="../../../dscord/api/client/APIClient.user.html"><code class="lang-d"><span class="pln">user</span></code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.meDMCreate.html" class="public">
+										<code>meDMCreate</code>
+									</a>
+								</td>
+								<td>Creates a new DM for a recipient (<a href="../../../dscord/api/client/APIClient.user.html"><code class="lang-d"><span class="pln"><a href="../../../dscord/api/client/APIClient.user.html"><span class="pln">user</span></a></span></code></a>) ID. Returns a Channel object.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.meGuildLeave.html" class="public">
+										<code>meGuildLeave</code>
+									</a>
+								</td>
+								<td>Leaves a <a href="../../../dscord/api/client/APIClient.guild.html"><code class="lang-d"><span class="pln"><a href="../../../dscord/api/client/APIClient.guild.html"><span class="pln">guild</span></a></span></code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.meGuilds.html" class="public">
+										<code>meGuilds</code>
+									</a>
+								</td>
+								<td>Returns a list of Guild objects for the current <a href="../../../dscord/api/client/APIClient.user.html"><code class="lang-d"><span class="pln"><a href="../../../dscord/api/client/APIClient.user.html"><span class="pln">user</span></a></span></code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.meSettings.html" class="public">
+										<code>meSettings</code>
+									</a>
+								</td>
+								<td>Modifies the current users settings. Returns a User object.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.requestJSON.html" class="public">
+										<code>requestJSON</code>
+									</a>
+								</td>
+								<td>Makes a HTTP request to the API (with empty body), returning an APIResponse
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.requestJSON.html" class="public">
+										<code>requestJSON</code>
+									</a>
+								</td>
+								<td>Makes a HTTP request to the API (with JSON body), returning an APIResponse
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.requestJSON.html" class="public">
+										<code>requestJSON</code>
+									</a>
+								</td>
+								<td>Makes a HTTP request to the API (with string body), returning an APIResponse
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.sendMessage.html" class="public">
+										<code>sendMessage</code>
+									</a>
+								</td>
+								<td>Sends a message to a channel.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../dscord/api/client/APIClient.user.html" class="public">
+										<code>user</code>
+									</a>
+								</td>
+								<td>Return a User object for a Snowflake ID.
+</td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<footer>
+				<hr/>
+				<div id="license-info">
+
+
+
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

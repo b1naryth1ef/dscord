@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<title>Module dscord.gateway.events</title>
+		<link rel="stylesheet" href="../../css/style.min.css"/>
+		<script type="text/javascript" src="../../js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header>
+		</header>
+		<nav id="main-nav">
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<input id="symbolSearch" type="text" placeholder="Search" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus="autofocus"/>
+					<ul id="symbolSearchResults" style="display: none"></ul>
+					<script type="application/javascript" src="../../symbols.js"></script>
+					<script type="application/javascript">
+var symbolSearchRootDir = "../../";
+document.getElementById('symbolSearchPane').style.display = 'block';
+					</script>
+				</div>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">dscord</a>
+						<ul class="tree-view">
+							<li class="collapsed tree-view">
+								<a href="#" class="package">api</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../dscord/api.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../dscord/api/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../dscord/api/ratelimit.html" class=" module">ratelimit</a>
+							</li>
+							<li>
+								<a href="../../dscord/api/routes.html" class=" module">routes</a>
+							</li>
+							<li>
+								<a href="../../dscord/api/util.html" class=" module">util</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">bot</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../dscord/bot.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../dscord/bot/bot.html" class=" module">bot</a>
+							</li>
+							<li>
+								<a href="../../dscord/bot/command.html" class=" module">command</a>
+							</li>
+							<li>
+								<a href="../../dscord/bot/listener.html" class=" module">listener</a>
+							</li>
+							<li>
+								<a href="../../dscord/bot/plugin.html" class=" module">plugin</a>
+							</li>
+						</ul>
+							</li>
+							<li class="tree-view">
+								<a href="#" class="package">gateway</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../dscord/gateway.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../dscord/gateway/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../dscord/gateway/events.html" class="selected module">events</a>
+							</li>
+							<li>
+								<a href="../../dscord/gateway/packets.html" class=" module">packets</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">types</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../dscord/types.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../dscord/types/base.html" class=" module">base</a>
+							</li>
+							<li>
+								<a href="../../dscord/types/channel.html" class=" module">channel</a>
+							</li>
+							<li>
+								<a href="../../dscord/types/guild.html" class=" module">guild</a>
+							</li>
+							<li>
+								<a href="../../dscord/types/message.html" class=" module">message</a>
+							</li>
+							<li>
+								<a href="../../dscord/types/permission.html" class=" module">permission</a>
+							</li>
+							<li>
+								<a href="../../dscord/types/user.html" class=" module">user</a>
+							</li>
+							<li>
+								<a href="../../dscord/types/util.html" class=" module">util</a>
+							</li>
+							<li>
+								<a href="../../dscord/types/voice.html" class=" module">voice</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">util</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../dscord/util/counter.html" class=" module">counter</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/emitter.html" class=" module">emitter</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/errors.html" class=" module">errors</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/json.html" class=" module">json</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/process.html" class=" module">process</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/queue.html" class=" module">queue</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/sharding.html" class=" module">sharding</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/storage.html" class=" module">storage</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/ticker.html" class=" module">ticker</a>
+							</li>
+							<li>
+								<a href="../../dscord/util/time.html" class=" module">time</a>
+							</li>
+						</ul>
+							</li>
+							<li class="collapsed tree-view">
+								<a href="#" class="package">voice</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../dscord/voice.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../dscord/voice/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../dscord/voice/packets.html" class=" module">packets</a>
+							</li>
+							<li>
+								<a href="../../dscord/voice/playable.html" class=" module">playable</a>
+							</li>
+							<li>
+								<a href="../../dscord/voice/youtubedl.html" class=" module">youtubedl</a>
+							</li>
+						</ul>
+							</li>
+							<li>
+								<a href="../../dscord/client.html" class=" module">client</a>
+							</li>
+							<li>
+								<a href="../../dscord/core.html" class=" module">core</a>
+							</li>
+							<li>
+								<a href="../../dscord/info.html" class=" module">info</a>
+							</li>
+							<li>
+								<a href="../../dscord/state.html" class=" module">state</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+			<p id="main-nav-footer">
+ Built with
+				<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<h1>Module dscord.gateway.events</h1>
+			<p>Implementations of Discord events.
+</p>
+
+			<section></section>
+			<section>
+				<h2>Classes</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="ChannelCreate" class="public" href="../../dscord/gateway/events/ChannelCreate.html">
+								<code>ChannelCreate</code>
+							</a>
+						</td>
+						<td>Sent when a <a href="../../dscord/gateway/events/ChannelCreate.channel.html"><code class="lang-d"><span class="pln">channel</span></code></a> is created.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="ChannelDelete" class="public" href="../../dscord/gateway/events/ChannelDelete.html">
+								<code>ChannelDelete</code>
+							</a>
+						</td>
+						<td>Sent when a <a href="../../dscord/gateway/events/ChannelDelete.channel.html"><code class="lang-d"><span class="pln">channel</span></code></a> is deleted.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="ChannelPinsUpdate" class="public" href="../../dscord/gateway/events/ChannelPinsUpdate.html">
+								<code>ChannelPinsUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a channels pins are updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="ChannelUpdate" class="public" href="../../dscord/gateway/events/ChannelUpdate.html">
+								<code>ChannelUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a <a href="../../dscord/gateway/events/ChannelUpdate.channel.html"><code class="lang-d"><span class="pln">channel</span></code></a> is updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildBanAdd" class="public" href="../../dscord/gateway/events/GuildBanAdd.html">
+								<code>GuildBanAdd</code>
+							</a>
+						</td>
+						<td>Sent when a guild ban is added.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildBanRemove" class="public" href="../../dscord/gateway/events/GuildBanRemove.html">
+								<code>GuildBanRemove</code>
+							</a>
+						</td>
+						<td>Sent when a guild ban is removed.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildCreate" class="public" href="../../dscord/gateway/events/GuildCreate.html">
+								<code>GuildCreate</code>
+							</a>
+						</td>
+						<td>Sent when a <a href="../../dscord/gateway/events/GuildCreate.guild.html"><code class="lang-d"><span class="pln">guild</span></code></a> is created (often on startup).
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildDelete" class="public" href="../../dscord/gateway/events/GuildDelete.html">
+								<code>GuildDelete</code>
+							</a>
+						</td>
+						<td>Sent when a guild is deleted (or becomes <a href="../../dscord/gateway/events/GuildDelete.unavailable.html"><code class="lang-d"><span class="pln">unavailable</span></code></a>)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildEmojisUpdate" class="public" href="../../dscord/gateway/events/GuildEmojisUpdate.html">
+								<code>GuildEmojisUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a guilds emojis are updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildIntegrationsUpdate" class="public" href="../../dscord/gateway/events/GuildIntegrationsUpdate.html">
+								<code>GuildIntegrationsUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a guilds integrations are updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildMemberAdd" class="public" href="../../dscord/gateway/events/GuildMemberAdd.html">
+								<code>GuildMemberAdd</code>
+							</a>
+						</td>
+						<td>Sent when a <a href="../../dscord/gateway/events/GuildMemberAdd.member.html"><code class="lang-d"><span class="pln">member</span></code></a> is added to a guild.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildMemberRemove" class="public" href="../../dscord/gateway/events/GuildMemberRemove.html">
+								<code>GuildMemberRemove</code>
+							</a>
+						</td>
+						<td>Sent when a member is removed from a guild.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildMembersChunk" class="public" href="../../dscord/gateway/events/GuildMembersChunk.html">
+								<code>GuildMembersChunk</code>
+							</a>
+						</td>
+						<td>Sent in response to RequestGuildMembers.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildMemberUpdate" class="public" href="../../dscord/gateway/events/GuildMemberUpdate.html">
+								<code>GuildMemberUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a guild member is updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildRoleCreate" class="public" href="../../dscord/gateway/events/GuildRoleCreate.html">
+								<code>GuildRoleCreate</code>
+							</a>
+						</td>
+						<td>Sent when a guild <a href="../../dscord/gateway/events/GuildRoleCreate.role.html"><code class="lang-d"><span class="pln">role</span></code></a> is created.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildRoleDelete" class="public" href="../../dscord/gateway/events/GuildRoleDelete.html">
+								<code>GuildRoleDelete</code>
+							</a>
+						</td>
+						<td>Sent when a guild <a href="../../dscord/gateway/events/GuildRoleDelete.role.html"><code class="lang-d"><span class="pln">role</span></code></a> is deleted.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildRoleUpdate" class="public" href="../../dscord/gateway/events/GuildRoleUpdate.html">
+								<code>GuildRoleUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a guild <a href="../../dscord/gateway/events/GuildRoleUpdate.role.html"><code class="lang-d"><span class="pln">role</span></code></a> is updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GuildUpdate" class="public" href="../../dscord/gateway/events/GuildUpdate.html">
+								<code>GuildUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a <a href="../../dscord/gateway/events/GuildUpdate.guild.html"><code class="lang-d"><span class="pln">guild</span></code></a> is updated
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="MessageCreate" class="public" href="../../dscord/gateway/events/MessageCreate.html">
+								<code>MessageCreate</code>
+							</a>
+						</td>
+						<td>Sent when a <a href="../../dscord/gateway/events/MessageCreate.message.html"><code class="lang-d"><span class="pln">message</span></code></a> is created.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="MessageDelete" class="public" href="../../dscord/gateway/events/MessageDelete.html">
+								<code>MessageDelete</code>
+							</a>
+						</td>
+						<td>Sent when a message is deleted.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="MessageDeleteBulk" class="public" href="../../dscord/gateway/events/MessageDeleteBulk.html">
+								<code>MessageDeleteBulk</code>
+							</a>
+						</td>
+						<td>Sent when a bulk set of messages gets deleted from a channel.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="MessageUpdate" class="public" href="../../dscord/gateway/events/MessageUpdate.html">
+								<code>MessageUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a <a href="../../dscord/gateway/events/MessageUpdate.message.html"><code class="lang-d"><span class="pln">message</span></code></a> is updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="PresenceUpdate" class="public" href="../../dscord/gateway/events/PresenceUpdate.html">
+								<code>PresenceUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a users presence is updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Ready" class="public" href="../../dscord/gateway/events/Ready.html">
+								<code>Ready</code>
+							</a>
+						</td>
+						<td>Sent when we initially connect, contains base state and connection information.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Resumed" class="public" href="../../dscord/gateway/events/Resumed.html">
+								<code>Resumed</code>
+							</a>
+						</td>
+						<td>Sent when we've completed a reconnect/resume sequence.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="TypingStart" class="public" href="../../dscord/gateway/events/TypingStart.html">
+								<code>TypingStart</code>
+							</a>
+						</td>
+						<td>Sent when a user starts typing.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="UserSettingsUpdate" class="public" href="../../dscord/gateway/events/UserSettingsUpdate.html">
+								<code>UserSettingsUpdate</code>
+							</a>
+						</td>
+						<td>Sent when this users settings are updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="UserUpdate" class="public" href="../../dscord/gateway/events/UserUpdate.html">
+								<code>UserUpdate</code>
+							</a>
+						</td>
+						<td>Sent when this user is updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="VoiceServerUpdate" class="public" href="../../dscord/gateway/events/VoiceServerUpdate.html">
+								<code>VoiceServerUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a voice server is updated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="VoiceStateUpdate" class="public" href="../../dscord/gateway/events/VoiceStateUpdate.html">
+								<code>VoiceStateUpdate</code>
+							</a>
+						</td>
+						<td>Sent when a voice <a href="../../dscord/gateway/events/VoiceStateUpdate.state.html"><code class="lang-d"><span class="pln">state</span></code></a> is updated.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Templates</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="Event" class="public" href="../../dscord/gateway/events/Event.html">
+								<code>Event</code>
+							</a>
+						</td>
+						<td>Base template for events from discord. Handles basic initilization, and some
+  <a href="../../dscord/gateway/events/Event.deferred.html"><code class="lang-d"><span class="pln">deferred</span></code></a>-function code.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Type</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="EventDeferredFunc" class="public" href="../../dscord/gateway/events/EventDeferredFunc.html">
+								<code>EventDeferredFunc</code>
+							</a>
+						</td>
+						<td>
+<code class="prettyprint lang-d"><span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><span class="pun">)</span></code>
+						</td>
+						<td>A wrapper type for delegates that can be attached to an event, and run after
+  all listeners are executed. This can be used to ensure an event has fully passed
+  through all listeners, or to avoid having function/stack pointers within plugin
+  code (which allows for dynamically reloading the plugin).
+</td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<hr/>
+				<div id="license-info">
+
+
+
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>
