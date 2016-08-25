@@ -62,7 +62,7 @@ mixin template Permissible() {
       ((this.getPermissions(user) & perm) == perm);
   }
 
-  // Returns whether the given user id has all of the given permissions
+  /// Returns whether the given user id has all of the given permissions
   bool can(Snowflake user, Permission[] some...) {
     return some.map!((p) => this.can(user, p)).all();
   }
