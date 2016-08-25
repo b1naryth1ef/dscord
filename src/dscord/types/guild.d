@@ -111,7 +111,7 @@ class GuildMember : IModel {
   bool    mute;
   bool    deaf;
 
-  Snowflake[]  roles;
+  private Snowflake[]  _roles;
 
   this(Client client, ref JSON obj) {
     super(client, obj);
@@ -124,7 +124,7 @@ class GuildMember : IModel {
 
   void fromUpdate(GuildMemberUpdate update) {
     this.user = update.user;
-    this.roles = update.roles;
+    this._roles = update.roles;
   }
 
   override void load(ref JSON obj) {
@@ -133,21 +133,19 @@ class GuildMember : IModel {
     )(
       { this.user = new User(this.client, obj); },
       { this.guild = this.client.state.guilds.get(readSnowflake(obj)); },
-      { this.roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
+      { this._roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
       { this.nick = obj.read!string; },
       { this.mute = obj.read!bool; },
       { this.deaf = obj.read!bool; },
       { this.joinedAt = obj.read!string; },
     );
-
-    // If the state has a user, lets use that version (and trash our local one)
-    //  in theory this could leave things dirty, which isn't great...
-    if (this.client.state.users.has(this.user.id)) {
-      this.user = this.client.state.users.get(this.user.id);
-    }
   }
 
-  Snowflake getID() {
+  @property Snowflake[] roles() {
+    return this._roles ~ [this.guild.id];
+  }
+
+  @property Snowflake id() {
     return this.user.id;
   }
 
@@ -160,8 +158,9 @@ class GuildMember : IModel {
   }
 }
 
-class Guild : IModel {
+class Guild : IModel, IPermissible {
   mixin Model;
+  mixin Permissible;
 
   Snowflake  id;
   Snowflake  ownerID;
@@ -285,5 +284,25 @@ class Guild : IModel {
   /// Request offline members for this guild
   void requestOfflineMembers() {
     this.client.gw.send(new RequestGuildMembers(this.id));
+  }
+
+  override Permission getPermissions(Snowflake user) {
+    // If we're the owner, we have alllll the permissions
+    if (this.ownerID == user) {
+      return PermissionBits.ADMINISTRATOR;
+    }
+
+    // Otherwise grab the member object
+    GuildMember member = this.getMember(user);
+    Permission perm;
+    auto roles = member.roles.map!((rid) => this.roles.get(rid));
+    this.client.log.infof("%s", member.roles);
+
+    foreach (role; roles) {
+      this.client.log.infof("role: %s, perms: %s", role.name, role.permissions);
+      perm |= role.permissions;
+    }
+
+    return perm;
   }
 }

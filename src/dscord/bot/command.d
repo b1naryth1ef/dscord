@@ -6,6 +6,7 @@ module dscord.bot.command;
 
 import std.regex,
        std.array,
+       std.functional,
        std.algorithm;
 
 import dscord.types,
@@ -179,6 +180,10 @@ class CommandEvent {
 
   string arg(ushort index) {
     return this.args[index];
+  }
+
+  @property UserMap mentions() {
+    return this.msg.mentions.filter((k, v) => k != this.event.client.me.id);
   }
 }
 

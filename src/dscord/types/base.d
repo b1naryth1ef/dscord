@@ -293,6 +293,30 @@ class ModelMap(TKey, TValue) {
   }
 
   /**
+    Returns a new mapping from a subset of keys.
+  */
+  auto subset(TKey[] keysWanted) {
+    auto obj = new ModelMap!(TKey, TValue);
+
+    foreach (k; keysWanted) {
+      obj[k] = this.get(k);
+    }
+
+    return obj;
+  }
+
+  /**
+    Allows using a delegate to filter the keys/values of the mapping into a new
+    mapping.
+
+    Params:
+      f = a delegate which returns true if the passed in key/value matches.
+  */
+  auto filter(bool delegate(TKey, TValue) f) {
+    return this.subset(this.data.keys.filter!((k) => f(k, this.get(k))).array);
+  }
+
+  /**
     Allows using a delegate to filter the values of the mapping.
 
     Params:

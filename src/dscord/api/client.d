@@ -80,7 +80,6 @@ class APIClient {
       throw new APIError(-1, "Request expired before rate-limit cooldown.");
     }
 
-    this.log.tracef("API Request: [%s] %s: %s", route.method, this.baseURL ~ route.compiled, content);
     auto res = new APIResponse(requestHTTP(this.baseURL ~ route.compiled,
       (scope req) {
         req.method = route.method;
@@ -89,6 +88,7 @@ class APIClient {
         req.headers["User-Agent"] = this.userAgent;
         req.bodyWriter.write(content);
     }));
+    this.log.tracef("[%s] [%s] %s: \n\t%s", route.method, res.statusCode, this.baseURL ~ route.compiled, content);
 
     // If we returned ratelimit headers, update our ratelimit states
     if (res.header("X-RateLimit-Limit", "") != "") {

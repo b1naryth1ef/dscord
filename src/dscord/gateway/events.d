@@ -243,6 +243,11 @@ class GuildMembersChunk {
       { this.guildID = readSnowflake(obj); },
       { loadMany!GuildMember(this.client, obj, (m) { this.members ~= m; }); },
     );
+
+    auto guild = this.client.state.guilds.get(this.guildID);
+    foreach (member; this.members) {
+      member.guild = guild;
+    }
   }
 }
 

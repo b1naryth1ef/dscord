@@ -3,6 +3,7 @@ module dscord.types.channel;
 import std.stdio,
        std.format,
        std.variant,
+       std.algorithm,
        core.vararg;
 
 import dscord.types,
@@ -54,8 +55,9 @@ class PermissionOverwrite : IModel {
   }
 }
 
-class Channel : IModel {
+class Channel : IModel, IPermissible {
   mixin Model;
+  mixin Permissible;
 
   Snowflake    id;
   string       name;
@@ -142,5 +144,26 @@ class Channel : IModel {
   VoiceClient joinVoice() {
     this.vc = new VoiceClient(this);
     return this.vc;
+  }
+
+  override Permission getPermissions(Snowflake user) {
+    GuildMember member = this.guild.getMember(user);
+    Permission perm = this.guild.getPermissions(user);
+
+    // Apply any role overwrites
+    foreach (overwrite; this.overwrites.values) {
+      if (overwrite.type != PermissionOverwriteType.ROLE) continue;
+      if (!member.roles.canFind(overwrite.id)) continue;
+      perm ^= overwrite.deny;
+      perm |= overwrite.allow;
+    }
+
+    // Finally grab a user overwrite
+    if (this.overwrites.has(member.id)) {
+      perm ^= this.overwrites.get(member.id).deny;
+      perm |= this.overwrites.get(member.id).allow;
+    }
+
+    return perm;
   }
 }
