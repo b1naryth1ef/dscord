@@ -175,11 +175,13 @@ class CommandEvent {
     return this.args.join(" ");
   }
 
-  @deprecated bool has(ushort index) {
+  deprecated("use CommandEvent.args.length check")
+  bool has(ushort index) {
     return (index < this.args.length);
   }
 
-  @deprecated string arg(ushort index) {
+  deprecated("use CommandEvent.args[]")
+  string arg(ushort index) {
     return this.args[index];
   }
 
