@@ -38,7 +38,7 @@ class BasicPlugin : Plugin {
       return;
     }
 
-    auto sound = new DCAFile(File("test.dca", "r"));
+    auto sound = new DCAPlayable(new DCAFile(File("test.dca", "r")));
     auto vc = chan.joinVoice();
 
     if (vc.connect()) {
