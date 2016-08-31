@@ -12,6 +12,7 @@
     "fast": "~master"
   },
   "-ddoxTool": "scod",
-  "-ddoxFilterArgs": ["--no-unittest-examples"]
+  "-ddoxFilterArgs": ["--no-unittest-examples"],
+  "libs-posix": ["-L/usr/local/opt/openssl/lib"]
 }
 
