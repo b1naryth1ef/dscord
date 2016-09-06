@@ -14,6 +14,7 @@ import std.experimental.logger,
 import dscord.bot,
        dscord.types,
        dscord.client,
+       dscord.util.dynlib,
        dscord.util.storage;
 
 /**
@@ -139,7 +140,7 @@ class Plugin {
   string dynamicLibraryPath;
 
   /// Pointer to the dynamic library, used for cleaning up on shutdown.
-  void* dynamicLibrary;
+  DynamicLibrary dynamicLibrary;
 
   /// Constructor for initial load. Usually called from the inherited constructor.
   this(this T)(PluginOptions opts = null) {

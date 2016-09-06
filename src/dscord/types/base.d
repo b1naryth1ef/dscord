@@ -30,7 +30,7 @@ SysTime toSysTime(Snowflake s) {
   return SysTime(unixTimeToStdTime(((s >> 22) + DISCORD_EPOCH) / 1000));
 }
 
-/*
+/**
   AsyncChainer is a utility for exposing methods that can help
   chain actions with various delays/resolving patterns.
 */
@@ -133,6 +133,8 @@ class AsyncChainer(T) {
   }
 }
 
+
+
 /**
   Base class for all models. Provides a simple interface definition and some
   utility constructor code.
@@ -169,10 +171,12 @@ mixin template Model() {
     super(client, obj);
   }
 
+  /// Allows chaining based on a delay. Returns a new AsyncChainer of this type.
   auto after(Duration delay) {
     return new AsyncChainer!(typeof(this))(this, delay);
   }
 
+  /// Allows arbitrary chaining. Returns a new AsyncChainer of this type.
   auto chain() {
     return new AsyncChainer!(typeof(this))(this);
   }
@@ -227,14 +231,14 @@ void loadManyComplex(TSub, T)(TSub sub, ref JSON obj, void delegate(T) F) {
 }
 
 /**
-  A utility wrapper around an associative array that stores models.
+  ModelMap serves as an abstraction layer around associative arrays that store
+  models. Usually ModelMaps will be a direct mapping of ID (Snowflake) -> Model.
 */
 class ModelMap(TKey, TValue) {
+  /// Underlying associative array
   TValue[TKey]  data;
 
-  /**
-    Set the key to a value.
-  */
+  /// Set the key to a value.
   TValue set(TKey key, TValue value) {
     if (value is null) {
       this.remove(key);
@@ -245,16 +249,12 @@ class ModelMap(TKey, TValue) {
     return value;
   }
 
-  /**
-    Return the value for a key.
-  */
+  /// Return the value for a key. Throws an exception if the key does not exist.
   TValue get(TKey key) {
     return this.data[key];
   }
 
-  /**
-    Return the value for a key, or if it doesn't exist a default value.
-  */
+  /// Return the value for a key, or if it doesn't exist a default value.
   TValue get(TKey key, TValue def) {
     if (this.has(key)) {
       return this.get(key);
@@ -262,45 +262,32 @@ class ModelMap(TKey, TValue) {
     return def;
   }
 
-  /**
-    Utility method that returns the value for a key.
-  */
-  TValue opCall(TKey key) {
-    return this.data[key];
-  }
-
-  /**
-    Removes a key.
-  */
+  /// Removes a key.
   void remove(TKey key) {
     this.data.remove(key);
   }
 
-  /**
-    Returns true if the key exists within the mapping.
-  */
+  /// Returns true if the key exists within the mapping.
   bool has(TKey key) {
     return (key in this.data) != null;
   }
 
+  /// Indexing by key
   TValue opIndex(TKey key) {
     return this.get(key);
   }
 
+  /// Indexing assignment
   void opIndexAssign(TValue value, TKey key) {
     this.set(key, value);
   }
 
-  /**
-    Returns the length of the mapping.
-  */
+  /// Returns the length of the mapping.
   size_t length() {
     return this.data.length;
   }
 
-  /**
-    Returns a new mapping from a subset of keys.
-  */
+  /// Returns a new mapping from a subset of keys.
   auto subset(TKey[] keysWanted) {
     auto obj = new ModelMap!(TKey, TValue);
 
@@ -359,16 +346,12 @@ class ModelMap(TKey, TValue) {
     return def;
   }
 
-  /**
-    Returns an array of keys from the mapping.
-  */
+  /// Returns an array of keys from the mapping.
   auto keys() {
     return this.data.keys;
   }
 
-  /**
-    returns an array of values from the mapping.
-  */
+  /// Returns an array of values from the mapping.
   auto values() {
     return this.data.values;
   }

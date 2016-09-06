@@ -15,14 +15,9 @@ import dscord.bot,
        dscord.types,
        dscord.client,
        dscord.gateway,
+       dscord.util.dynlib,
        dscord.util.emitter,
        dscord.util.errors;
-
-version (linux) {
-  import core.stdc.stdio;
-  import core.stdc.stdlib;
-  import core.sys.posix.dlfcn;
-}
 
 /**
   Feature flags that can be used to toggle behavior of the Bot interface.
@@ -105,25 +100,15 @@ class Bot {
       state.
     */
     Plugin dynamicLoadPlugin(string path, PluginState state) {
-      // Attempt to load the dynamic library from a given path
-      void* lh = dlopen(toStringz(path), RTLD_NOW);
-      if (!lh) {
-        throw new BaseError("Failed to dynamically load plugin: %s", fromStringz(dlerror()));
-      }
-
-      // Try to grab the create function (which should return a new plugin instance)
-      Plugin function() fn = cast(Plugin function())dlsym(lh, "create");
-      char* error = dlerror();
-      if (error) {
-        throw new BaseError("Failed to dynamically load plugin create function: %s", fromStringz(error));
-      }
+      DynamicLibrary dl = loadDynamicLibrary(path);
+      Plugin function() fn = dl.loadFromDynamicLibrary!(Plugin function())("create");
 
       // Finally create the plugin instance and register it.
       Plugin p = fn();
       this.loadPlugin(p, state);
 
       // Track the DLL handle so we can close it when unloading
-      p.dynamicLibrary = lh;
+      p.dynamicLibrary = dl;
       p.dynamicLibraryPath = path;
       return p;
     }
@@ -165,9 +150,9 @@ class Bot {
     // Loaded dynamically, close the DLL
     version (linux) {
       if (p.dynamicLibrary) {
-        void* lh = p.dynamicLibrary;
+        void* dl = p.dynamicLibrary;
         p.destroy();
-        dlclose(lh);
+        dl.unloadDynamicLibrary();
       }
     }
   }
