@@ -13,6 +13,5 @@
   },
   "-ddoxTool": "scod",
   "-ddoxFilterArgs": ["--no-unittest-examples"],
-  "libs-posix": ["-L/usr/local/opt/openssl/lib"]
+  "lflags-posix": ["-L/usr/local/opt/openssl/lib"]
 }
-
