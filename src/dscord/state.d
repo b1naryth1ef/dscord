@@ -177,11 +177,13 @@ class State : Emitter {
 
   private void onGuildRoleDelete(GuildRoleDelete c) {
     if (!this._guilds.has(c.guildID)) return;
+    if (!this._guilds[c.guildID].roles.has(c.role.id)) return;
     this._guilds[c.guildID].roles.remove(c.role.id);
   }
 
   private void onGuildRoleUpdate(GuildRoleUpdate c) {
     if (!this._guilds.has(c.guildID)) return;
+    if (!this._guilds[c.guildID].roles.has(c.role.id)) return;
     this._guilds[c.guildID].roles[c.role.id] = c.role;
   }
 

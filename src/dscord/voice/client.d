@@ -313,7 +313,8 @@ class VoiceClient {
       // If we're paused, wait until we unpause to continue playing. Make sure
       //  to set speaking here in case users connect during this period.
       if (this.paused) {
-        this.setSpeaking(false);
+        // Only set our speaking status if we're still connected
+        if (this.sock.connected) this.setSpeaking(false);
         this.pauseEvent.wait();
         this.setSpeaking(true);
 
@@ -404,7 +405,11 @@ class VoiceClient {
   /// Sends a payload to the websocket
   void send(Serializable p) {
     string data = p.serialize().toString;
-    this.sock.send(data);
+    try {
+      this.sock.send(data);
+    } catch (Exception e) {
+      this.log.warningf("ERROR: %s", e.toString);
+    }
   }
 
   // Runs this voice client
@@ -454,17 +459,20 @@ class VoiceClient {
       this.token = event.token;
     }
 
-    // Pause the player until we reconnect
-    if (!this.paused) {
-      this.pause();
-    }
-
     // If we're connected (e.g. have a WS open), close it so we can reconnect
     //  to the new voice endpoint.
     if (this.state >= VoiceState.CONNECTED) {
+      this.log.warningf("Voice server updated while connected to voice, attempting server change");
+
+      // If we're playing, pause until we finish reconnecting
+      if (!this.paused && this.playing) {
+        this.log.tracef("pausing player while we reconnect");
+        this.pause();
+      }
+
       // Set state before we close so we don't attempt to reconnect
       this.state = VoiceState.CONNECTED;
-      this.sock.close();
+      if (this.sock.connected) this.sock.close();
     }
 
     // Make sure our state is now CONNECTED
@@ -535,7 +543,7 @@ class VoiceClient {
     // If we're actually connected, close the voice socket
     if (this.state >= VoiceState.CONNECTING) {
       this.state = VoiceState.DISCONNECTED;
-      this.sock.close();
+      if (this.sock.connected) this.sock.close();
     }
 
     // If we have a UDP connection, close it

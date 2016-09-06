@@ -50,7 +50,7 @@ class APIClient {
       route = route to make the request for
   */
   APIResponse requestJSON(CompiledRoute route) {
-    return requestJSON(route, VibeJSON.emptyObject);
+    return requestJSON(route, "");
   }
 
   /**
@@ -230,7 +230,7 @@ class APIClient {
   Message editMessage(Snowflake chan, Snowflake msg, inout(string) content) {
     VibeJSON payload = VibeJSON(["content": VibeJSON(content)]);
 
-    auto json = this.requestJSON(Routes.EDIT_MESSAGE(chan, msg)).ok().fastJSON;
+    auto json = this.requestJSON(Routes.EDIT_MESSAGE(chan, msg), payload).ok().fastJSON;
     return new Message(this.client, json);
   }
 

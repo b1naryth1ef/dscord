@@ -221,10 +221,6 @@ class Message : IModel {
     Edits this message contents.
   */
   Message edit(inout(string) content) {
-    if (!this.canEdit()) {
-      throw new PermissionsError(Permissions.MANAGE_MESSAGES);
-    }
-
     return this.client.api.editMessage(this.channel.id, this.id, content);
   }
 

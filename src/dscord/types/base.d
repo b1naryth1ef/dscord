@@ -17,11 +17,17 @@ import vibe.core.sync;
 public import dscord.util.json;
 public import std.datetime;
 
+immutable ulong DISCORD_EPOCH = 1420070400000;
+
 // TODO: Eventually this should be a type
 alias Snowflake = ulong;
 
 string toString(Snowflake s) {
   return to!string(s);
+}
+
+SysTime toSysTime(Snowflake s) {
+  return SysTime(unixTimeToStdTime(((s >> 22) + DISCORD_EPOCH) / 1000));
 }
 
 /*

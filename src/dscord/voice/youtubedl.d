@@ -11,6 +11,15 @@ import vibe.core.core,
 import dscord.types,
        dscord.util.process;
 
+shared struct WorkerState {
+}
+
+bool maybeSendCompat(T)(Task dest, T data) {
+  if (!dest.running) return false;
+  dest.sendCompat(data);
+  return true;
+}
+
 class YoutubeDL {
   static void infoWorker(Task parent, string url) {
     auto proc = new Process([
@@ -27,10 +36,13 @@ class YoutubeDL {
 
     shared string[] lines;
     while (!proc.stdout.eof()) {
-      parent.sendCompat(proc.stdout.readln());
+      if (!parent.maybeSendCompat!string(proc.stdout.readln())) {
+        proc.wait();
+        return;
+      }
     }
 
-    parent.sendCompat(null);
+    parent.maybeSendCompat(null);
 
     // Let the process terminate
     proc.wait();
@@ -93,9 +105,9 @@ class YoutubeDL {
       run(["dcad"]);
 
     shared ubyte[][] frames = cast(shared ubyte[][])rawReadFramesFromFile(chain.end);
-    parent.sendCompat(frames);
+    parent.maybeSendCompat!(shared ubyte[][])(frames);
 
-    // Let the process terminate
+    // Let the process chain terminate
     chain.wait();
   }
 
@@ -106,7 +118,7 @@ class YoutubeDL {
   */
   static DCAFile download(string url) {
     Task worker = runWorkerTaskH(&YoutubeDL.downloadWorker, Task.getThis, url);
-    auto frames = receiveOnlyCompat!(shared ubyte[][])();
+      auto frames = receiveOnlyCompat!(shared ubyte[][])();
     return new DCAFile(cast(ubyte[][])frames);
   }
 }

@@ -21,4 +21,3 @@ long getUnixTimeMilli() {
 long getUnixTime() {
   return getUnixTimeMilli() / 1000;
 }
-

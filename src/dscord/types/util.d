@@ -224,7 +224,15 @@ class MessageTable : Sendable {
 
   /// Appends the output of this table to a message buffer
   void appendToBuffer(MessageBuffer buffer) {
-    foreach (entry; this.header ~ this.entries) {
+    string[][] ents;
+
+    if (this.header.length) {
+      ents ~= this.header;
+    }
+
+    ents ~= this.entries;
+
+    foreach (entry; ents) {
       buffer.append(this.compileEntry(entry));
     }
   }
