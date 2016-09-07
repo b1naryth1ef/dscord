@@ -216,11 +216,11 @@ class Bot {
     }
 
     // Extract some stuff for the CommandEvent
-    event.contents = strip(capture.back);
+    event.contents = strip(capture.post);
     event.args = event.contents.split(" ");
 
     if (event.args.length && event.args[0] == "") {
-      event.args = event.args[1..event.args.length];
+      event.args = event.args[1..$];
     }
 
     // Check permissions (if enabled)
