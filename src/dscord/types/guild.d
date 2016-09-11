@@ -317,4 +317,14 @@ class Guild : IModel, IPermissible {
 
     return perm;
   }
+
+  /// Set this servers name
+  void setName(string name) {
+    this.client.api.guildModify(this.id, VibeJSON(["name" : VibeJSON(name)]));
+  }
+
+  /// Set this servers region
+  void setRegion(string region) {
+    this.client.api.guildModify(this.id, VibeJSON(["region" : VibeJSON(region)]));
+  }
 }

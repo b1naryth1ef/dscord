@@ -38,6 +38,7 @@ enum Routes : Route {
   GET_USER = Route(HTTPMethod.GET, "/users/%s"),
   GET_GUILD = Route(HTTPMethod.GET, "/guilds/%s"),
   DELETE_GUILD = Route(HTTPMethod.DELETE, "/guilds/%s"),
+  PATCH_GUILD = Route(HTTPMethod.PATCH, "/guilds/%s"),
   GET_GUILD_CHANNELS = Route(HTTPMethod.GET, "/guilds/%s/channels"),
 
   DELETE_MEMBER = Route(HTTPMethod.DELETE, "/guilds/%s/members/%s"),

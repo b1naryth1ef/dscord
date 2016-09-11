@@ -178,6 +178,14 @@ class APIClient {
   }
 
   /**
+    Modifies a guild.
+  */
+  Guild guildModify(Snowflake id, VibeJSON obj) {
+    auto json = this.requestJSON(Routes.PATCH_GUILD(id), obj).fastJSON;
+    return new Guild(this.client, json);
+  }
+
+  /**
     Deletes a guild.
   */
   void guildDelete(Snowflake id) {
