@@ -11,3 +11,5 @@ public import dscord.client;
 
 public import dscord.types.util;
 public import dscord.util.json;
+public import std.format;
+

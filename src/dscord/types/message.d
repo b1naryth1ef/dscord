@@ -150,6 +150,10 @@ class Message : IModel {
     }
   }
 
+  override string toString() {
+    return format("<Message %s>", this.id);
+  }
+
   /*
     Returns a version of the message contents, with mentions completely removed
   */

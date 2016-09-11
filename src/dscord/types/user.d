@@ -1,6 +1,7 @@
 module dscord.types.user;
 
-import std.stdio;
+import std.stdio,
+       std.format;
 
 import dscord.types,
        dscord.client;
@@ -59,6 +60,10 @@ class User : IModel {
       { this.verified = obj.read!bool; },
       { this.email = obj.read!string; },
     );
+  }
+
+  override string toString() {
+    return format("<User %s#%s (%s)>", this.username, this.discriminator, this.id);
   }
 
   Snowflake getID() {

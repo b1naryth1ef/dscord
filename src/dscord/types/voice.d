@@ -38,6 +38,14 @@ class VoiceState : IModel {
     );
   }
 
+  override string toString() {
+    return format("<VoiceState %s (%s / %s /%s)>",
+      this.sessionID,
+      this.guildID,
+      this.channelID,
+      this.userID);
+  }
+
   @property Guild guild() {
     return this.client.state.guilds[this.guildID];
   }

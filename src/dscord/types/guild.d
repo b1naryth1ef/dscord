@@ -141,6 +141,14 @@ class GuildMember : IModel {
     );
   }
 
+  override string toString() {
+    return format("<GuildMember %s#%s (%s / %s)>",
+      this.user.username,
+      this.user.discriminator,
+      this.id,
+      this.guild.id);
+  }
+
   @property Snowflake[] roles() {
     return this._roles ~ [this.guild.id];
   }
@@ -245,6 +253,10 @@ class Guild : IModel, IPermissible {
       { this.features = obj.read!(string[]); },
       { this.mfaLevel = obj.read!ushort; },
     );
+  }
+
+  override string toString() {
+    return format("<Guild %s (%s)>", this.name, this.id);
   }
 
   /// Returns a GuildMember for a given user object

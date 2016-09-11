@@ -109,6 +109,10 @@ class Channel : IModel, IPermissible {
     );
   }
 
+  override string toString() {
+    return format("<Channel %s (%s)>", this.name, this.id);
+  }
+
   Snowflake getID() {
     return this.id;
   }
