@@ -98,7 +98,11 @@ class MessageBuffer : Sendable {
 
     // TODO: make this smarter
     if (this.filter) {
-      raw = raw.replace("`", "").replace("\n", "");
+      if (this.codeBlock) {
+        raw = raw.replace("`", "");
+      }
+
+      raw = raw.replace("\n", "");
     }
 
     if (this.length + raw.length > this.maxLength) {
@@ -158,7 +162,7 @@ class MessageTable : Sendable {
     Params:
       column = column index to sort by (0 based)
   */
-  void sort(ulong column, int delegate(string) conv=null) {
+  void sort(uint column, int delegate(string) conv=null) {
     if (conv) {
       this.entries = std.algorithm.sorting.sort!(
         (a, b) => conv(a[column]) < conv(b[column])
@@ -181,7 +185,7 @@ class MessageTable : Sendable {
     size_t pos = 0;
 
     foreach (part; row) {
-      ulong size = to!wstring(part).length;
+      size_t size = to!wstring(part).length;
 
       if (this.sizes.length <= pos) {
         this.sizes ~= size;
@@ -212,7 +216,7 @@ class MessageTable : Sendable {
 
     foreach (part; entry) {
       ulong size = to!wstring(part).length;
-      line ~= part ~ " ".replicate(this.sizes[pos] - size) ~ this.delim;
+      line ~= part ~ " ".replicate(cast(size_t)(this.sizes[pos] - size)) ~ this.delim;
       pos++;
     }
 

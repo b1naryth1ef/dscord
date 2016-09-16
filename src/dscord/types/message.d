@@ -29,7 +29,7 @@ class MessageEmbed : IModel {
 
   // TODO: thumbnail, provider
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "title", "type", "description", "url"
     )(
@@ -52,7 +52,7 @@ class MessageAttachment : IModel {
   uint       height;
   uint       width;
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "id", "filename", "size", "url", "proxy_url",
       "height", "width",
@@ -93,11 +93,11 @@ class Message : IModel {
   // Attachments
   MessageAttachment[]  attachments;
 
-  this(Client client, ref JSON obj) {
+  this(Client client, JSONDecoder obj) {
     super(client, obj);
   }
 
-  this(Channel channel, ref JSON obj) {
+  this(Channel channel, JSONDecoder obj) {
     this.channel = channel;
     super(channel.client, obj);
   }
@@ -107,7 +107,7 @@ class Message : IModel {
     this.roleMentions = new RoleMap;
   }
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     // TODO: avoid leaking user
 
     obj.keySwitch!(
@@ -120,7 +120,7 @@ class Message : IModel {
       { this.content = obj.read!string; },
       { this.timestamp = obj.read!string; },
       {
-        if (obj.peek() == DataType.string) {
+        if (obj.peek() == VibeJSON.Type.string) {
           this.editedTimestamp = obj.read!string;
         } else {
           obj.skipValue;
@@ -129,9 +129,9 @@ class Message : IModel {
       { this.tts = obj.read!bool; },
       { this.mentionEveryone = obj.read!bool; },
       {
-        if (obj.peek() == DataType.string) {
+        if (obj.peek() == VibeJSON.Type.string) {
           this.nonce = obj.read!string;
-        } else if (obj.peek() == DataType.null_) {
+        } else if (obj.peek() == VibeJSON.Type.null_) {
           obj.skipValue;
         } else {
           this.nonce = obj.read!long.to!string;

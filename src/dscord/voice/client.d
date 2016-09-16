@@ -362,18 +362,18 @@ class VoiceClient {
     }
   }
 
-  private void dispatchVoicePacket(T)(ref JSON obj) {
+  private void dispatchVoicePacket(T)(JSONDecoder obj) {
     T packet = new T;
     packet.deserialize(obj);
     this.packetEmitter.emit!T(packet);
   }
 
   private void parse(string rawData) {
-    auto json = parseTrustedJSON(rawData);
+    auto json = new JSONDecoder(rawData);
 
     VoiceOPCode op;
 
-    foreach (key; json.byKey) {
+    foreach (key; json.byKey("d")) {
       switch (key) {
         case "op":
           op = cast(VoiceOPCode)json.read!ushort;
@@ -449,7 +449,7 @@ class VoiceClient {
   }
 
   private void onVoiceServerUpdate(VoiceServerUpdate event) {
-    if (this.channel.guild.id != event.guildID) {
+    if (this.channel.guild.id != event.guildID || !event.token) {
       return;
     }
 
@@ -543,7 +543,7 @@ class VoiceClient {
     // If we're actually connected, close the voice socket
     if (this.state >= VoiceState.CONNECTING) {
       this.state = VoiceState.DISCONNECTED;
-      if (this.sock.connected) this.sock.close();
+      if (this.sock && this.sock.connected) this.sock.close();
     }
 
     // If we have a UDP connection, close it

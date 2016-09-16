@@ -13,9 +13,16 @@ import dscord.types,
 alias ChannelMap = ModelMap!(Snowflake, Channel);
 alias PermissionOverwriteMap = ModelMap!(Snowflake, PermissionOverwrite);
 
-enum PermissionOverwriteType {
-	ROLE = 1 << 0,
-	MEMBER = 1 << 1,
+enum PermissionOverwriteType : string {
+	ROLE = "role",
+	MEMBER = "member" ,
+}
+
+enum ChannelType : ushort {
+  GUILD_TEXT = 0,
+  DM = 1,
+  GUILD_VOICE = 2,
+  GROUP_DM = 3,
 }
 
 class PermissionOverwrite : IModel {
@@ -31,22 +38,19 @@ class PermissionOverwrite : IModel {
 	Permission  allow;
 	Permission  deny;
 
-  this(Channel channel, ref JSON obj) {
+  this(Channel channel, JSONDecoder obj) {
     this.channel = channel;
     super(channel.client, obj);
   }
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "id", "allow", "deny", "type"
     )(
       { this.id = readSnowflake(obj); },
       { this.allow = Permission(obj.read!uint); },
       { this.deny = Permission(obj.read!uint); },
-      { this.type = obj.read!string == "role" ?
-        PermissionOverwriteType.ROLE :
-        PermissionOverwriteType.MEMBER;
-      },
+      { this.type = cast(PermissionOverwriteType)obj.read!string; },
     );
   }
 
@@ -67,7 +71,7 @@ class Channel : IModel, IPermissible {
   short        position;
   uint         bitrate;
   User         recipient;
-  string       type;
+  ChannelType  type;
   bool         isPrivate;
 
   // Overwrites
@@ -76,11 +80,11 @@ class Channel : IModel, IPermissible {
   // Voice Connection
   VoiceClient  vc;
 
-  this(Client client, ref JSON obj) {
+  this(Client client, JSONDecoder obj) {
     super(client, obj);
   }
 
-  this(Guild guild, ref JSON obj) {
+  this(Guild guild, JSONDecoder obj) {
     this.guild = guild;
     super(guild.client, obj);
   }
@@ -89,7 +93,7 @@ class Channel : IModel, IPermissible {
     this.overwrites = new PermissionOverwriteMap;
   }
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "id", "name", "topic", "guild_id", "last_message_id", "position",
       "bitrate", "is_private", "type", "permission_overwrites",
@@ -102,7 +106,7 @@ class Channel : IModel, IPermissible {
       { this.position = obj.read!short; },
       { this.bitrate = obj.read!uint; },
       { this.isPrivate = obj.read!bool; },
-      { this.type = obj.read!string; },
+      { this.type = cast(ChannelType)obj.read!ushort; },
       {
         loadManyComplex!(Channel, PermissionOverwrite)(this, obj, (p) { this.overwrites[p.id] = p; });
       },
@@ -134,11 +138,11 @@ class Channel : IModel, IPermissible {
   }
 
   @property bool voice() {
-    return this.type == "voice";
+    return this.type == ChannelType.GUILD_VOICE;
   }
 
   @property bool text() {
-    return this.type == "text";
+    return this.type == ChannelType.GUILD_TEXT || this.type == ChannelType.DM;
   }
 
   @property auto voiceStates() {

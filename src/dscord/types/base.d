@@ -27,7 +27,7 @@ string toString(Snowflake s) {
 }
 
 SysTime toSysTime(Snowflake s) {
-  return SysTime(unixTimeToStdTime(((s >> 22) + DISCORD_EPOCH) / 1000));
+  return SysTime(unixTimeToStdTime(cast(int)(((s >> 22) + DISCORD_EPOCH) / 1000)));
 }
 
 /**
@@ -143,9 +143,9 @@ class IModel {
   Client  client;
 
   void init() {};
-  void load(ref JSON obj) {};
+  void load(JSONDecoder obj) {};
 
-  this(Client client, ref JSON obj) {
+  this(Client client, JSONDecoder obj) {
     version (TIMING) {
       client.log.tracef("Starting creation of model %s", this.toString);
       auto sw = StopWatch(AutoStart.yes);
@@ -167,7 +167,7 @@ class IModel {
   a base constructor that calls the parent IModel constructor.
 */
 mixin template Model() {
-  this(Client client, ref JSON obj) {
+  this(Client client, JSONDecoder obj) {
     super(client, obj);
   }
 
@@ -189,7 +189,7 @@ mixin template Model() {
 /**
   Utility method which reads a Snowflake off of a fast JSON object.
 */
-Snowflake readSnowflake(ref JSON obj) {
+Snowflake readSnowflake(JSONDecoder obj) {
   string data = obj.read!string;
   if (!data) return 0;
   return data.to!Snowflake;
@@ -199,7 +199,7 @@ Snowflake readSnowflake(ref JSON obj) {
   Utility method which loads many of a model T off of a fast JSON object. Returns
   an array of model T objects.
 */
-T[] loadManyArray(T)(Client client, ref JSON obj) {
+T[] loadManyArray(T)(Client client, JSONDecoder obj) {
   T[] data;
 
   foreach (item; obj) {
@@ -213,7 +213,7 @@ T[] loadManyArray(T)(Client client, ref JSON obj) {
   Utility method that loads many of a model T off of a fast JSON object. Calls
   the delegate f for each member loaded, returning nothing.
 */
-void loadMany(T)(Client client, ref JSON obj, void delegate(T) F) {
+void loadMany(T)(Client client, JSONDecoder obj, void delegate(T) F) {
   foreach (item; obj) {
     F(new T(client, obj));
   }
@@ -224,7 +224,7 @@ void loadMany(T)(Client client, ref JSON obj, void delegate(T) F) {
   in a sub-type TSub as the first argument to the constructor. Calls the delegate
   f for each member loaded, returning nothing.
 */
-void loadManyComplex(TSub, T)(TSub sub, ref JSON obj, void delegate(T) F) {
+void loadManyComplex(TSub, T)(TSub sub, JSONDecoder obj, void delegate(T) F) {
   foreach (item; obj) {
     F(new T(sub, obj));
   }

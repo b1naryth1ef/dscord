@@ -122,8 +122,8 @@ class APIResponse {
     return parseJsonString(this.content);
   }
 
-  @property JSON fastJSON() {
-    return parseTrustedJSON(this.content);
+  @property JSONDecoder fastJSON() {
+    return new JSONDecoder(this.content);
   }
 
   string header(string name, string def="") {

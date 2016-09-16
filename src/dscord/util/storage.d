@@ -34,6 +34,10 @@ class Storage {
     return this.obj[key];
   }
 
+  void set(string key, VibeJSON o) {
+    this.obj[key] = o;
+  }
+
   VibeJSON opIndex(string key) {
     return this.obj[key];
   }

@@ -36,7 +36,7 @@ mixin template Event() {
   */
   EventDeferredFunc[] deferred;
 
-  this(Client c, ref JSON obj) {
+  this(Client c, JSONDecoder obj) {
     version (TIMING) {
       auto sw = StopWatch(AutoStart.yes);
       c.log.tracef("Starting create event for %s", this.toString);
@@ -76,16 +76,14 @@ class Ready {
   mixin Event;
 
   ushort     ver;
-  uint       heartbeatInterval;
   string     sessionID;
   User       me;
   Guild[]    guilds;
   Channel[]  dms;
 
-  void load(ref JSON obj) {
-    obj.keySwitch!("v", "heartbeat_interval", "session_id", "user", "guilds")(
+  void load(JSONDecoder obj) {
+    obj.keySwitch!("v", "session_id", "user", "guilds")(
       { this.ver = obj.read!ushort; },
-      { this.heartbeatInterval = obj.read!uint; },
       { this.sessionID = obj.read!string; },
       { this.me = new User(this.client, obj); },
       { loadMany!Guild(this.client, obj, (g) { this.guilds ~= g; }); },
@@ -99,7 +97,7 @@ class Ready {
 class Resumed {
   mixin Event;
 
-  void load(ref JSON obj) {}
+  void load(JSONDecoder obj) {}
 }
 
 /**
@@ -110,7 +108,7 @@ class ChannelCreate {
 
   Channel  channel;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.channel = new Channel(this.client, obj);
   }
 }
@@ -123,7 +121,7 @@ class ChannelUpdate {
 
   Channel  channel;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.channel = new Channel(this.client, obj);
   }
 }
@@ -136,7 +134,7 @@ class ChannelDelete {
 
   Channel  channel;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.channel = new Channel(this.client, obj);
   }
 }
@@ -149,7 +147,7 @@ class GuildCreate {
 
   Guild  guild;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.guild = new Guild(this.client, obj);
   }
 }
@@ -162,7 +160,7 @@ class GuildUpdate {
 
   Guild  guild;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.guild = new Guild(this.client, obj);
   }
 }
@@ -176,7 +174,7 @@ class GuildDelete {
   Snowflake  guildID;
   bool       unavailable;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("guild_id", "unavailable")(
       { this.guildID = readSnowflake(obj); },
       { this.unavailable = obj.read!bool; },
@@ -192,7 +190,7 @@ class GuildBanAdd {
 
   User  user;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.user = new User(this.client, obj);
   }
 }
@@ -205,7 +203,7 @@ class GuildBanRemove {
 
   User  user;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.user = new User(this.client, obj);
   }
 }
@@ -216,7 +214,7 @@ class GuildBanRemove {
 class GuildEmojisUpdate {
   mixin Event;
 
-  void load(ref JSON obj) {}
+  void load(JSONDecoder obj) {}
 }
 
 /**
@@ -225,7 +223,7 @@ class GuildEmojisUpdate {
 class GuildIntegrationsUpdate {
   mixin Event;
 
-  void load(ref JSON obj) {}
+  void load(JSONDecoder obj) {}
 }
 
 /**
@@ -238,7 +236,7 @@ class GuildMembersChunk {
   Snowflake guildID;
   GuildMember[] members;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("guild_id", "members")(
       { this.guildID = readSnowflake(obj); },
       { loadMany!GuildMember(this.client, obj, (m) { this.members ~= m; }); },
@@ -259,7 +257,7 @@ class GuildMemberAdd {
 
   GuildMember  member;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.member = new GuildMember(this.client, obj);
   }
 }
@@ -273,7 +271,7 @@ class GuildMemberRemove {
   Snowflake  guildID;
   User       user;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("guild_id", "user")(
       { this.guildID = readSnowflake(obj); },
       { this.user = new User(this.client, obj); },
@@ -291,11 +289,11 @@ class GuildMemberUpdate {
   User         user;
   Snowflake[]  roles;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("guild_id", "user", "roles")(
       { this.guildID = readSnowflake(obj); },
       { this.user = new User(this.client, obj); },
-      { this.roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
+      { this.roles = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
     );
   }
 }
@@ -309,7 +307,7 @@ class GuildRoleCreate {
   Snowflake  guildID;
   Role       role;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("guild_id", "role")(
       { this.guildID = readSnowflake(obj); },
       { this.role = new Role(this.client, obj); },
@@ -326,7 +324,7 @@ class GuildRoleUpdate {
   Snowflake  guildID;
   Role       role;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("guild_id", "role")(
       { this.guildID = readSnowflake(obj); },
       { this.role = new Role(this.client, obj); },
@@ -343,7 +341,7 @@ class GuildRoleDelete {
   Snowflake  guildID;
   Role       role;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("guild_id", "role")(
       { this.guildID = readSnowflake(obj); },
       { this.role = new Role(this.client, obj); },
@@ -362,7 +360,7 @@ class MessageCreate {
   // Reference to the command event
   CommandEvent commandEvent;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.message = new Message(this.client, obj);
   }
 }
@@ -375,7 +373,7 @@ class MessageUpdate {
 
   Message  message;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.message = new Message(this.client, obj);
   }
 }
@@ -389,7 +387,7 @@ class MessageDelete {
   Snowflake  id;
   Snowflake  channelID;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("id", "channel_id")(
       { this.id = readSnowflake(obj); },
       { this.channelID = readSnowflake(obj); },
@@ -409,13 +407,13 @@ class PresenceUpdate {
   string       game;
   string       status;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("user", "guild_id", "roles", "game", "status")(
       { this.user = new User(this.client, obj); },
       { this.guildID = readSnowflake(obj); },
-      { this.roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
+      { this.roles = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
       {
-        if (obj.peek == DataType.string) {
+        if (obj.peek == VibeJSON.Type.string) {
           this.game = obj.read!string;
         } else {
           obj.skipValue;
@@ -436,7 +434,7 @@ class TypingStart {
   Snowflake  userID;
   ulong      timestamp;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("channel_id", "user_id", "timestamp")(
       { this.channelID = readSnowflake(obj); },
       { this.userID = readSnowflake(obj); },
@@ -451,7 +449,7 @@ class TypingStart {
 class UserSettingsUpdate {
   mixin Event;
 
-  void load(ref JSON obj) {};
+  void load(JSONDecoder obj) {};
 }
 
 /**
@@ -460,7 +458,7 @@ class UserSettingsUpdate {
 class UserUpdate {
   mixin Event;
 
-  void load(ref JSON obj) {};
+  void load(JSONDecoder obj) {};
 }
 
 /**
@@ -471,7 +469,7 @@ class VoiceStateUpdate {
 
   VoiceState  state;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     this.state = new VoiceState(this.client, obj);
   }
 }
@@ -486,7 +484,7 @@ class VoiceServerUpdate {
   string     endpoint;
   Snowflake  guildID;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("token", "endpoint", "guild_id")(
       { this.token = obj.read!string; },
       { this.endpoint = obj.read!string; },
@@ -504,7 +502,7 @@ class ChannelPinsUpdate {
   Snowflake  channelID;
   string     lastPinTimestamp;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("channel_id", "last_pin_timestamp")(
       { this.channelID = readSnowflake(obj); },
       { this.lastPinTimestamp = obj.read!string; },
@@ -521,10 +519,10 @@ class MessageDeleteBulk {
   Snowflake channelID;
   Snowflake[] ids;
 
-  void load(ref JSON obj) {
+  void load(JSONDecoder obj) {
     obj.keySwitch!("channel_id", "ids")(
       { this.channelID = readSnowflake(obj); },
-      { this.ids = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
+      { this.ids = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
     );
   }
 }

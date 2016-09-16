@@ -28,7 +28,7 @@ interface Serializable {
 }
 
 interface Deserializable {
-  void deserialize(ref JSON);
+  void deserialize(JSONDecoder);
 }
 
 class BasePacket {

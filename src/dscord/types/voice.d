@@ -21,7 +21,7 @@ class VoiceState : IModel {
   bool       selfMute;
   bool       suppress;
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "guild_id", "channel_id", "user_id", "session_id",
       "deaf", "mute", "self_deaf", "self_mute", "suppress"

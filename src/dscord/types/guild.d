@@ -28,16 +28,16 @@ class Role : IModel {
   bool    managed;
   bool    mentionable;
 
-  this(Client client, ref JSON obj) {
+  this(Client client, JSONDecoder obj) {
     super(client, obj);
   }
 
-  this(Guild guild, ref JSON obj) {
+  this(Guild guild, JSONDecoder obj) {
     this.guild = guild;
     super(guild.client, obj);
   }
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "id", "name", "hoist", "position", "permissions",
       "managed", "mentionable", "color"
@@ -69,16 +69,16 @@ class Emoji : IModel {
 
   Snowflake[]  roles;
 
-  this(Client client, ref JSON obj) {
+  this(Client client, JSONDecoder obj) {
     super(client, obj);
   }
 
-  this(Guild guild, ref JSON obj) {
+  this(Guild guild, JSONDecoder obj) {
     this.guild = guild;
     super(guild.client, obj);
   }
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "id", "name", "require_colons", "managed", "roles"
     )(
@@ -86,7 +86,7 @@ class Emoji : IModel {
       { this.name = obj.read!string; },
       { this.requireColons = obj.read!bool; },
       { this.managed = obj.read!bool; },
-      { this.roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
+      { this.roles = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
     );
   }
 
@@ -113,11 +113,11 @@ class GuildMember : IModel {
 
   private Snowflake[]  _roles;
 
-  this(Client client, ref JSON obj) {
+  this(Client client, JSONDecoder obj) {
     super(client, obj);
   }
 
-  this(Guild guild, ref JSON obj) {
+  this(Guild guild, JSONDecoder obj) {
     this.guild = guild;
     super(guild.client, obj);
   }
@@ -127,13 +127,13 @@ class GuildMember : IModel {
     this._roles = update.roles;
   }
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "user", "guild_id", "roles", "nick", "mute", "deaf", "joined_at"
     )(
       { this.user = new User(this.client, obj); },
       { this.guild = this.client.state.guilds.get(readSnowflake(obj)); },
-      { this._roles = obj.read!(string[]).map!((c) => c.to!Snowflake).array; },
+      { this._roles = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
       { this.nick = obj.read!string; },
       { this.mute = obj.read!bool; },
       { this.deaf = obj.read!bool; },
@@ -218,7 +218,7 @@ class Guild : IModel, IPermissible {
     this.emojis = new EmojiMap;
   }
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "id", "unavailable", "owner_id", "name", "icon",
       "region", "verification_level", "afk_channel_id",
@@ -250,7 +250,7 @@ class Guild : IModel, IPermissible {
       {
         loadManyComplex!(Guild, Emoji)(this, obj, (e) { this.emojis[e.id] = e; });
       },
-      { this.features = obj.read!(string[]); },
+      { this.features = obj.readArray!(string); },
       { this.mfaLevel = obj.read!ushort; },
     );
   }
@@ -308,10 +308,9 @@ class Guild : IModel, IPermissible {
     GuildMember member = this.getMember(user);
     Permission perm;
     auto roles = member.roles.map!((rid) => this.roles.get(rid));
-    this.client.log.infof("%s", member.roles);
 
+    // Iterate over roles and add permissions
     foreach (role; roles) {
-      this.client.log.infof("role: %s, perms: %s", role.name, role.permissions);
       perm |= role.permissions;
     }
 

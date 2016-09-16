@@ -4,3 +4,12 @@ docs.json
 docs/
 __test__library__
 *.html
+dub.selections.json
+
+# Windows/VisualD
+*.visualdproj
+*.lib
+*.sln
+*.suo
+*.dll
+*.exe

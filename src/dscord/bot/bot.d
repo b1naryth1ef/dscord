@@ -237,7 +237,7 @@ class Bot {
 
     // Set the command event so other people can introspect it
     event.event.commandEvent = event;
-    event.cmd.func(event);
+    event.cmd.call(event);
   }
 
   private void onMessageCreate(MessageCreate event) {

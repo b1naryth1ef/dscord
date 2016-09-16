@@ -11,6 +11,8 @@ import std.stdio,
        std.variant,
        std.format;
 
+static import std.typecons;
+
 import vibe.core.core,
        vibe.inet.url,
        vibe.http.websockets;
@@ -151,7 +153,7 @@ class GatewayClient {
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
   }
 
-  private void emitDispatchEvent(T)(ref JSON obj) {
+  private void emitDispatchEvent(T)(JSONDecoder obj) {
     T v = new T(this.client, obj);
     this.eventEmitter.emit!T(v);
     v.resolveDeferreds();
@@ -159,7 +161,7 @@ class GatewayClient {
     // v.destroy();
   }
 
-  private void handleDispatchPacket(uint seq, string type, ref JSON obj, size_t size) {
+  private void handleDispatchPacket(uint seq, string type, JSONDecoder obj, size_t size) {
     // Update sequence number if it's larger than what we have
     if (seq > this.seq) {
       this.seq = seq;
@@ -268,7 +270,7 @@ class GatewayClient {
   }
 
   private void parse(string rawData) {
-    auto json = parseTrustedJSON(rawData);
+    auto json = new JSONDecoder(rawData);
 
     uint seq;
     string type;
@@ -278,8 +280,7 @@ class GatewayClient {
       this.log.tracef("GATEWAY RECV: %s", rawData);
     }
 
-    // Scan over each key, store any extra information until we hit the data payload
-    foreach (key; json.byKey) {
+    foreach (key; json.byKey("d")) {
       switch (key) {
         case "op":
           op = cast(OPCode)json.read!ushort;
@@ -308,7 +309,7 @@ class GatewayClient {
               break;
             case OPCode.HELLO:
               this.log.tracef("Recieved HELLO OPCode, starting heartbeatter...");
-              this.heartbeatInterval = json.heartbeat_interval.read!uint;
+              json.keySwitch!("heartbeat_interval")({ this.heartbeatInterval = json.read!uint; });
               this.heartbeater = runTask(toDelegate(&this.heartbeat));
               break;
             case OPCode.HEARTBEAT_ACK:
@@ -319,7 +320,7 @@ class GatewayClient {
           }
           break;
         default:
-          this.log.warning("Got unexepcted key for gateway OP %s: %s (%s)", op, key, json.peek);
+          this.log.warningf("Unknown key hit, this should never happen... (%s)", key);
           break;
       }
     }

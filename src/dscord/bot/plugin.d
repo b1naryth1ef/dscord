@@ -181,6 +181,8 @@ class Plugin {
       }
     }
 
+    string group = this.options.commandGroup;
+
     if (this.options.useOverrides) {
       if (this.config.has("levels")) {
         auto levels = this.config.get!(VibeJSON[string])("levels");
@@ -191,11 +193,14 @@ class Plugin {
         }
       }
 
-      string group = this.config.get!string("group", this.options.commandGroup);
-      if (group != "") {
-        foreach (command; this.commands.values) {
-          command.setGroup(group);
-        }
+      // Try grabbing an override for group
+      group = this.config.get!string("group", group);
+    }
+
+    // If we have an override value for the commandgroup, set it now on all commands
+    if (group != "") {
+      foreach (command; this.commands.values) {
+        command.setGroup(group);
       }
     }
   }

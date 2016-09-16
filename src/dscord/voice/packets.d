@@ -46,11 +46,11 @@ class VoiceReadyPacket : BasePacket, Deserializable {
   string[]  modes;
   ushort    heartbeatInterval;
 
-  void deserialize(ref JSON obj) {
+  void deserialize(JSONDecoder obj) {
     obj.keySwitch!("ssrc", "port", "modes", "heartbeat_interval")(
       { this.ssrc = obj.read!ushort; },
       { this.port = obj.read!ushort; },
-      { this.modes = obj.read!(string[]); },
+      { this.modes = obj.readArray!string; },
       { this.heartbeatInterval = obj.read!ushort; },
     );
   }
@@ -115,9 +115,9 @@ class VoiceSpeakingPacket : BasePacket, Serializable {
 class VoiceSessionDescriptionPacket : BasePacket, Deserializable {
   string  secretKey;
 
-  void deserialize(ref JSON obj) {
-    obj.keySwitch!("secret_key")(
+  void deserialize(JSONDecoder obj) {
+    /+ obj.keySwitch!("secret_key")(
       { this.secretKey = obj.read!string; }
-    );
+    ); +/
   }
 }

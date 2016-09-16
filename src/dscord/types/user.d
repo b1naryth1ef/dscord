@@ -48,7 +48,7 @@ class User : IModel {
   bool       verified;
   string     email;
 
-  override void load(ref JSON obj) {
+  override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "id", "username", "discriminator", "avatar",
       "verified", "email"

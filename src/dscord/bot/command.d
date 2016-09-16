@@ -64,10 +64,30 @@ CommandObjectUpdate CommandLevel(int level) {
   return (c) {c.level = level;};
 }
 
-/**
-  A delegate type which represents a function used for handling commands.
-*/
+/// Sets a guild permission requirement.
+CommandObjectUpdate CommandGuildPermission(Permission p) {
+  return (c) {
+    c.pre ~= (ce) {
+      return (ce.msg.guild && ce.msg.guild.can(ce.msg.author, p));
+    };
+  };
+}
+
+/// Sets a channel permission requirement.
+CommandObjectUpdate CommandChannelPermission(Permission p) {
+  return (c) {
+    c.pre ~= (ce) {
+      return (ce.msg.channel.can(ce.msg.author, p));
+    };
+  };
+}
+
+
+/// A delegate type which represents a function used for handling commands.
 alias CommandHandler = void delegate(CommandEvent);
+
+/// A delegate type which represents a function used for filtering commands.
+alias CommandHandlerWrapper = bool delegate(CommandEvent);
 
 /**
   A CommandObject represents the configuration/state for  a single command.
@@ -81,6 +101,9 @@ class CommandObject {
 
   /// Whether this command is enabled
   bool  enabled = true;
+
+  /// Function to run before main command handler.
+  CommandHandlerWrapper[] pre;
 
   /// The function handler for this command
   CommandHandler  func;
@@ -147,6 +170,14 @@ class CommandObject {
   /// Returns the command name (always the first trigger in the list).
   @property string name() {
     return this.triggers[0];
+  }
+
+  void call(CommandEvent e) {
+    foreach (prefunc; this.pre) {
+      if (!prefunc(e)) return;
+    }
+
+    this.func(e);
   }
 }
 
