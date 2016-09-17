@@ -53,10 +53,6 @@ class PermissionOverwrite : IModel {
       { this.type = cast(PermissionOverwriteType)obj.read!string; },
     );
   }
-
-  Snowflake getID() {
-    return this.id;
-  }
 }
 
 class Channel : IModel, IPermissible {
@@ -115,10 +111,6 @@ class Channel : IModel, IPermissible {
 
   override string toString() {
     return format("<Channel %s (%s)>", this.name, this.id);
-  }
-
-  Snowflake getID() {
-    return this.id;
   }
 
   Message sendMessage(inout(string) content, string nonce=null, bool tts=false) {

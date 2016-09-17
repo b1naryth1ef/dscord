@@ -52,10 +52,6 @@ class Role : IModel {
       { this.color = obj.read!uint; },
     );
   }
-
-  Snowflake getID() {
-    return this.id;
-  }
 }
 
 class Emoji : IModel {

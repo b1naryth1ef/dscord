@@ -65,8 +65,4 @@ class User : IModel {
   override string toString() {
     return format("<User %s#%s (%s)>", this.username, this.discriminator, this.id);
   }
-
-  Snowflake getID() {
-    return this.id;
-  }
 }
