@@ -226,8 +226,8 @@ class MessageTable : Sendable {
     return line;
   }
 
-  /// Appends the output of this table to a message buffer
-  void appendToBuffer(MessageBuffer buffer) {
+  /// Returns all entries in the table (incl. header)
+  string[][] all() {
     string[][] ents;
 
     if (this.header.length) {
@@ -235,10 +235,30 @@ class MessageTable : Sendable {
     }
 
     ents ~= this.entries;
+    return ents;
+  }
 
-    foreach (entry; ents) {
+  /// Appends the output of this table to a message buffer
+  void appendToBuffer(MessageBuffer buffer) {
+    foreach (entry; this.all()) {
       buffer.append(this.compileEntry(entry));
     }
+  }
+
+  /// Appends the output of this table to N many message buffers
+  MessageBuffer[] appendToBuffers(MessageBuffer delegate() createBuffer=null){
+    MessageBuffer[] bufs = [createBuffer ? createBuffer() : new MessageBuffer];
+
+    foreach (entry; this.all()) {
+      string compiled = this.compileEntry(entry);
+
+      if (!bufs[$-1].append(compiled)) {
+        bufs ~= createBuffer ? createBuffer() : new MessageBuffer;
+        bufs[$-1].append(compiled);
+      }
+    }
+
+    return bufs;
   }
 
   string[][] iterEntries() {
