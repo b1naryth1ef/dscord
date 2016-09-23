@@ -22,7 +22,7 @@ Duration randomBackoff(int low=500, int high=3000) {
 }
 
 /**
-  Stores the rate limit state for a given route.
+  Stores the rate limit state for a given bucket.
 */
 struct RateLimitState {
   int remaining;
@@ -51,46 +51,46 @@ struct RateLimitState {
   RateLimiter provides an interface for rate limiting HTTP Requests.
 */
 class RateLimiter {
-  ManualEvent[Route]     cooldowns;
-  RateLimitState[Route]  states;
+  ManualEvent[Bucket]     cooldowns;
+  RateLimitState[Bucket]  states;
 
-  /// Cooldown a route for a given duration. Blocks ALL requests from completing.
-  void cooldown(Route route, Duration duration) {
-    if (route in this.cooldowns) {
-      this.cooldowns[route].wait();
+  /// Cooldown a bucket for a given duration. Blocks ALL requests from completing.
+  void cooldown(Bucket bucket, Duration duration) {
+    if (bucket in this.cooldowns) {
+      this.cooldowns[bucket].wait();
     } else {
-      this.cooldowns[route] = createManualEvent();
+      this.cooldowns[bucket] = createManualEvent();
       sleep(duration);
-      this.cooldowns[route].emit();
-      this.cooldowns.remove(route);
+      this.cooldowns[bucket].emit();
+      this.cooldowns.remove(bucket);
     }
   }
 
   /**
-    Check whether a request can be made for a route. If the route is on cooldown,
+    Check whether a request can be made for a bucket. If the bucket is on cooldown,
     wait until the cooldown resets before returning.
   */
-  bool check(Route route, Duration timeout) {
+  bool check(Bucket bucket, Duration timeout) {
     // If we're currently waiting for a cooldown, join the waiting club
-    if (route in this.cooldowns) {
-      if (this.cooldowns[route].wait(timeout, 0) != 0) {
+    if (bucket in this.cooldowns) {
+      if (this.cooldowns[bucket].wait(timeout, 0) != 0) {
         return false;
       }
     }
 
-    // If we don't have the route cached, return
-    if (route !in this.states) return true;
+    // If we don't have the bucket cached, return
+    if (bucket !in this.states) return true;
 
     // If this request will rate limit, wait until it won't anymore
-    if (this.states[route].willRateLimit()) {
-      this.cooldown(route, this.states[route].waitTime());
+    if (this.states[bucket].willRateLimit()) {
+      this.cooldown(bucket, this.states[bucket].waitTime());
     }
 
     return true;
   }
 
-  /// Update a given route with headers returned from a request.
-  void update(Route route, string remaining, string reset, string retryAfter) {
+  /// Update a given bucket with headers returned from a request.
+  void update(Bucket bucket, string remaining, string reset, string retryAfter) {
     long resetSeconds = (reset.to!long);
 
     // If we have a retryAfter header, it may be more accurate
@@ -106,13 +106,13 @@ class RateLimiter {
     }
 
     // Create a new RateLimitState if one doesn't exist
-    if (route !in this.states) {
-      this.states[route] = RateLimitState();
+    if (bucket !in this.states) {
+      this.states[bucket] = RateLimitState();
     }
 
     // Save our remaining requests and reset seconds
-    this.states[route].remaining = remaining.to!int;
-    this.states[route].resetTime = resetSeconds;
+    this.states[bucket].remaining = remaining.to!int;
+    this.states[bucket].resetTime = resetSeconds;
   }
 }
 

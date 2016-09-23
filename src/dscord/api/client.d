@@ -76,7 +76,7 @@ class APIClient {
     Duration timeout = 15.seconds;
 
     // Check the rate limit for the route (this may sleep)
-    if (!this.ratelimit.check(route.route, timeout)) {
+    if (!this.ratelimit.check(route.bucket, timeout)) {
       throw new APIError(-1, "Request expired before rate-limit cooldown.");
     }
 
@@ -92,7 +92,7 @@ class APIClient {
 
     // If we returned ratelimit headers, update our ratelimit states
     if (res.header("X-RateLimit-Limit", "") != "") {
-      this.ratelimit.update(route.route,
+      this.ratelimit.update(route.bucket,
             res.header("X-RateLimit-Remaining"),
             res.header("X-RateLimit-Reset"),
             res.header("Retry-After", ""));
