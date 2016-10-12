@@ -115,112 +115,102 @@ class APIClient {
   /**
     Return the User object for the currently logged in user.
   */
-  User me() {
-    auto json = this.requestJSON(Routes.GET_ME()).ok().fastJSON;
+  User usersMeGet() {
+    auto json = this.requestJSON(Routes.USERS_ME_GET()).ok().fastJSON;
     return new User(this.client, json);
   }
 
   /**
     Return a User object for a Snowflake ID.
   */
-  User user(Snowflake id) {
-    auto json = this.requestJSON(Routes.GET_USER(id)).fastJSON;
+  User usersGet(Snowflake id) {
+    auto json = this.requestJSON(Routes.USERS_GET(id)).fastJSON;
     return new User(this.client, json);
   }
 
   /**
     Modifies the current users settings. Returns a User object.
   */
-  User meSettings(string username, string avatar) {
+  User usersMePatch(string username, string avatar) {
     VibeJSON data = VibeJSON(["username": VibeJSON(username), "avatar": VibeJSON(avatar)]);
-    auto json = this.requestJSON(Routes.PATCH_ME(), data).fastJSON;
+    auto json = this.requestJSON(Routes.USERS_ME_PATCH(), data).fastJSON;
     return new User(this.client, json);
   }
 
   /**
     Returns a list of Guild objects for the current user.
   */
-  Guild[] meGuilds() {
-    auto json = this.requestJSON(Routes.GET_ME_GUILDS()).ok().fastJSON;
+  Guild[] usersMeGuildsList() {
+    auto json = this.requestJSON(Routes.USERS_ME_GUILDS_LIST()).ok().fastJSON;
     return loadManyArray!Guild(this.client, json);
   }
 
   /**
     Leaves a guild.
   */
-  void meGuildLeave(Snowflake id) {
-    this.requestJSON(Routes.LEAVE_GUILD(id)).ok();
+  void usersMeGuildsLeave(Snowflake id) {
+    this.requestJSON(Routes.USERS_ME_GUILDS_LEAVE(id)).ok();
   }
 
   /**
     Returns a list of Channel objects for the current user.
   */
-  Channel[] meDMChannels() {
-    auto json = this.requestJSON(Routes.GET_ME_CHANNELS()).ok().fastJSON;
+  Channel[] usersMeDMSList() {
+    auto json = this.requestJSON(Routes.USERS_ME_DMS_LIST()).ok().fastJSON;
     return loadManyArray!Channel(this.client, json);
   }
 
   /**
     Creates a new DM for a recipient (user) ID. Returns a Channel object.
   */
-  Channel meDMCreate(Snowflake recipientID) {
+  Channel usersMeDMSCreate(Snowflake recipientID) {
     VibeJSON payload = VibeJSON(["recipient_id": VibeJSON(recipientID)]);
-    auto json = this.requestJSON(Routes.CREATE_DM()).ok().fastJSON;
+    auto json = this.requestJSON(Routes.USERS_ME_DMS_CREATE()).ok().fastJSON;
     return new Channel(this.client, json);
   }
 
   /**
     Returns a Guild for a Snowflake ID.
   */
-  Guild guild(Snowflake id) {
-    auto json = this.requestJSON(Routes.GET_GUILD(id)).ok().fastJSON;
+  Guild guildsGet(Snowflake id) {
+    auto json = this.requestJSON(Routes.GUILDS_GET(id)).ok().fastJSON;
     return new Guild(this.client, json);
   }
 
   /**
     Modifies a guild.
   */
-  Guild guildModify(Snowflake id, VibeJSON obj) {
-    auto json = this.requestJSON(Routes.PATCH_GUILD(id), obj).fastJSON;
+  Guild guildsModify(Snowflake id, VibeJSON obj) {
+    auto json = this.requestJSON(Routes.GUILDS_MODIFY(id), obj).fastJSON;
     return new Guild(this.client, json);
   }
 
   /**
     Deletes a guild.
   */
-  void guildDelete(Snowflake id) {
-    this.requestJSON(Routes.DELETE_GUILD(id)).ok();
+  void guildsDelete(Snowflake id) {
+    this.requestJSON(Routes.GUILDS_DELETE(id)).ok();
   }
 
   /**
     Returns a list of channels for a Guild.
   */
-  Channel[] guildChannels(Snowflake id) {
-    auto json = this.requestJSON(Routes.GET_GUILD_CHANNELS(id)).ok().fastJSON;
+  Channel[] guildsChannelsList(Snowflake id) {
+    auto json = this.requestJSON(Routes.GUILDS_CHANNELS_LIST(id)).ok().fastJSON;
     return loadManyArray!Channel(this.client, json);
   }
 
   /**
     Removes (kicks) a user from a Guild.
   */
-  void guildRemoveMember(Snowflake id, Snowflake user) {
-    this.requestJSON(Routes.DELETE_MEMBER(id, user)).ok();
+  void guildsMembersKick(Snowflake id, Snowflake user) {
+    this.requestJSON(Routes.GUILDS_MEMBERS_KICK(id, user)).ok();
   }
-
-  /*
-  Channel guildChannelCreate(Snowflake id, string name, string type, int bitrate = -1, int userLimit = -1) {
-    VibeJSON payload = VibeJSON.emptyObject;
-    payload["name"] = VibeJSON(id);
-    payload["type"] = VibeJSON(type);
-    if (bitrate > -1) payload["bitrate"] = VibeJSON(bitrate);
-    if (userLimit > -1) payload["user_limit"] = VibeJSON(userLimit);
-  }
-  */
 
   /**
     Sends a message to a channel.
   */
-  Message sendMessage(Snowflake chan, inout(string) content, string nonce, bool tts) {
+  Message channelsMessagesCreate(Snowflake chan, inout(string) content, string nonce, bool tts) {
     VibeJSON payload = VibeJSON([
       "content": VibeJSON(content),
       "nonce": VibeJSON(nonce),
@@ -228,39 +218,39 @@ class APIClient {
     ]);
 
     // Send payload and return message object
-    auto json = this.requestJSON(Routes.SEND_MESSAGE(chan), payload).ok().fastJSON;
+    auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_CREATE(chan), payload).ok().fastJSON;
     return new Message(this.client, json);
   }
 
   /**
     Edits a messages contents.
   */
-  Message editMessage(Snowflake chan, Snowflake msg, inout(string) content) {
+  Message channelsMessagesModify(Snowflake chan, Snowflake msg, inout(string) content) {
     VibeJSON payload = VibeJSON(["content": VibeJSON(content)]);
 
-    auto json = this.requestJSON(Routes.EDIT_MESSAGE(chan, msg), payload).ok().fastJSON;
+    auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_MODIFY(chan, msg), payload).ok().fastJSON;
     return new Message(this.client, json);
   }
 
   /**
     Deletes a message.
   */
-  void deleteMessage(Snowflake chan, Snowflake msg) {
-    this.requestJSON(Routes.DELETE_MESSAGE(chan, msg)).ok();
+  void channelsMessagesDelete(Snowflake chan, Snowflake msg) {
+    this.requestJSON(Routes.CHANNELS_MESSAGES_DELETE(chan, msg)).ok();
   }
 
   /**
     Deletes messages in bulk.
   */
-  void bulkDeleteMessages(Snowflake chan, Snowflake[] msgs) {
+  void channelsMessagesDeleteBulk(Snowflake chan, Snowflake[] msgs) {
     VibeJSON payload = VibeJSON(["messages": VibeJSON(array(map!((m) => VibeJSON(m))(msgs)))]);
-    this.requestJSON(Routes.BULK_DELETE_MESSAGES(chan)).ok();
+    this.requestJSON(Routes.CHANNELS_MESSAGES_DELETE_BULK(chan)).ok();
   }
 
   /**
     Returns a valid Gateway Websocket URL
   */
-  string gateway() {
-    return this.requestJSON(Routes.GET_GATEWAY()).ok().vibeJSON["url"].to!string;
+  string gatewayGet() {
+    return this.requestJSON(Routes.GATEWAY_GET()).ok().vibeJSON["url"].to!string;
   }
 }

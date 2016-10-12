@@ -130,7 +130,7 @@ class SimplePlaylistProvider : PlaylistProvider {
   }
 
   Playable getNext() {
-    assert(this.hasNext());
+    assert(this.hasNext(), "No next Playable for SimplePlaylistProvider");
     Playable next = this.playlist[0];
     this.playlist = this.playlist[1..$];
     return next;

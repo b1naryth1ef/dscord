@@ -105,7 +105,7 @@ class GatewayClient {
 
     // If this is our first connection, get a gateway WS URL
     if (!this.cachedGatewayURL) {
-      this.cachedGatewayURL = client.api.gateway();
+      this.cachedGatewayURL = client.api.gatewayGet();
       this.cachedGatewayURL ~= format("/?v=%s&encoding=%s", GATEWAY_VERSION, "json");
     }
 

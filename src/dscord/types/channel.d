@@ -114,11 +114,11 @@ class Channel : IModel, IPermissible {
   }
 
   Message sendMessage(inout(string) content, string nonce=null, bool tts=false) {
-    return this.client.api.sendMessage(this.id, content, nonce, tts);
+    return this.client.api.channelsMessagesCreate(this.id, content, nonce, tts);
   }
 
   Message sendMessagef(T...)(inout(string) content, T args) {
-    return this.client.api.sendMessage(this.id, format(content, args), null, false);
+    return this.client.api.channelsMessagesCreate(this.id, format(content, args), null, false);
   }
 
   Message sendMessage(Sendable obj) {

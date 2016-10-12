@@ -153,7 +153,8 @@ class IModel {
 
     this.client = client;
     this.init();
-    this.load(obj);
+
+    if (obj) this.load(obj);
 
     version (TIMING) {
       this.client.log.tracef("Finished creation of model %s in %sms", this.toString,

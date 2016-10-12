@@ -204,28 +204,28 @@ class Message : IModel {
       tts = whether this is a TTS message
   */
   Message reply(inout(string) content, string nonce=null, bool tts=false) {
-    return this.client.api.sendMessage(this.channel.id, content, nonce, tts);
+    return this.client.api.channelsMessagesCreate(this.channel.id, content, nonce, tts);
   }
 
   /**
     Sends a Sendable to the same channel as this message.
   */
   Message reply(Sendable obj) {
-    return this.client.api.sendMessage(this.channel.id, obj.toSendableString(), null, false);
+    return this.client.api.channelsMessagesCreate(this.channel.id, obj.toSendableString(), null, false);
   }
 
   /**
     Sends a new formatted message to the same channel as this message.
   */
   Message replyf(T...)(inout(string) content, T args) {
-    return this.client.api.sendMessage(this.channel.id, format(content, args), null, false);
+    return this.client.api.channelsMessagesCreate(this.channel.id, format(content, args), null, false);
   }
 
   /**
     Edits this message contents.
   */
   Message edit(inout(string) content) {
-    return this.client.api.editMessage(this.channel.id, this.id, content);
+    return this.client.api.channelsMessagesModify(this.channel.id, this.id, content);
   }
 
   /**
@@ -243,7 +243,7 @@ class Message : IModel {
       throw new PermissionsError(Permissions.MANAGE_MESSAGES);
     }
 
-    return this.client.api.deleteMessage(this.channel.id, this.id);
+    return this.client.api.channelsMessagesDelete(this.channel.id, this.id);
   }
 
   /*

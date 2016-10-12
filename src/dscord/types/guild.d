@@ -272,7 +272,7 @@ class Guild : IModel, IPermissible {
 
   /// Kick a given User
   void kick(User user) {
-    this.client.api.guildRemoveMember(this.id, user.id);
+    this.client.api.guildsMembersKick(this.id, user.id);
   }
 
   /// Default role for this Guild
@@ -315,11 +315,11 @@ class Guild : IModel, IPermissible {
 
   /// Set this servers name
   void setName(string name) {
-    this.client.api.guildModify(this.id, VibeJSON(["name" : VibeJSON(name)]));
+    this.client.api.guildsModify(this.id, VibeJSON(["name" : VibeJSON(name)]));
   }
 
   /// Set this servers region
   void setRegion(string region) {
-    this.client.api.guildModify(this.id, VibeJSON(["region" : VibeJSON(region)]));
+    this.client.api.guildsModify(this.id, VibeJSON(["region" : VibeJSON(region)]));
   }
 }

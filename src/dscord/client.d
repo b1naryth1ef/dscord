@@ -80,9 +80,9 @@ class Client {
   */
   void deleteMessages(Snowflake channelID, Snowflake[] messages) {
     if (messages.length <= 2) {
-      messages.each!(x => this.api.deleteMessage(channelID, x));
+      messages.each!(x => this.api.channelsMessagesDelete(channelID, x));
     } else {
-      this.api.bulkDeleteMessages(channelID, messages);
+      this.api.channelsMessagesDeleteBulk(channelID, messages);
     }
   }
 

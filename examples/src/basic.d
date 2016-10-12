@@ -15,6 +15,7 @@ import dcad.types : DCAFile;
 
 import dscord.core,
        dscord.util.process,
+       dscord.util.emitter,
        dscord.voice.youtubedl;
 
 import core.sys.posix.signal;
@@ -59,10 +60,24 @@ class BasicPlugin : Plugin {
     }
   }
 
+  @Command("spam")
+  void spam(CommandEvent event) {
+    for (int i = 0; i < 30; i++) {
+      this.client.updateStatus(0, new Game(format("Test #%s", i)));
+      sleep(250.msecs);
+      this.log.infof("%s", i);
+    }
+  }
+
   Channel userVoiceChannel(Guild guild, User user) {
     auto state = guild.voiceStates.pick(s => s.userID == user.id);
     if (!state) return null;
     return state.channel;
+  }
+
+  @Listener!VoiceStateUpdate(EmitterOrder.AFTER)
+  void onVoiceStateUpdate(VoiceStateUpdate e) {
+    auto beore = this.client.state.guilds.get(e.state.guildID).voiceStates.get(e.state.sessionID);
   }
 }
 

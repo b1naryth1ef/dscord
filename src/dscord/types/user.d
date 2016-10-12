@@ -13,15 +13,36 @@ enum GameType : ushort {
   STREAMING = 1,
 }
 
+enum UserStatus : string {
+  ONLINE = "online",
+  IDLE = "idle",
+  DND = "dnd",
+  INVISIBLE = "invisible",
+  OFFLINE = "offline",
+}
+
+
 class Game {
   string name;
   string url;
   GameType type;
 
-  this(string name, string url="", GameType type=GameType.DEFAULT) {
+  this(string name="", string url="", GameType type=GameType.DEFAULT) {
     this.name = name;
     this.url = url;
     this.type = type;
+  }
+
+  static Game load(JSONDecoder obj) {
+    Game inst = new Game();
+    obj.keySwitch!(
+      "name", "url", "type"
+    )(
+      { inst.name = obj.read!string; },
+      { inst.url = obj.read!string; },
+      { inst.type = cast(GameType)obj.read!ushort; },
+    );
+    return inst;
   }
 
   VibeJSON dump() {
@@ -35,6 +56,24 @@ class Game {
     }
 
     return obj;
+  }
+}
+
+class Presence : IModel {
+  mixin Model;
+
+  User        user;
+  Game        game;
+  UserStatus  status;
+
+  override void load(JSONDecoder obj) {
+    obj.keySwitch!(
+      "user", "game", "status"
+    )(
+      { this.user = new User(this.client, obj); },
+      { this.game = Game.load(obj); },
+      { this.status = cast(UserStatus)obj.read!string; },
+    );
   }
 }
 

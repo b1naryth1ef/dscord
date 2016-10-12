@@ -401,26 +401,10 @@ class MessageDelete {
 class PresenceUpdate {
   mixin Event;
 
-  User         user;
-  Snowflake    guildID;
-  Snowflake[]  roles;
-  string       game;
-  string       status;
+  Presence presence;
 
   void load(JSONDecoder obj) {
-    obj.keySwitch!("user", "guild_id", "roles", "game", "status")(
-      { this.user = new User(this.client, obj); },
-      { this.guildID = readSnowflake(obj); },
-      { this.roles = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
-      {
-        if (obj.peek == VibeJSON.Type.string) {
-          this.game = obj.read!string;
-        } else {
-          obj.skipValue;
-        }
-      },
-      { this.status = obj.read!string; },
-    );
+    this.presence = new Presence(this.client, obj);
   }
 }
 

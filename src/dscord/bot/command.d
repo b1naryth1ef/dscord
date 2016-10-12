@@ -53,7 +53,7 @@ CommandObjectUpdate CommandGroup(string group) {
 /**
   Sets whether a command uses regex matching
 */
-CommandObjectUpdate CommandRegex(bool rgx) {
+CommandObjectUpdate CommandRegex(bool rgx=true) {
   return (c) {c.setRegex(rgx);};
 }
 
