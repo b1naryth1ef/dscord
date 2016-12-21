@@ -71,7 +71,13 @@ class Presence : IModel {
       "user", "game", "status"
     )(
       { this.user = new User(this.client, obj); },
-      { this.game = Game.load(obj); },
+      {
+        if (obj.peek != VibeJSON.Type.null_) {
+          this.game = Game.load(obj);
+        } else {
+          obj.skipValue;
+        }
+      },
       { this.status = cast(UserStatus)obj.read!string; },
     );
   }
