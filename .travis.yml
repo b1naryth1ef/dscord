@@ -1,8 +1,12 @@
 language: d
 
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libopus-dev libsodium-dev
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libopus-dev
+      - libsodium-dev
 
 d:
   - dmd
