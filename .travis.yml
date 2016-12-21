@@ -1,3 +1,5 @@
+language: d
+
 d:
   - dmd
   - dmd-2.072.1
