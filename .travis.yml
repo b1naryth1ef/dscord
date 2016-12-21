@@ -1,7 +1,9 @@
 language: d
 
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libopus-dev libsodium-dev
+
 d:
   - dmd
   - dmd-2.072.1
-  - ldc
-  - gdc
