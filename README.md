@@ -1,4 +1,7 @@
 # dscord
+
+![](https://travis-ci.org/b1naryth1ef/dscord.svg?branch=master)
+
 dscord is a client library for the Discord chat service, written in D-lang. The core focus of dscord is to provide a clean interface with a highly performant and scalable backing runtime, to support use-cases that contain a large number of user or guilds. Dscord provides both a base client implementation, and various extras that assist in constructing bots out of it. Dscord is still very much a work-in-progress, so beware of sharp edges or missing pieces.
 
 ## Examples
