@@ -3,7 +3,8 @@
 */
 module dscord.util.storage;
 
-import std.file : dirSeparator, read, write, exists;
+import std.file : read, write, exists;
+import std.path : dirSeparator;
 import dscord.util.json;
 
 class Storage {

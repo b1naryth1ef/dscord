@@ -12,7 +12,8 @@ public import vibe.data.json : VibeJSON = Json, parseJsonString;
   Because for some reason that doesnt link correctly. Cri.
 */
 
-version (Have_fast) {
+// TODO: fast support again
+version (Have_fast_DISABLED) {
   public import fast.json : FastJson = Json, parseTrustedJSON, DataType;
 
   alias JSON = FastJson!(0u, false);
@@ -81,7 +82,7 @@ version (Have_fast) {
 
     private VibeJSON currentObj;
     private string currentKey;
-    private uint currentIndex = uint.max;
+    private ulong currentIndex = ulong.max;
     private string byLastKey;
 
     this(string content) {
@@ -92,7 +93,7 @@ version (Have_fast) {
     private VibeJSON current() {
       if (this.currentKey != "") {
         return this.currentObj[this.currentKey];
-      } else if (this.currentIndex != uint.max) {
+      } else if (this.currentIndex != ulong.max) {
         return this.currentObj[this.currentIndex];
       } else {
         throw new Exception("Cannot read from un keyed/indexed object.");
@@ -155,7 +156,8 @@ version (Have_fast) {
       string lastKey = this.currentKey;
       this.currentKey = "";
 
-      foreach (uint idx, VibeJSON item; lastObj[lastKey]) {
+      // VibeJSON item;
+      foreach (ulong idx, VibeJSON item; lastObj[lastKey]) {
         if (item.type == VibeJSON.Type.object) {
           this.currentObj = item;
         } else {
@@ -166,13 +168,13 @@ version (Have_fast) {
 
       this.currentKey = lastKey;
       this.currentObj = lastObj;
-      this.currentIndex = uint.max;
+      this.currentIndex = ulong.max;
       return i;
     }
 
     void skipValue() {
       this.currentKey = "";
-      this.currentIndex = uint.max;
+      this.currentIndex = ulong.max;
     }
 
     @property int delegate(scope int delegate(ref const char[])) byKey(string lastKey="") {

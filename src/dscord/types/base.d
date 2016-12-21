@@ -6,7 +6,8 @@ import std.conv,
        std.array,
        std.algorithm,
        std.traits,
-       std.functional;
+       std.functional,
+       std.algorithm.sorting;
 
 import dscord.client;
 
@@ -359,7 +360,7 @@ class ModelMap(TKey, TValue) {
 
   /// Return the set-union for an array of keys
   TKey[] keyUnion(TKey[] other) {
-    return setUnion(this.keys, other).array;
+    return merge(this.keys, other).array;
   }
 
   int opApply(int delegate(ref TKey, ref TValue) dg) {
