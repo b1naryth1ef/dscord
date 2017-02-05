@@ -173,8 +173,8 @@ class State : Emitter {
   }
 
   private void onGuildMemberUpdate(GuildMemberUpdate c) {
-    if (!this.guilds.has(c.guildID)) return;
-    if (!this.guilds[c.guildID].members.has(c.user.id)) return;
+    if (!this.guilds.has(c.member.guildID)) return;
+    if (!this.guilds[c.member.guildID].members.has(c.member.user.id)) return;
     // TODO: handle updates
     // this._guilds[c.guildID].members[c.user.id].fromUpdate(c);
   }

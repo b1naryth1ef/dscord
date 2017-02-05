@@ -104,6 +104,7 @@ class Resumed {
 class ChannelCreate {
   mixin Event;
 
+  @JSONFlat
   Channel  channel;
 }
 
@@ -113,6 +114,7 @@ class ChannelCreate {
 class ChannelUpdate {
   mixin Event;
 
+  @JSONFlat
   Channel  channel;
 }
 
@@ -122,6 +124,7 @@ class ChannelUpdate {
 class ChannelDelete {
   mixin Event;
 
+  @JSONFlat
   Channel  channel;
 }
 
@@ -240,9 +243,8 @@ class GuildMemberRemove {
 class GuildMemberUpdate {
   mixin Event;
 
-  Snowflake    guildID;
-  User         user;
-  Snowflake[]  roles;
+  @JSONFlat
+  GuildMember  member;
 }
 
 /**
@@ -315,6 +317,7 @@ class MessageDelete {
 class PresenceUpdate {
   mixin Event;
 
+  @JSONFlat
   Presence presence;
 }
 
