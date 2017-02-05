@@ -6,12 +6,15 @@ import std.stdio,
        std.format,
        std.conv,
        std.array,
+       std.json,
+       std.traits,
        std.process,
        core.time;
 
 import vibe.core.core;
 import vibe.http.client;
 import dcad.types : DCAFile;
+
 
 import dscord.core,
        dscord.util.process,
@@ -21,6 +24,7 @@ import dscord.core,
 import core.sys.posix.signal;
 import etc.linux.memoryerror;
 
+import dscord.util.string : camelCaseToUnderscores;
 
 class BasicPlugin : Plugin {
   DCAFile sound;
@@ -29,9 +33,18 @@ class BasicPlugin : Plugin {
     super();
   }
 
-  @Command("test")
-  @CommandDescription("HI")
-  void onTestCommand(CommandEvent event) {
+  @Listener!MessageCreate
+  void onMessageCreate(MessageCreate event) {
+    this.log.infof("MessageCreate: %s", event.message.mentions.length);
+  }
+
+  @Command("ping")
+  void onPing(CommandEvent event) {
+    event.msg.reply("Pong!");
+  }
+
+  @Command("sound")
+  void onSound(CommandEvent event) {
     auto chan = this.userVoiceChannel(event.msg.guild, event.msg.author);
 
     if (!chan) {
@@ -39,15 +52,20 @@ class BasicPlugin : Plugin {
       return;
     }
 
-    auto sound = new DCAPlayable(new DCAFile(File("test.dca", "r")));
+    if (!this.sound) {
+      this.sound = new DCAFile(File("test.dca", "r"));
+    }
+
+    auto playable = new DCAPlayable(this.sound);
+
     auto vc = chan.joinVoice();
 
     if (vc.connect()) {
-      event.msg.replyf("OK: %s", vc);
-      vc.play(sound).disconnect();
+        vc.play(playable).disconnect();
     } else {
-      event.msg.reply("it dont work");
+      event.msg.reply("Failed :(");
     }
+
   }
 
   @Command("whereami")
@@ -70,14 +88,12 @@ class BasicPlugin : Plugin {
   }
 
   Channel userVoiceChannel(Guild guild, User user) {
+    this.log.infof("k: %s", guild.voiceStates.keys);
+    this.log.infof("v: %s", guild.voiceStates.values);
+
     auto state = guild.voiceStates.pick(s => s.userID == user.id);
     if (!state) return null;
     return state.channel;
-  }
-
-  @Listener!VoiceStateUpdate(EmitterOrder.AFTER)
-  void onVoiceStateUpdate(VoiceStateUpdate e) {
-    auto beore = this.client.state.guilds.get(e.state.guildID).voiceStates.get(e.state.sessionID);
   }
 }
 

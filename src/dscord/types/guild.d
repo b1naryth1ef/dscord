@@ -14,43 +14,30 @@ alias RoleMap = ModelMap!(Snowflake, Role);
 alias GuildMemberMap = ModelMap!(Snowflake, GuildMember);
 alias EmojiMap = ModelMap!(Snowflake, Emoji);
 
+enum VerificationLevel : ushort {
+  NONE = 0,
+  LOW = 1,
+  MEDIUM = 2,
+  HIGH = 3,
+  EXTREME = 4,
+}
+
 class Role : IModel {
   mixin Model;
 
   Snowflake   id;
-  Guild       guild;
+  Snowflake   guildID;
+
+  string      name;
+  bool        hoist;
+  bool        managed;
+  uint        color;
   Permission  permissions;
+  short       position;
+  bool        mentionable;
 
-  string  name;
-  uint    color;
-  bool    hoist;
-  short   position;
-  bool    managed;
-  bool    mentionable;
-
-  this(Client client, JSONDecoder obj) {
-    super(client, obj);
-  }
-
-  this(Guild guild, JSONDecoder obj) {
-    this.guild = guild;
-    super(guild.client, obj);
-  }
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "id", "name", "hoist", "position", "permissions",
-      "managed", "mentionable", "color"
-    )(
-      { this.id = readSnowflake(obj); },
-      { this.name = obj.read!string; },
-      { this.hoist = obj.read!bool; },
-      { this.position = obj.read!short; },
-      { this.permissions = Permission(obj.read!uint); },
-      { this.managed = obj.read!bool; },
-      { this.mentionable = obj.read!bool; },
-      { this.color = obj.read!uint; },
-    );
+  @property Guild guild() {
+    return this.client.state.guilds.get(this.guildID);
   }
 }
 
@@ -58,32 +45,15 @@ class Emoji : IModel {
   mixin Model;
 
   Snowflake  id;
-  Guild      guild;
+  Snowflake  guildID;
   string     name;
   bool       requireColons;
   bool       managed;
 
   Snowflake[]  roles;
 
-  this(Client client, JSONDecoder obj) {
-    super(client, obj);
-  }
-
-  this(Guild guild, JSONDecoder obj) {
-    this.guild = guild;
-    super(guild.client, obj);
-  }
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "id", "name", "require_colons", "managed", "roles"
-    )(
-      { this.id = readSnowflake(obj); },
-      { this.name = obj.read!string; },
-      { this.requireColons = obj.read!bool; },
-      { this.managed = obj.read!bool; },
-      { this.roles = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
-    );
+  @property Guild guild() {
+    return this.client.state.guilds.get(this.guildID);
   }
 
   bool matches(string usage) {
@@ -100,41 +70,21 @@ class Emoji : IModel {
 class GuildMember : IModel {
   mixin Model;
 
-  User    user;
-  Guild   guild;
-  string  nick;
-  string  joinedAt;
-  bool    mute;
-  bool    deaf;
+  User       user;
+  Snowflake  guildID;
+  string     nick;
+  string     joinedAt;
+  bool       mute;
+  bool       deaf;
 
-  private Snowflake[]  _roles;
+  Snowflake[]  roles;
 
-  this(Client client, JSONDecoder obj) {
-    super(client, obj);
+  @property Snowflake id() {
+    return this.user.id;
   }
 
-  this(Guild guild, JSONDecoder obj) {
-    this.guild = guild;
-    super(guild.client, obj);
-  }
-
-  void fromUpdate(GuildMemberUpdate update) {
-    this.user = update.user;
-    this._roles = update.roles;
-  }
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "user", "guild_id", "roles", "nick", "mute", "deaf", "joined_at"
-    )(
-      { this.user = new User(this.client, obj); },
-      { this.guild = this.client.state.guilds.get(readSnowflake(obj)); },
-      { this._roles = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
-      { this.nick = obj.read!string; },
-      { this.mute = obj.read!bool; },
-      { this.deaf = obj.read!bool; },
-      { this.joinedAt = obj.read!string; },
-    );
+  @property Guild guild() {
+    return this.client.state.guilds.get(this.guildID);
   }
 
   override string toString() {
@@ -143,14 +93,6 @@ class GuildMember : IModel {
       this.user.discriminator,
       this.id,
       this.guild.id);
-  }
-
-  @property Snowflake[] roles() {
-    return this._roles ~ [this.guild.id];
-  }
-
-  @property Snowflake id() {
-    return this.user.id;
   }
 
   bool hasRole(Role role) {
@@ -182,73 +124,30 @@ class Guild : IModel, IPermissible {
 
   bool  unavailable;
 
-  // Mappings
+  @JSONListToMap("id")
   GuildMemberMap  members;
+
+  @JSONListToMap("sessionID")
   VoiceStateMap   voiceStates;
+
+  @JSONListToMap("id")
   ChannelMap      channels;
+
+  @JSONListToMap("id")
   RoleMap         roles;
+
+  @JSONListToMap("id")
   EmojiMap        emojis;
 
-  void fromUpdate(GuildUpdate update) {
-    auto guild = update.guild;
-    assert(this.id == guild.id, "Cannot update from mismatched GuildUpdate");
-
-    this.ownerID = guild.ownerID;
-    this.afkChannelID = guild.afkChannelID;
-    this.embedChannelID = guild.embedChannelID;
-    this.name = guild.name;
-    this.icon = guild.icon;
-    this.splash = guild.splash;
-    this.afkTimeout = guild.afkTimeout;
-    this.embedEnabled = guild.embedEnabled;
-    this.verificationLevel = guild.verificationLevel;
-    this.mfaLevel = guild.mfaLevel;
-    this.features = guild.features;
-  }
-
   override void init() {
-    this.members = new GuildMemberMap;
-    this.voiceStates = new VoiceStateMap;
-    this.channels = new ChannelMap;
-    this.roles = new RoleMap;
-    this.emojis = new EmojiMap;
-  }
+    // It's possible these are not created
+    if (!this.members) return;
 
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "id", "unavailable", "owner_id", "name", "icon",
-      "region", "verification_level", "afk_channel_id",
-      "splash", "afk_timeout", "channels", "roles", "members",
-      "voice_states", "emojis", "features", "mfa_level",
-    )(
-      { this.id = readSnowflake(obj); },
-      { this.unavailable = obj.read!bool; },
-      { this.ownerID = readSnowflake(obj); },
-      { this.name = obj.read!string; },
-      { this.icon = obj.read!string; },
-      { this.region = obj.read!string; },
-      { this.verificationLevel = obj.read!ushort; },
-      { this.afkChannelID = readSnowflake(obj); },
-      { this.splash = obj.read!string; },
-      { this.afkTimeout = obj.read!uint; },
-      {
-        loadManyComplex!(Guild, Channel)(this, obj, (c) { this.channels[c.id] = c; });
-      },
-      {
-        loadManyComplex!(Guild, Role)(this, obj, (r) { this.roles[r.id] = r; });
-      },
-      {
-        loadManyComplex!(Guild, GuildMember)(this, obj, (m) { this.members[m.user.id] = m; });
-      },
-      {
-        loadMany!VoiceState(this.client, obj, (v) { this.voiceStates[v.sessionID] = v; });
-      },
-      {
-        loadManyComplex!(Guild, Emoji)(this, obj, (e) { this.emojis[e.id] = e; });
-      },
-      { this.features = obj.readArray!(string); },
-      { this.mfaLevel = obj.read!ushort; },
-    );
+    this.members.each((m) { m.guildID = this.id; });
+    this.voiceStates.each((vc) { vc.guildID = this.id; });
+    this.channels.each((c) { c.guildID = this.id; });
+    this.roles.each((r) { r.guildID = this.id; });
+    this.emojis.each((e) { e.guildID = this.id; });
   }
 
   override string toString() {
@@ -262,7 +161,7 @@ class Guild : IModel, IPermissible {
 
   /// Returns a GuildMember for a given user/member id
   GuildMember getMember(Snowflake id) {
-    return this.members[id];
+    return this.members.get(id);
   }
 
   /// Kick a given GuildMember

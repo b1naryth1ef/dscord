@@ -2,15 +2,13 @@ language: d
 
 before_install:
   - sudo apt-get update -qq
-  - wget http://ftp.us.debian.org/debian/pool/main/o/opus/libopus0_1.1.3-1_amd64.deb
-  - wget http://ftp.us.debian.org/debian/pool/main/o/opus/libopus-dev_1.1.3-1_amd64.deb
+  - wget http://ftp.us.debian.org/debian/pool/main/o/opus/libopus0_1.1-2_amd64.deb
+  - wget http://ftp.us.debian.org/debian/pool/main/o/opus/libopus-dev_1.1-2_amd64.deb
   - wget http://ftp.us.debian.org/debian/pool/main/libs/libsodium/libsodium18_1.0.11-1_amd64.deb
   - wget http://ftp.us.debian.org/debian/pool/main/libs/libsodium/libsodium-dev_1.0.11-1_amd64.deb
-  - sudo dpkg -i libopus0_1.1.3-1_amd64.deb
-  - sudo dpkg -i libopus-dev_1.1.3-1_amd64.deb
-  - sudo dpkg -i libsodium18_1.0.11-1_amd64.deb
-  - sudo dpkg -i libsodium-dev_1.0.11-1_amd64.deb
+  - "sudo dpkg -i *.deb"
 
 d:
   - dmd
-  - dmd-2.072.1
+  - dmd-2.072.2
+  - dmd-2.071.2

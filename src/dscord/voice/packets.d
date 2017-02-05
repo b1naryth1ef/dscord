@@ -8,13 +8,17 @@ import std.stdio;
 import dscord.types,
        dscord.gateway;
 
-enum VoiceOPCode {
+enum VoiceOPCode : ushort {
   VOICE_IDENTIFY = 0,
   VOICE_SELECT_PROTOCOL = 1,
   VOICE_READY = 2,
   VOICE_HEARTBEAT = 3,
   VOICE_SESSION_DESCRIPTION = 4,
   VOICE_SPEAKING = 5,
+  VOICE_HEARTBEAT_ACK = 6,
+  VOICE_RESUME = 7,
+  VOICE_HELLO = 8,
+  VOICE_RESUMED = 9,
 }
 
 class VoiceIdentifyPacket : BasePacket, Serializable {
@@ -46,6 +50,7 @@ class VoiceReadyPacket : BasePacket, Deserializable {
   string[]  modes;
   ushort    heartbeatInterval;
 
+  /*
   void deserialize(JSONDecoder obj) {
     obj.keySwitch!("ssrc", "port", "modes", "heartbeat_interval")(
       { this.ssrc = obj.read!ushort; },
@@ -54,6 +59,7 @@ class VoiceReadyPacket : BasePacket, Deserializable {
       { this.heartbeatInterval = obj.read!ushort; },
     );
   }
+  */
 }
 
 class VoiceSelectProtocolPacket : BasePacket, Serializable {
@@ -113,11 +119,13 @@ class VoiceSpeakingPacket : BasePacket, Serializable {
 }
 
 class VoiceSessionDescriptionPacket : BasePacket, Deserializable {
-  string  secretKey;
+  // string  secretKey;
 
+  /*
   void deserialize(JSONDecoder obj) {
     /+ obj.keySwitch!("secret_key")(
       { this.secretKey = obj.read!string; }
     ); +/
   }
+  */
 }

@@ -13,25 +13,12 @@
     {
       "name": "dscord-linux",
       "targetType": "library",
-      "dependencies": {
-        "fast": {
-          "version": "~master",
-          "optional": true,
-          "default": true
-        }
-      },
-      "platforms": ["linux"]
+      "platforms": ["linux"],
+      "versions": []
     },
     {
       "name": "dscord-osx",
       "targetType": "library",
-      "dependencies": {
-        "fast": {
-          "version": "~master",
-          "optional": true,
-          "default": true
-        }
-      },
       "lflags": ["-L/usr/local/opt/openssl/lib"],
       "platforms": ["OSX"]
     },
@@ -41,6 +28,5 @@
       "platforms": ["Windows"]
     }
   ],
-  "-ddoxTool": "scod",
   "-ddoxFilterArgs": ["--no-unittest-examples"]
 }

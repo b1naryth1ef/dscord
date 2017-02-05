@@ -28,7 +28,6 @@ interface Serializable {
 }
 
 interface Deserializable {
-  void deserialize(JSONDecoder);
 }
 
 class BasePacket {

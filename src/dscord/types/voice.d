@@ -21,6 +21,7 @@ class VoiceState : IModel {
   bool       selfMute;
   bool       suppress;
 
+  /*
   override void load(JSONDecoder obj) {
     obj.keySwitch!(
       "guild_id", "channel_id", "user_id", "session_id",
@@ -37,6 +38,7 @@ class VoiceState : IModel {
       { this.suppress = obj.read!bool; },
     );
   }
+  */
 
   override string toString() {
     return format("<VoiceState %s (%s / %s /%s)>",

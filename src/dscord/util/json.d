@@ -3,202 +3,271 @@
 */
 module dscord.util.json;
 
-import std.traits;
+import std.stdio;
+
+import std.conv,
+       std.meta,
+       std.traits;
 
 public import vibe.data.json : VibeJSON = Json, parseJsonString;
 
-/*
-  Why is this not an interface with seperate implementations for each JSON parser?
-  Because for some reason that doesnt link correctly. Cri.
-*/
+import dscord.types.base : IModel, Snowflake;
+public import dscord.util.string : camelCaseToUnderscores;
 
-// TODO: fast support again
-version (Have_fast_DISABLED) {
-  public import fast.json : FastJson = Json, parseTrustedJSON, DataType;
 
-  alias JSON = FastJson!(0u, false);
+enum JSONIgnore;
+enum JSONFlat;
 
-  class JSONDecoder {
-    JSON obj;
+struct JSONSource {
+  string src;
+}
 
-    this(string content) {
-      this.obj = parseTrustedJSON(content);
-    }
+struct JSONListToMap {
+  string field;
+}
 
-    void keySwitch(Args...)(scope void delegate()[Args.length] dlg...) {
-      this.obj.keySwitch!(Args)(dlg);
-    }
 
-    T singleKey(T)(string key) {
-      return obj.singleKey(key).read!T;
-    }
+VibeJSON serializeArrayToJSON(T)(in ref T array) if (isArray!T) {
+  alias ElementType = ForeachType!T;
+  VibeJSON result = VibeJSON.emptyArray;
 
-    T read(T)() {
-      static if (isSomeString!T) {
-        return obj.read!T.dup;
-      } else {
-        return obj.read!T;
+  foreach (item; array) {
+    static if (is(ElementType == struct)) {
+      result ~= item.serializeToJSON();
+    } else static if (is(ElementType == class)) {
+      if (result !is null) {
+        result ~= item.serializeToJSON();
       }
-    }
-
-    T[] readArray(T)() {
-      return obj.read!(T[]);
-    }
-
-    VibeJSON.Type peek() {
-      final switch (this.obj.peek()) {
-        case DataType.string:
-          return VibeJSON.Type.string;
-        case DataType.number:
-          return VibeJSON.Type.int_;
-        case DataType.object:
-          return VibeJSON.Type.object;
-        case DataType.array:
-          return VibeJSON.Type.array;
-        case DataType.boolean:
-          return VibeJSON.Type.bool_;
-        case DataType.null_:
-          return VibeJSON.Type.null_;
-      }
-    }
-
-    int opApply(scope int delegate(const size_t) foreachBody) {
-      return this.obj.opApply(foreachBody);
-    }
-
-    void skipValue() {
-      this.obj.skipValue();
-    }
-
-    @property int delegate(scope int delegate(ref const char[])) byKey(string lastKey="") {
-      return this.obj.byKey();
+    } else static if (isSomeString!ElementType) {
+      result ~= VibeJSON(item.to!string);
+    } else static if (isArray!ElementType) {
+      result ~= item.serializeArrayToJSON();
+    } else {
+      result ~= VibeJSON(item);
     }
   }
 
-} else {
+  return result;
+}
 
-  class JSONDecoder {
-    VibeJSON obj;
+VibeJSON serializeToJSON(T)(T obj) {
+  enum fieldNames = FieldNameTuple!T;
+  VibeJSON result = VibeJSON.emptyObject;
 
-    private VibeJSON currentObj;
-    private string currentKey;
-    private ulong currentIndex = ulong.max;
-    private string byLastKey;
+  foreach(fieldName; fieldNames) {
+    static if (fieldName != "") {
+      auto outFieldName = camelCaseToUnderscores(fieldName);
+      auto field = __traits(getMember, obj, fieldName);
+      alias FieldType = typeof(field);
 
-    this(string content) {
-      this.obj = parseJsonString(content);
-      this.currentObj = obj;
-    }
-
-    private VibeJSON current() {
-      if (this.currentKey != "") {
-        return this.currentObj[this.currentKey];
-      } else if (this.currentIndex != ulong.max) {
-        return this.currentObj[this.currentIndex];
+      static if (hasUDA!(mixin("obj." ~ fieldName), JSONIgnore)) {
+        // Ignore any fields that have JSONIgnore
+        continue;
+      } else static if (is(FieldType == struct)) {
+          // This field is a struct - recurse into it
+          result[outFieldName] = field.serializeToJSON();
+      } else static if (is(FieldType == class)) {
+        static if (hasUDA!(typeof(mixin("obj." ~ fieldName)), JSONIgnore)) {
+          continue;
+        } else {
+          // This field is a class - recurse into it unless it is null
+          if (field !is null) {
+            result[outFieldName] = field.serializeToJSON();
+          }
+        }
+      } else static if (isSomeString!FieldType) {
+          // Because JSONValue only seems to work with string strings (and not char[], etc), convert all string types to string
+          result[outFieldName] = VibeJSON(field.to!string);
+      } else static if (isArray!FieldType) {
+          // Field is an array
+          result[outFieldName] = field.serializeArrayToJSON();
+      } else static if (isAssociativeArray!FieldType) {
+          // Field is an associative array
+          result[outFieldName] = field.serializeToJSON();
       } else {
-        throw new Exception("Cannot read from un keyed/indexed object.");
+          result[outFieldName] = VibeJSON(field);
       }
     }
+  }
 
-    void keySwitch(Args...)(scope void delegate()[Args.length] dlg...) {
-      VibeJSON lastObj;
-      string lastKey = this.currentKey;
+  return result;
+}
 
-      // If we have a currentKey and we're keySwitching, adjust currentObj
-      if (this.currentKey != "") {
-        lastObj = this.currentObj;
-        this.currentObj = this.currentObj[this.currentKey];
+void deserializeFromJSONArray(T)(ref T array, VibeJSON jsonData) {
+  alias ElementType = ForeachType!T;
+
+  foreach (item; jsonData) {
+    static if (is(ElementType == struct)) {
+      ElementType inst;
+      inst.deserializeFromJSON(item);
+      array ~= inst;
+    } else static if (is(ElementType == class)) {
+      auto inst = new ElementType();
+      inst.deserializeFromJSON(item);
+      array ~= inst;
+    } else static if (isSomeString!ElementType) {
+      array ~= item.to!ElementType;
+    } else static if (isArray!ElementType) {
+      ElementType subArray;
+      subArray.deserializeFromJSONArray(item);
+      array ~= subArray;
+    } else {
+      array ~= item.get!ElementType;
+    }
+  }
+}
+
+void deserializeFromJSON(T)(T sourceObj, VibeJSON sourceData) {
+  version (JSON_DEBUG) {
+    pragma(msg, "Generating Deserialization for: ", typeof(sourceObj));
+  }
+
+  string sourceFieldName, dstFieldName;
+  VibeJSON fieldData;
+
+  foreach (fieldName; FieldNameTuple!T) {
+    version (JSON_DEBUG) {
+      pragma(msg, "  -> ", fieldName);
+      writefln("%s", fieldName);
+    }
+
+    alias FieldType = typeof(__traits(getMember, sourceObj, fieldName));
+
+    // First we need to check whether we should ignore this field
+    static if (hasUDA!(mixin("sourceObj." ~ fieldName), JSONIgnore)) {
+      version (JSON_DEBUG) {
+        pragma(msg, "    -> skipping");
+        writefln("  -> skipping");
       }
+      continue;
+    } else static if ((is(FieldType == struct) || is(FieldType == class)) &&
+        hasUDA!(typeof(mixin("sourceObj." ~ fieldName)), JSONIgnore)) {
+      version (JSON_DEBUG) {
+        pragma(msg, "    -> skipping");
+        writefln("  -> skipping");
+      }
+      continue;
+    } else static if (fieldName[0] == '_') {
+      version (JSON_DEBUG) {
+        pragma(msg, "    -> skipping");
+        writefln("  -> skipping");
+      }
+      continue;
+    } else {
+      // Now we grab the data
+      static if (hasUDA!(mixin("sourceObj." ~ fieldName), JSONFlat)) {
+        fieldData = sourceData;
+      } else {
+        static if (hasUDA!(mixin("sourceObj." ~ fieldName), JSONSource)) {
+          sourceFieldName = getUDAs!(mixin("sourceObj." ~ fieldName), JSONSource)[0].src;
+        } else {
+          sourceFieldName = camelCaseToUnderscores(fieldName);
+        }
 
-      foreach (idx, arg; Args) {
-        if (this.currentObj[arg].type == VibeJSON.Type.undefined) {
+        if (
+            (sourceFieldName !in sourceData) ||
+            (sourceData[sourceFieldName].type == VibeJSON.Type.undefined) ||
+            (sourceData[sourceFieldName].type == VibeJSON.Type.null_)) {
           continue;
         }
-        this.currentKey = arg;
-        dlg[idx]();
+
+        fieldData = sourceData[sourceFieldName];
       }
 
-      this.currentKey = lastKey;
-      this.currentObj = lastObj;
-    }
-
-    T singleKey(T)(string key) {
-      return this.currentObj[key].get!T;
-    }
-
-    T read(T)() {
-      if (this.current().type == VibeJSON.Type.null_) {
-        T v;
-        return v;
+      // Now we parse the data
+      version (JSON_DEBUG) {
+        writefln("  -> src from %s", fieldData);
       }
 
-      return this.current().get!T;
-    }
-
-    T[] readArray(T)() {
-      T[] array;
-
-      foreach (ref VibeJSON item; this.currentObj[this.currentKey]) {
-        array ~= item.get!T;
+      // meh
+      static if (hasUDA!(mixin("sourceObj." ~ fieldName), JSONListToMap)) {
+        version (JSON_DEBUG) pragma(msg, "    -= JSONListToMap");
+        __traits(getMember, sourceObj, fieldName) = typeof(__traits(getMember, sourceObj, fieldName)).fromJSONArray!(
+          getUDAs!(mixin("sourceObj." ~ fieldName), JSONListToMap)[0].field
+        )(sourceObj, fieldData);
+      } else {
+        version (JSON_DEBUG) pragma(msg, "    -= loadSingleField");
+        loadSingleField!(T, FieldType)(sourceObj, __traits(getMember, sourceObj, fieldName), fieldData);
       }
-
-      return array;
-    }
-
-    VibeJSON.Type peek() {
-      return this.current().type;
-    }
-
-    int opApply(scope int delegate(const size_t) foreachBody) {
-      int i = 0;
-
-      VibeJSON lastObj = this.currentObj;
-      string lastKey = this.currentKey;
-      this.currentKey = "";
-
-      // VibeJSON item;
-      foreach (ulong idx, VibeJSON item; lastObj[lastKey]) {
-        if (item.type == VibeJSON.Type.object) {
-          this.currentObj = item;
-        } else {
-          this.currentIndex = idx;
-        }
-        i = foreachBody(0);
-      }
-
-      this.currentKey = lastKey;
-      this.currentObj = lastObj;
-      this.currentIndex = ulong.max;
-      return i;
-    }
-
-    void skipValue() {
-      this.currentKey = "";
-      this.currentIndex = ulong.max;
-    }
-
-    @property int delegate(scope int delegate(ref const char[])) byKey(string lastKey="") {
-      this.byLastKey = lastKey;
-      return &this.byKeyImpl;
-    }
-
-    private int byKeyImpl(scope int delegate(ref const char[]) foreachBody) {
-      string lastKey = this.currentKey;
-
-      foreach (string key, VibeJSON value; this.currentObj) {
-        if (key == this.byLastKey) continue;
-        this.currentKey = key;
-        foreachBody(key);
-      }
-
-      // If we have a last key, send it to the delegate now
-      if (this.byLastKey in this.currentObj) {
-        this.currentKey = this.byLastKey;
-        foreachBody(this.byLastKey);
-      }
-
-      this.currentKey = lastKey;
-      return 0;
     }
   }
+}
+
+template ArrayElementType(T : T[]) {
+  alias T ArrayElementType;
+}
+
+private bool loadSingleField(T, Z)(T sourceObj, ref Z result, VibeJSON data) {
+  static if (is(Z == struct)) {
+    result.deserializeFromJSON(data);
+  } else static if (is(Z == class)) {
+    // If we have a constructor which allows the parent object and the JSON data use it
+    static if (__traits(compiles, {
+      new Z(sourceObj, data);
+    })) {
+      result = new Z(sourceObj, data);
+      result.attach(sourceObj);
+    } else static if (hasMember!(Z, "client")) {
+      result = new Z(__traits(getMember, sourceObj, "client"), data);
+      result.attach(sourceObj);
+    } else {
+      result = new Z;
+      // TODO: might have to check null here
+      result.deserializeFromJSON(data);
+    }
+  } else static if (isSomeString!Z) {
+    static if (__traits(compiles, {
+      result = cast(Z)data.get!string;
+    })) {
+      result = cast(Z)data.get!string;
+    } else {
+      result = data.get!string.to!Z;
+    }
+  } else static if (isArray!Z) {
+    alias AT = ArrayElementType!(Z);
+
+    foreach (obj; data) {
+      AT v;
+      loadSingleField!(T, AT)(sourceObj, v, obj);
+      result ~= v;
+    }
+    // TODO: map loadSingleField over this array
+  } else static if (isIntegral!Z) {
+    if (data.type == VibeJSON.Type.string) {
+      result = data.get!string.to!Z;
+    } else {
+      result = data.get!Z;
+    }
+  } else {
+    result = data.to!Z;
+  }
+
+  return false;
+}
+
+private void attach(T, Z)(T baseObj, Z parentObj) {
+  foreach (fieldName; FieldNameTuple!T) {
+    alias FieldType = typeof(__traits(getMember, baseObj, fieldName));
+
+    static if (is(FieldType == Z)) {
+      __traits(getMember, baseObj, fieldName) = parentObj;
+    }
+  }
+}
+
+
+T deserializeFromJSON(T)(VibeJSON jsonData) {
+  T result = new T;
+  result.deserializeFromJSON(jsonData);
+  return result;
+}
+
+T[] deserializeFromJSONArray(T)(VibeJSON jsonData, T delegate(VibeJSON) cons) {
+  T[] result;
+
+  foreach (item; jsonData) {
+    result ~= cons(item);
+  }
+
+  return result;
 }

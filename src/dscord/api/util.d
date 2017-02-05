@@ -122,10 +122,6 @@ class APIResponse {
     return parseJsonString(this.content);
   }
 
-  @property JSONDecoder fastJSON() {
-    return new JSONDecoder(this.content);
-  }
-
   string header(string name, string def="") {
     if (name in this.res.headers) {
       return this.res.headers[name];

@@ -153,19 +153,22 @@ class GatewayClient {
     this.heartbeater = runTask(toDelegate(&this.heartbeat));
   }
 
-  private void emitDispatchEvent(T)(JSONDecoder obj) {
-    T v = new T(this.client, obj);
+  private void emitDispatchEvent(T)(VibeJSON obj) {
+    T v = new T(this.client, obj["d"]);
     this.eventEmitter.emit!T(v);
     v.resolveDeferreds();
     // TODO: determine if we really need to destory things here
     // v.destroy();
   }
 
-  private void handleDispatchPacket(uint seq, string type, JSONDecoder obj, size_t size) {
+  private void handleDispatchPacket(VibeJSON obj, size_t size) {
     // Update sequence number if it's larger than what we have
+    uint seq = obj["s"].get!uint;
     if (seq > this.seq) {
       this.seq = seq;
     }
+
+    string type = obj["t"].get!string;
 
     if (this.eventTracking) {
       this.eventCounter.tick(type);
@@ -270,59 +273,39 @@ class GatewayClient {
   }
 
   private void parse(string rawData) {
-    auto json = new JSONDecoder(rawData);
-
-    uint seq;
-    string type;
-    OPCode op;
+    VibeJSON json = parseJsonString(rawData);
 
     version (DEBUG_GATEWAY_DATA) {
       this.log.tracef("GATEWAY RECV: %s", rawData);
     }
 
-    foreach (key; json.byKey("d")) {
-      switch (key) {
-        case "op":
-          op = cast(OPCode)json.read!ushort;
-          break;
-        case "t":
-          type = json.read!string;
-          break;
-        case "s":
-          seq = json.read!uint;
-          break;
-        case "d":
-          switch (op) {
-            case OPCode.DISPATCH:
-              this.handleDispatchPacket(seq, type, json, rawData.length);
-              break;
-            case OPCode.HEARTBEAT:
-              this.send(new HeartbeatPacket(this.seq));
-              break;
-            case OPCode.RECONNECT:
-              this.log.warningf("Recieved RECONNECT OPCode, resetting connection...");
-              if (this.sock && this.sock.connected) this.sock.close();
-              break;
-            case OPCode.INVALID_SESSION:
-              this.log.warningf("Recieved INVALID_SESSION OPCode, resetting connection...");
-              if (this.sock && this.sock.connected) this.sock.close();
-              break;
-            case OPCode.HELLO:
-              this.log.tracef("Recieved HELLO OPCode, starting heartbeatter...");
-              json.keySwitch!("heartbeat_interval")({ this.heartbeatInterval = json.read!uint; });
-              this.heartbeater = runTask(toDelegate(&this.heartbeat));
-              break;
-            case OPCode.HEARTBEAT_ACK:
-              break;
-            default:
-              this.log.warningf("Unhandled gateway packet: %s", op);
-              break;
-          }
-          break;
-        default:
-          this.log.warningf("Unknown key hit, this should never happen... (%s)", key);
-          break;
-      }
+    OPCode op = json["op"].get!OPCode;
+
+    switch (op) {
+      case OPCode.DISPATCH:
+        this.handleDispatchPacket(json, rawData.length);
+        break;
+      case OPCode.HEARTBEAT:
+        this.send(new HeartbeatPacket(this.seq));
+        break;
+      case OPCode.RECONNECT:
+        this.log.warningf("Recieved RECONNECT OPCode, resetting connection...");
+        if (this.sock && this.sock.connected) this.sock.close();
+        break;
+      case OPCode.INVALID_SESSION:
+        this.log.warningf("Recieved INVALID_SESSION OPCode, resetting connection...");
+        if (this.sock && this.sock.connected) this.sock.close();
+        break;
+      case OPCode.HELLO:
+        this.log.tracef("Recieved HELLO OPCode, starting heartbeatter...");
+        this.heartbeatInterval = json["d"]["heartbeat_interval"].get!uint;
+        this.heartbeater = runTask(toDelegate(&this.heartbeat));
+        break;
+      case OPCode.HEARTBEAT_ACK:
+        break;
+      default:
+        this.log.warningf("Unhandled gateway packet: %s", op);
+        break;
     }
   }
 

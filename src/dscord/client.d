@@ -28,6 +28,7 @@ struct ShardInfo {
   ushort numShards = 1;
 }
 
+@JSONIgnore
 class Client {
   /** Base log */
   Logger  log;

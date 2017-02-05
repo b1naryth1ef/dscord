@@ -33,18 +33,7 @@ class Game {
     this.type = type;
   }
 
-  static Game load(JSONDecoder obj) {
-    Game inst = new Game();
-    obj.keySwitch!(
-      "name", "url", "type"
-    )(
-      { inst.name = obj.read!string; },
-      { inst.url = obj.read!string; },
-      { inst.type = cast(GameType)obj.read!ushort; },
-    );
-    return inst;
-  }
-
+  // TODO: remove
   VibeJSON dump() {
     VibeJSON obj = VibeJSON.emptyObject;
 
@@ -65,22 +54,6 @@ class Presence : IModel {
   User        user;
   Game        game;
   UserStatus  status;
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "user", "game", "status"
-    )(
-      { this.user = new User(this.client, obj); },
-      {
-        if (obj.peek != VibeJSON.Type.null_) {
-          this.game = Game.load(obj);
-        } else {
-          obj.skipValue;
-        }
-      },
-      { this.status = cast(UserStatus)obj.read!string; },
-    );
-  }
 }
 
 class User : IModel {
@@ -92,20 +65,6 @@ class User : IModel {
   string     avatar;
   bool       verified;
   string     email;
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "id", "username", "discriminator", "avatar",
-      "verified", "email"
-    )(
-      { this.id = readSnowflake(obj); },
-      { this.username = obj.read!string; },
-      { this.discriminator = obj.read!string; },
-      { this.avatar = obj.read!string; },
-      { this.verified = obj.read!bool; },
-      { this.email = obj.read!string; },
-    );
-  }
 
   override string toString() {
     return format("<User %s#%s (%s)>", this.username, this.discriminator, this.id);

@@ -19,6 +19,32 @@ interface Sendable {
   immutable(string) toSendableString();
 }
 
+/**
+  Enum of all types a message can be.
+*/
+enum MessageType {
+  DEFAULT = 0,
+  RECIPIENT_ADD = 1,
+  RECIPIENT_REMOVE = 2,
+  CALL = 3,
+  CHANNEL_NAME_CHANGE = 4,
+  CHANNEL_ICON_CHANGE = 5,
+  PINS_ADD = 6,
+}
+
+// TODO
+class MessageReaction : IModel {
+  mixin Model;
+}
+
+class MessageEmbedFooter : IModel {
+  mixin Model;
+
+  string  text;
+  string  iconURL;
+  string  proxyIconURL;
+}
+
 class MessageEmbed : IModel {
   mixin Model;
 
@@ -28,17 +54,6 @@ class MessageEmbed : IModel {
   string  url;
 
   // TODO: thumbnail, provider
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "title", "type", "description", "url"
-    )(
-      { this.title = obj.read!string; },
-      { this.type = obj.read!string; },
-      { this.description = obj.read!string; },
-      { this.url = obj.read!string; },
-    );
-  }
 }
 
 class MessageAttachment : IModel {
@@ -51,21 +66,6 @@ class MessageAttachment : IModel {
   string     proxyUrl;
   uint       height;
   uint       width;
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "id", "filename", "size", "url", "proxy_url",
-      "height", "width",
-    )(
-      { this.id = readSnowflake(obj); },
-      { this.filename = obj.read!string; },
-      { this.size = obj.read!uint; },
-      { this.url = obj.read!string; },
-      { this.proxyUrl = obj.read!string; },
-      { this.height = obj.read!uint; },
-      { this.width = obj.read!uint; },
-    );
-  }
 }
 
 class Message : IModel {
@@ -73,7 +73,6 @@ class Message : IModel {
 
   Snowflake  id;
   Snowflake  channelID;
-  Channel    channel;
   User       author;
   string     content;
   string     timestamp; // TODO: timestamps lol
@@ -84,7 +83,11 @@ class Message : IModel {
   bool       pinned;
 
   // TODO: GuildMemberMap here
+  @JSONListToMap("id")
   UserMap    mentions;
+
+  @JSONListToMap("id")
+  @JSONSource("mention_roles")
   RoleMap    roleMentions;
 
   // Embeds
@@ -93,61 +96,12 @@ class Message : IModel {
   // Attachments
   MessageAttachment[]  attachments;
 
-  this(Client client, JSONDecoder obj) {
-    super(client, obj);
+  @property Guild guild() {
+    return this.channel.guild;
   }
 
-  this(Channel channel, JSONDecoder obj) {
-    this.channel = channel;
-    super(channel.client, obj);
-  }
-
-  override void init() {
-    this.mentions = new UserMap;
-    this.roleMentions = new RoleMap;
-  }
-
-  override void load(JSONDecoder obj) {
-    // TODO: avoid leaking user
-
-    obj.keySwitch!(
-      "id", "channel_id", "content", "timestamp", "edited_timestamp", "tts",
-      "mention_everyone", "nonce", "author", "pinned", "mentions", "mention_roles",
-      // "embeds", "attachments",
-    )(
-      { this.id = readSnowflake(obj); },
-      { this.channelID = readSnowflake(obj); },
-      { this.content = obj.read!string; },
-      { this.timestamp = obj.read!string; },
-      {
-        if (obj.peek() == VibeJSON.Type.string) {
-          this.editedTimestamp = obj.read!string;
-        } else {
-          obj.skipValue;
-        }
-      },
-      { this.tts = obj.read!bool; },
-      { this.mentionEveryone = obj.read!bool; },
-      {
-        if (obj.peek() == VibeJSON.Type.string) {
-          this.nonce = obj.read!string;
-        } else if (obj.peek() == VibeJSON.Type.null_) {
-          obj.skipValue;
-        } else {
-          this.nonce = obj.read!long.to!string;
-        }
-      },
-      { this.author = new User(this.client, obj); },
-      { this.pinned = obj.read!bool; },
-      { loadMany!User(this.client, obj, (u) { this.mentions[u.id] = u; }); },
-      { obj.skipValue; },
-      // { obj.skipValue; },
-      // { obj.skipvalue; },
-    );
-
-    if (!this.channel && this.client.state.channels.has(this.channelID)) {
-      this.channel = this.client.state.channels.get(this.channelID);
-    }
+  @property Channel channel() {
+    return this.client.state.channels.get(this.channelID);
   }
 
   override string toString() {
@@ -179,7 +133,7 @@ class Message : IModel {
     specified delegate.
   */
   string replaceMentions(string delegate(Message, User) fu, string delegate(Message, Role) fr) {
-    if (!this.mentions.length) {
+    if (!this.mentions.length && !this.roleMentions.length) {
       return this.content;
     }
 
@@ -204,28 +158,28 @@ class Message : IModel {
       tts = whether this is a TTS message
   */
   Message reply(inout(string) content, string nonce=null, bool tts=false) {
-    return this.client.api.channelsMessagesCreate(this.channel.id, content, nonce, tts);
+    return this.client.api.channelsMessagesCreate(this.channelID, content, nonce, tts);
   }
 
   /**
     Sends a Sendable to the same channel as this message.
   */
   Message reply(Sendable obj) {
-    return this.client.api.channelsMessagesCreate(this.channel.id, obj.toSendableString(), null, false);
+    return this.client.api.channelsMessagesCreate(this.channelID, obj.toSendableString(), null, false);
   }
 
   /**
     Sends a new formatted message to the same channel as this message.
   */
   Message replyf(T...)(inout(string) content, T args) {
-    return this.client.api.channelsMessagesCreate(this.channel.id, format(content, args), null, false);
+    return this.client.api.channelsMessagesCreate(this.channelID, format(content, args), null, false);
   }
 
   /**
     Edits this message contents.
   */
   Message edit(inout(string) content) {
-    return this.client.api.channelsMessagesModify(this.channel.id, this.id, content);
+    return this.client.api.channelsMessagesModify(this.channelID, this.id, content);
   }
 
   /**
@@ -243,7 +197,7 @@ class Message : IModel {
       throw new PermissionsError(Permissions.MANAGE_MESSAGES);
     }
 
-    return this.client.api.channelsMessagesDelete(this.channel.id, this.id);
+    return this.client.api.channelsMessagesDelete(this.channelID, this.id);
   }
 
   /*
@@ -255,14 +209,6 @@ class Message : IModel {
       this.roleMentions.keyUnion(
         this.guild.getMember(this.client.state.me).roles
       ).length != 0;
-  }
-
-  /**
-    Guild this message was sent in (if applicable).
-  */
-  @property Guild guild() {
-    if (this.channel && this.channel.guild) return this.channel.guild;
-    return null;
   }
 
   /**

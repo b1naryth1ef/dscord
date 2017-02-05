@@ -28,22 +28,28 @@ alias EventDeferredFunc = void delegate();
   deferred-function code.
 */
 mixin template Event() {
+  @JSONIgnore
   Client client;
+
+  @JSONIgnore
+  VibeJSON raw;
 
   /**
     Array of functions to be ran when this event has completed its pass through
     the any listeners, and is ready to be destroyed.
   */
+  @JSONIgnore
   EventDeferredFunc[] deferred;
 
-  this(Client c, JSONDecoder obj) {
+  this(Client c, VibeJSON obj) {
     version (TIMING) {
       auto sw = StopWatch(AutoStart.yes);
       c.log.tracef("Starting create event for %s", this.toString);
     }
 
+    this.raw = obj;
     this.client = c;
-    this.load(obj);
+    this.deserializeFromJSON(obj);
 
     version (TIMING) {
       this.client.log.tracef("Create event for %s took %sms", this.toString,
@@ -77,18 +83,12 @@ class Ready {
 
   ushort     ver;
   string     sessionID;
+
+  @JSONSource("user")
   User       me;
+
   Guild[]    guilds;
   Channel[]  dms;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("v", "session_id", "user", "guilds")(
-      { this.ver = obj.read!ushort; },
-      { this.sessionID = obj.read!string; },
-      { this.me = new User(this.client, obj); },
-      { loadMany!Guild(this.client, obj, (g) { this.guilds ~= g; }); },
-    );
-  }
 }
 
 /**
@@ -96,8 +96,6 @@ class Ready {
 */
 class Resumed {
   mixin Event;
-
-  void load(JSONDecoder obj) {}
 }
 
 /**
@@ -107,10 +105,6 @@ class ChannelCreate {
   mixin Event;
 
   Channel  channel;
-
-  void load(JSONDecoder obj) {
-    this.channel = new Channel(this.client, obj);
-  }
 }
 
 /**
@@ -120,10 +114,6 @@ class ChannelUpdate {
   mixin Event;
 
   Channel  channel;
-
-  void load(JSONDecoder obj) {
-    this.channel = new Channel(this.client, obj);
-  }
 }
 
 /**
@@ -133,10 +123,6 @@ class ChannelDelete {
   mixin Event;
 
   Channel  channel;
-
-  void load(JSONDecoder obj) {
-    this.channel = new Channel(this.client, obj);
-  }
 }
 
 /**
@@ -145,11 +131,10 @@ class ChannelDelete {
 class GuildCreate {
   mixin Event;
 
+  @JSONFlat
   Guild  guild;
 
-  void load(JSONDecoder obj) {
-    this.guild = new Guild(this.client, obj);
-  }
+  bool unavailable;
 }
 
 /**
@@ -159,10 +144,6 @@ class GuildUpdate {
   mixin Event;
 
   Guild  guild;
-
-  void load(JSONDecoder obj) {
-    this.guild = new Guild(this.client, obj);
-  }
 }
 
 /**
@@ -173,13 +154,6 @@ class GuildDelete {
 
   Snowflake  guildID;
   bool       unavailable;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("guild_id", "unavailable")(
-      { this.guildID = readSnowflake(obj); },
-      { this.unavailable = obj.read!bool; },
-    );
-  }
 }
 
 /**
@@ -189,10 +163,6 @@ class GuildBanAdd {
   mixin Event;
 
   User  user;
-
-  void load(JSONDecoder obj) {
-    this.user = new User(this.client, obj);
-  }
 }
 
 /**
@@ -202,10 +172,6 @@ class GuildBanRemove {
   mixin Event;
 
   User  user;
-
-  void load(JSONDecoder obj) {
-    this.user = new User(this.client, obj);
-  }
 }
 
 /**
@@ -213,8 +179,6 @@ class GuildBanRemove {
 */
 class GuildEmojisUpdate {
   mixin Event;
-
-  void load(JSONDecoder obj) {}
 }
 
 /**
@@ -222,8 +186,6 @@ class GuildEmojisUpdate {
 */
 class GuildIntegrationsUpdate {
   mixin Event;
-
-  void load(JSONDecoder obj) {}
 }
 
 /**
@@ -236,6 +198,7 @@ class GuildMembersChunk {
   Snowflake guildID;
   GuildMember[] members;
 
+/+
   void load(JSONDecoder obj) {
     obj.keySwitch!("guild_id", "members")(
       { this.guildID = readSnowflake(obj); },
@@ -247,6 +210,7 @@ class GuildMembersChunk {
       member.guild = guild;
     }
   }
++/
 }
 
 /**
@@ -256,10 +220,6 @@ class GuildMemberAdd {
   mixin Event;
 
   GuildMember  member;
-
-  void load(JSONDecoder obj) {
-    this.member = new GuildMember(this.client, obj);
-  }
 }
 
 /**
@@ -270,13 +230,6 @@ class GuildMemberRemove {
 
   Snowflake  guildID;
   User       user;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("guild_id", "user")(
-      { this.guildID = readSnowflake(obj); },
-      { this.user = new User(this.client, obj); },
-    );
-  }
 }
 
 /**
@@ -288,14 +241,6 @@ class GuildMemberUpdate {
   Snowflake    guildID;
   User         user;
   Snowflake[]  roles;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("guild_id", "user", "roles")(
-      { this.guildID = readSnowflake(obj); },
-      { this.user = new User(this.client, obj); },
-      { this.roles = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
-    );
-  }
 }
 
 /**
@@ -306,13 +251,6 @@ class GuildRoleCreate {
 
   Snowflake  guildID;
   Role       role;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("guild_id", "role")(
-      { this.guildID = readSnowflake(obj); },
-      { this.role = new Role(this.client, obj); },
-    );
-  }
 }
 
 /**
@@ -323,13 +261,6 @@ class GuildRoleUpdate {
 
   Snowflake  guildID;
   Role       role;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("guild_id", "role")(
-      { this.guildID = readSnowflake(obj); },
-      { this.role = new Role(this.client, obj); },
-    );
-  }
 }
 
 /**
@@ -340,13 +271,6 @@ class GuildRoleDelete {
 
   Snowflake  guildID;
   Role       role;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("guild_id", "role")(
-      { this.guildID = readSnowflake(obj); },
-      { this.role = new Role(this.client, obj); },
-    );
-  }
 }
 
 /**
@@ -355,14 +279,12 @@ class GuildRoleDelete {
 class MessageCreate {
   mixin Event;
 
+  @JSONFlat
   Message  message;
 
   // Reference to the command event
+  @JSONIgnore
   CommandEvent commandEvent;
-
-  void load(JSONDecoder obj) {
-    this.message = new Message(this.client, obj);
-  }
 }
 
 /**
@@ -371,11 +293,8 @@ class MessageCreate {
 class MessageUpdate {
   mixin Event;
 
+  @JSONFlat
   Message  message;
-
-  void load(JSONDecoder obj) {
-    this.message = new Message(this.client, obj);
-  }
 }
 
 /**
@@ -386,13 +305,6 @@ class MessageDelete {
 
   Snowflake  id;
   Snowflake  channelID;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("id", "channel_id")(
-      { this.id = readSnowflake(obj); },
-      { this.channelID = readSnowflake(obj); },
-    );
-  }
 }
 
 /**
@@ -402,10 +314,6 @@ class PresenceUpdate {
   mixin Event;
 
   Presence presence;
-
-  void load(JSONDecoder obj) {
-    this.presence = new Presence(this.client, obj);
-  }
 }
 
 /**
@@ -417,14 +325,6 @@ class TypingStart {
   Snowflake  channelID;
   Snowflake  userID;
   ulong      timestamp;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("channel_id", "user_id", "timestamp")(
-      { this.channelID = readSnowflake(obj); },
-      { this.userID = readSnowflake(obj); },
-      { this.timestamp = obj.read!ulong; },
-    );
-  }
 }
 
 /**
@@ -432,8 +332,6 @@ class TypingStart {
 */
 class UserSettingsUpdate {
   mixin Event;
-
-  void load(JSONDecoder obj) {};
 }
 
 /**
@@ -441,8 +339,6 @@ class UserSettingsUpdate {
 */
 class UserUpdate {
   mixin Event;
-
-  void load(JSONDecoder obj) {};
 }
 
 /**
@@ -451,11 +347,8 @@ class UserUpdate {
 class VoiceStateUpdate {
   mixin Event;
 
+  @JSONFlat
   VoiceState  state;
-
-  void load(JSONDecoder obj) {
-    this.state = new VoiceState(this.client, obj);
-  }
 }
 
 /**
@@ -467,14 +360,6 @@ class VoiceServerUpdate {
   string     token;
   string     endpoint;
   Snowflake  guildID;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("token", "endpoint", "guild_id")(
-      { this.token = obj.read!string; },
-      { this.endpoint = obj.read!string; },
-      { this.guildID = readSnowflake(obj); },
-    );
-  }
 }
 
 /**
@@ -485,13 +370,6 @@ class ChannelPinsUpdate {
 
   Snowflake  channelID;
   string     lastPinTimestamp;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("channel_id", "last_pin_timestamp")(
-      { this.channelID = readSnowflake(obj); },
-      { this.lastPinTimestamp = obj.read!string; },
-    );
-  }
 }
 
 /**
@@ -502,11 +380,4 @@ class MessageDeleteBulk {
 
   Snowflake channelID;
   Snowflake[] ids;
-
-  void load(JSONDecoder obj) {
-    obj.keySwitch!("channel_id", "ids")(
-      { this.channelID = readSnowflake(obj); },
-      { this.ids = obj.readArray!(string).map!((c) => c.to!Snowflake).array; },
-    );
-  }
 }

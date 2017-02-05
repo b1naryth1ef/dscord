@@ -5,27 +5,15 @@ import std.functional,
        std.algorithm.iteration,
        std.experimental.logger;
 
+import vibe.core.core : createManualEvent, ManualEvent;
+import std.algorithm.searching : canFind, countUntil;
+import std.algorithm.mutation : remove;
+
 import dscord.api,
        dscord.types,
        dscord.client,
        dscord.gateway,
        dscord.util.emitter;
-
-enum StateFeatures {
-  GUILDS = 1 << 0,
-  CHANNELS = 1 << 1,
-  VOICE = 1 << 2,
-  GUILD_MEMBERS = 1 << 3,
-  GUILD_ROLES = 1 << 4,
-}
-
-const StateFeatures DEFAULT_STATE_FEATURES =
-  StateFeatures.GUILDS |
-  StateFeatures.CHANNELS |
-  StateFeatures.VOICE |
-  StateFeatures.GUILD_MEMBERS |
-  StateFeatures.GUILD_ROLES;
-
 
 /**
   The State class is used to track and maintain client state.
@@ -39,37 +27,52 @@ class State : Emitter {
   /// Currently logged in user, recieved from READY payload.
   User        me;
 
-  private {
-    Logger  log;
-    ulong  onReadyGuildCount;
-    StateFeatures  features;
-    EventListenerArray  listeners;
+  /*
+    TODO: all of these should contain weakrefs too the objects.
+  */
 
-    UserMap     _users;
-    GuildMap    _guilds;
-    ChannelMap  _channels;
+  /// All users we've seen
+  UserMap        users;
+
+  /// All currently loaded guilds
+  GuildMap       guilds;
+
+  /// All currently loaded DMs
+  ChannelMap     directMessages;
+
+  /// All currently loaded channels
+  ChannelMap     channels;
+
+  /// All voice states
+  VoiceStateMap  voiceStates;
+
+  /// Event triggered when all guilds are synced
+  ManualEvent  ready;
+
+  bool requestOfflineMembers = true;
+
+  private {
+    Snowflake[] awaitingCreate;
+
+    Logger  log;
+    EventListenerArray  listeners;
   }
 
-  this(Client client, StateFeatures features = DEFAULT_STATE_FEATURES) {
-    this.features = features;
+  this(Client client) {
     this.client = client;
     this.log = client.log;
     this.api = client.api;
     this.gw = client.gw;
 
-    this._guilds = new GuildMap;
-    this._channels = new ChannelMap;
-    this._users = new UserMap;
+    this.users = new UserMap;
+    this.guilds = new GuildMap;
+    this.directMessages = new ChannelMap;
+    this.channels = new ChannelMap;
+    this.voiceStates = new VoiceStateMap;
+
+    this.ready = createManualEvent();
 
     // Finally bind all events we want
-    this.bindListeners();
-  }
-
-  /**
-    Sets the state-tracking features
-  */
-  void setFeatures(StateFeatures features) {
-    this.features = features;
     this.bindListeners();
   }
 
@@ -84,147 +87,156 @@ class State : Emitter {
     this.listeners.each!((l) => l.unbind());
 
     // Always listen for ready payload
-    this.listen!Ready;
-
-    // Guilds
-    if (this.features & StateFeatures.GUILDS) {
-      this.listen!(GuildCreate, GuildUpdate, GuildDelete);
-    }
-
-    // Channels
-    if (this.features & StateFeatures.CHANNELS) {
-      this.listen!(ChannelCreate, ChannelUpdate, ChannelDelete);
-    }
-
-    // Voice State
-    if (this.features & StateFeatures.VOICE) {
-      this.listen!VoiceStateUpdate;
-    }
-
-    // Guild Members
-    if (this.features & StateFeatures.GUILD_MEMBERS) {
-      this.listen!(GuildMemberAdd, GuildMemberRemove, GuildMemberUpdate);
-    }
-
-    // Guild Roles
-    if (this.features & StateFeatures.GUILD_ROLES) {
-      this.listen!(GuildRoleCreate, GuildRoleDelete, GuildRoleUpdate);
-    }
+    this.listen!(
+      Ready, GuildCreate, GuildUpdate, GuildDelete, GuildMemberAdd, GuildMemberRemove,
+      GuildMemberUpdate, GuildMembersChunk, GuildRoleCreate, GuildRoleUpdate, GuildRoleDelete,
+      GuildEmojisUpdate, ChannelCreate, ChannelUpdate, ChannelDelete, VoiceStateUpdate, MessageCreate,
+      PresenceUpdate
+    );
   }
 
   private void onReady(Ready r) {
     this.me = r.me;
-    this.onReadyGuildCount = r.guilds.length;
+
+    foreach (guild; r.guilds) {
+      this.awaitingCreate ~= guild.id;
+    }
+
+    foreach (dm; r.dms) {
+      this.directMessages[dm.id] = dm;
+    }
   }
 
   private void onGuildCreate(GuildCreate c) {
-    this._guilds[c.guild.id] = c.guild;
+    // If this guild is "coming online" and we're awaiting its creation, clear that state here
+    if (!c.unavailable && this.awaitingCreate.canFind(c.guild.id)) {
+      this.awaitingCreate.remove(this.awaitingCreate.countUntil(c.guild.id));
 
-    if (this._guilds.length % 100 == 0)
-      this.log.infof("GUILD_CREATE, now have %s guilds", this.guilds.length);
-
-    // Add channels
-    if (this.features & StateFeatures.CHANNELS) {
-      c.guild.channels.each((c) {
-        this._channels[c.id] = c;
-      });
+      // If no other guilds are awaiting, emit the event
+      if (this.awaitingCreate.length == 0) {
+        this.ready.emit();
+      }
     }
 
-    if (this.features & StateFeatures.GUILD_MEMBERS) {
-      // Request offline members
+    this.guilds[c.guild.id] = c.guild;
+
+    c.guild.channels.each((c) {
+      this.channels[c.id] = c;
+    });
+
+    c.guild.members.each((m) {
+      this.users[m.user.id] = m.user;
+    });
+
+    c.guild.voiceStates.each((v) {
+      this.voiceStates[v.sessionID] = v;
+    });
+
+    if (this.requestOfflineMembers) {
       c.guild.requestOfflineMembers();
     }
   }
 
   private void onGuildUpdate(GuildUpdate c) {
-    if (!this._guilds.has(c.guild.id)) return;
-    this.guilds[c.guild.id].fromUpdate(c);
+    if (!this.guilds.has(c.guild.id)) return;
+    // TODO: handle updates, iterate over raw data
+    // this.guilds[c.guild.id].fromUpdate(c);
   }
 
   private void onGuildDelete(GuildDelete c) {
-    if (!this._guilds.has(c.guildID)) return;
+    if (!this.guilds.has(c.guildID)) return;
 
-    this._guilds[c.guildID].channels.each((c) {
-      destroy(c.id);
-      this._channels.remove(c.id);
-    });
+    /*
+      this._guilds[c.guildID].channels.each((c) {
+        destroy(c.id);
+        this._channels.remove(c.id);
+      });
+    */
 
-    destroy(this._guilds[c.guildID]);
-    this._guilds.remove(c.guildID);
+    this.guilds.remove(c.guildID);
   }
 
   private void onGuildMemberAdd(GuildMemberAdd c) {
-    Snowflake guildID = c.member.guild.id;
-    if (!this._guilds.has(guildID)) return;
-    this._guilds[guildID].members[c.member.user.id] = c.member;
+    if (this.users.has(c.member.user.id)) {
+      this.users[c.member.user.id] = c.member.user;
+    }
+
+    if (this.guilds.has(c.member.guild.id)) {
+      this.guilds[c.member.guild.id].members[c.member.user.id] = c.member;
+    }
   }
 
   private void onGuildMemberRemove(GuildMemberRemove c) {
-    if (!this._guilds.has(c.guildID)) return;
-    this._guilds[c.guildID].members.remove(c.user.id);
+    if (!this.guilds.has(c.guildID)) return;
+    if (!this.guilds[c.guildID].members.has(c.user.id)) return;
+    this.guilds[c.guildID].members.remove(c.user.id);
   }
 
   private void onGuildMemberUpdate(GuildMemberUpdate c) {
-    if (!this._guilds.has(c.guildID)) return;
-    if (!this._guilds[c.guildID].members.has(c.user.id)) return;
-    this._guilds[c.guildID].members[c.user.id].fromUpdate(c);
+    if (!this.guilds.has(c.guildID)) return;
+    if (!this.guilds[c.guildID].members.has(c.user.id)) return;
+    // TODO: handle updates
+    // this._guilds[c.guildID].members[c.user.id].fromUpdate(c);
   }
 
   private void onGuildRoleCreate(GuildRoleCreate c) {
-    if (!this._guilds.has(c.guildID)) return;
-    this._guilds[c.guildID].roles[c.role.id] = c.role;
+    if (!this.guilds.has(c.guildID)) return;
+    this.guilds[c.guildID].roles[c.role.id] = c.role;
   }
 
   private void onGuildRoleDelete(GuildRoleDelete c) {
-    if (!this._guilds.has(c.guildID)) return;
-    if (!this._guilds[c.guildID].roles.has(c.role.id)) return;
-    this._guilds[c.guildID].roles.remove(c.role.id);
+    if (!this.guilds.has(c.guildID)) return;
+    if (!this.guilds[c.guildID].roles.has(c.role.id)) return;
+    this.guilds[c.guildID].roles.remove(c.role.id);
   }
 
   private void onGuildRoleUpdate(GuildRoleUpdate c) {
-    if (!this._guilds.has(c.guildID)) return;
-    if (!this._guilds[c.guildID].roles.has(c.role.id)) return;
-    this._guilds[c.guildID].roles[c.role.id] = c.role;
+    if (!this.guilds.has(c.guildID)) return;
+    if (!this.guilds[c.guildID].roles.has(c.role.id)) return;
+    this.guilds[c.guildID].roles[c.role.id] = c.role;
   }
 
   private void onChannelCreate(ChannelCreate c) {
-    this._channels[c.channel.id] = c.channel;
+    this.channels[c.channel.id] = c.channel;
   }
 
   private void onChannelUpdate(ChannelUpdate c) {
-    this._channels[c.channel.id] = c.channel;
+    this.channels[c.channel.id] = c.channel;
   }
 
   private void onChannelDelete(ChannelDelete c) {
-    if (this._channels.has(c.channel.id)) {
-      destroy(this._channels[c.channel.id]);
-      this._channels.remove(c.channel.id);
+    if (this.channels.has(c.channel.id)) {
+      this.channels.remove(c.channel.id);
     }
   }
 
   private void onVoiceStateUpdate(VoiceStateUpdate u) {
     // TODO: shallow tracking, don't require guilds
-    auto guild = this._guilds.get(u.state.guildID);
+    auto guild = this.guilds.get(u.state.guildID);
+    if (!guild) return;
 
     if (!u.state.channelID) {
+      this.voiceStates.remove(u.state.sessionID);
       guild.voiceStates.remove(u.state.sessionID);
     } else {
+      this.voiceStates[u.state.sessionID] = u.state;
       guild.voiceStates[u.state.sessionID] = u.state;
     }
   }
 
-  /// GuildMap of all tracked guilds
-  @property GuildMap guilds() {
-    return this._guilds;
+  private void onGuildMembersChunk(GuildMembersChunk c) {
+    // TODO
   }
 
-  /// ChannelMap of all tracked channels
-  @property ChannelMap channels() {
-    return this._channels;
+  private void onGuildEmojisUpdate(GuildEmojisUpdate c) {
+    // TODO
   }
 
-  /// UserMap of all tracked users
-  @property UserMap users() {
-    return this._users;
+  private void onMessageCreate(MessageCreate mc) {
+    // TODO
+  }
+
+  private void onPresenceUpdate(PresenceUpdate p) {
+    // TODO
   }
 }

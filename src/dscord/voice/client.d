@@ -362,49 +362,45 @@ class VoiceClient {
     }
   }
 
-  private void dispatchVoicePacket(T)(JSONDecoder obj) {
-    T packet = new T;
-    packet.deserialize(obj);
+  private void dispatchVoicePacket(T)(VibeJSON obj) {
+    T packet = deserializeFromJSON!(T)(obj);
     this.packetEmitter.emit!T(packet);
   }
 
   private void parse(string rawData) {
-    auto json = new JSONDecoder(rawData);
+    VibeJSON json = parseJsonString(rawData);
 
-    VoiceOPCode op;
+    VoiceOPCode op = json["op"].get!VoiceOPCode;
 
-    foreach (key; json.byKey("d")) {
-      switch (key) {
-        case "op":
-          op = cast(VoiceOPCode)json.read!ushort;
-          break;
-        case "d":
-          switch (op) {
-            case VoiceOPCode.VOICE_READY:
-              this.dispatchVoicePacket!VoiceReadyPacket(json);
-              break;
-            case VoiceOPCode.VOICE_SESSION_DESCRIPTION:
-              this.dispatchVoicePacket!VoiceSessionDescriptionPacket(json);
-              break;
-            case VoiceOPCode.VOICE_HEARTBEAT:
-            case VoiceOPCode.VOICE_SPEAKING:
-              // We ignore these
-              break;
-            default:
-              this.log.warningf("Unhandled voice packet: %s", op);
-              break;
-          }
-          break;
-        default:
-          this.log.warningf("Got unexpected key for voice OP: %s: %s (%s)", op, key, json.peek);
-          break;
-      }
+    version (DEBUG_GATEWAY_DATA) {
+      this.log.tracef("VOICE RECV: %s", rawData);
+    }
+
+    switch (op) {
+      case VoiceOPCode.VOICE_READY:
+        this.dispatchVoicePacket!VoiceReadyPacket(json["d"]);
+        break;
+      case VoiceOPCode.VOICE_SESSION_DESCRIPTION:
+        this.dispatchVoicePacket!VoiceSessionDescriptionPacket(json["d"]);
+        break;
+      case VoiceOPCode.VOICE_HEARTBEAT:
+      case VoiceOPCode.VOICE_SPEAKING:
+        // Ignored
+        break;
+      default:
+        this.log.warningf("Unhandled voice packet: %s", op);
+        break;
     }
   }
 
   /// Sends a payload to the websocket
   void send(Serializable p) {
     string data = p.serialize().toString;
+
+    version (DEBUG_GATEWAY_DATA) {
+      this.log.tracef("VOICE SEND: %s", data);
+    }
+
     try {
       this.sock.send(data);
     } catch (Exception e) {

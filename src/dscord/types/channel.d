@@ -13,9 +13,9 @@ import dscord.types,
 alias ChannelMap = ModelMap!(Snowflake, Channel);
 alias PermissionOverwriteMap = ModelMap!(Snowflake, PermissionOverwrite);
 
-enum PermissionOverwriteType : string {
-	ROLE = "role",
-	MEMBER = "member" ,
+enum PermissionOverwriteType {
+  ROLE = "role",
+  MEMBER = "member" ,
 }
 
 enum ChannelType : ushort {
@@ -28,31 +28,17 @@ enum ChannelType : ushort {
 class PermissionOverwrite : IModel {
   mixin Model;
 
-	Snowflake  id;
-  Channel    channel;
+  Snowflake  id;
 
   // Overwrite type
-	PermissionOverwriteType  type;
+  PermissionOverwriteType  type;
 
-	// Permissions
-	Permission  allow;
-	Permission  deny;
+  // Permissions
+  Permission  allow;
+  Permission  deny;
 
-  this(Channel channel, JSONDecoder obj) {
-    this.channel = channel;
-    super(channel.client, obj);
-  }
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "id", "allow", "deny", "type"
-    )(
-      { this.id = readSnowflake(obj); },
-      { this.allow = Permission(obj.read!uint); },
-      { this.deny = Permission(obj.read!uint); },
-      { this.type = cast(PermissionOverwriteType)obj.read!string; },
-    );
-  }
+  // Parent channel
+  Channel    channel;
 }
 
 class Channel : IModel, IPermissible {
@@ -60,53 +46,34 @@ class Channel : IModel, IPermissible {
   mixin Permissible;
 
   Snowflake    id;
+  Snowflake    guildID;
   string       name;
   string       topic;
-  Guild        guild;
   Snowflake    lastMessageID;
   short        position;
   uint         bitrate;
-  User         recipient;
   ChannelType  type;
-  bool         isPrivate;
+
+  @JSONListToMap("id")
+  UserMap         recipients;
 
   // Overwrites
+  @JSONListToMap("id")
+  @JSONSource("permission_overwrites")
   PermissionOverwriteMap  overwrites;
 
   // Voice Connection
+  //  TODO: move?
+  @JSONIgnore
   VoiceClient  vc;
 
-  this(Client client, JSONDecoder obj) {
-    super(client, obj);
-  }
-
-  this(Guild guild, JSONDecoder obj) {
-    this.guild = guild;
-    super(guild.client, obj);
+  @property Guild guild() {
+    this.client.log.infof("%s vs %s", this.guildID, this.client.state.guilds.keys);
+    return this.client.state.guilds.get(this.guildID);
   }
 
   override void init() {
     this.overwrites = new PermissionOverwriteMap;
-  }
-
-  override void load(JSONDecoder obj) {
-    obj.keySwitch!(
-      "id", "name", "topic", "guild_id", "last_message_id", "position",
-      "bitrate", "is_private", "type", "permission_overwrites",
-    )(
-      { this.id = readSnowflake(obj); },
-      { this.name = obj.read!string; },
-      { this.topic = obj.read!string; },
-      { this.guild = this.client.state.guilds.get(readSnowflake(obj)); },
-      { this.lastMessageID = readSnowflake(obj); },
-      { this.position = obj.read!short; },
-      { this.bitrate = obj.read!uint; },
-      { this.isPrivate = obj.read!bool; },
-      { this.type = cast(ChannelType)obj.read!ushort; },
-      {
-        loadManyComplex!(Channel, PermissionOverwrite)(this, obj, (p) { this.overwrites[p.id] = p; });
-      },
-    );
   }
 
   override string toString() {
@@ -126,15 +93,26 @@ class Channel : IModel, IPermissible {
   }
 
   @property bool DM() {
-    return this.isPrivate;
+    return (
+      this.type == ChannelType.DM ||
+      this.type == ChannelType.GROUP_DM
+    );
   }
 
   @property bool voice() {
-    return this.type == ChannelType.GUILD_VOICE;
+    return (
+      this.type == ChannelType.GUILD_VOICE ||
+      this.type == ChannelType.GROUP_DM ||
+      this.type == ChannelType.DM
+    );
   }
 
   @property bool text() {
-    return this.type == ChannelType.GUILD_TEXT || this.type == ChannelType.DM;
+    return (
+      this.type == ChannelType.GUILD_TEXT ||
+      this.type == ChannelType.DM ||
+      this.type == ChannelType.GROUP_DM
+    );
   }
 
   @property auto voiceStates() {

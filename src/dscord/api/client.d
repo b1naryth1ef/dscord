@@ -116,7 +116,7 @@ class APIClient {
     Return the User object for the currently logged in user.
   */
   User usersMeGet() {
-    auto json = this.requestJSON(Routes.USERS_ME_GET()).ok().fastJSON;
+    auto json = this.requestJSON(Routes.USERS_ME_GET()).ok().vibeJSON;
     return new User(this.client, json);
   }
 
@@ -124,7 +124,7 @@ class APIClient {
     Return a User object for a Snowflake ID.
   */
   User usersGet(Snowflake id) {
-    auto json = this.requestJSON(Routes.USERS_GET(id)).fastJSON;
+    auto json = this.requestJSON(Routes.USERS_GET(id)).vibeJSON;
     return new User(this.client, json);
   }
 
@@ -133,7 +133,7 @@ class APIClient {
   */
   User usersMePatch(string username, string avatar) {
     VibeJSON data = VibeJSON(["username": VibeJSON(username), "avatar": VibeJSON(avatar)]);
-    auto json = this.requestJSON(Routes.USERS_ME_PATCH(), data).fastJSON;
+    auto json = this.requestJSON(Routes.USERS_ME_PATCH(), data).vibeJSON;
     return new User(this.client, json);
   }
 
@@ -141,8 +141,8 @@ class APIClient {
     Returns a list of Guild objects for the current user.
   */
   Guild[] usersMeGuildsList() {
-    auto json = this.requestJSON(Routes.USERS_ME_GUILDS_LIST()).ok().fastJSON;
-    return loadManyArray!Guild(this.client, json);
+    auto json = this.requestJSON(Routes.USERS_ME_GUILDS_LIST()).ok().vibeJSON;
+    return deserializeFromJSONArray(json, v => new Guild(this.client, v));
   }
 
   /**
@@ -156,8 +156,8 @@ class APIClient {
     Returns a list of Channel objects for the current user.
   */
   Channel[] usersMeDMSList() {
-    auto json = this.requestJSON(Routes.USERS_ME_DMS_LIST()).ok().fastJSON;
-    return loadManyArray!Channel(this.client, json);
+    auto json = this.requestJSON(Routes.USERS_ME_DMS_LIST()).ok().vibeJSON;
+    return deserializeFromJSONArray(json, v => new Channel(this.client, v));
   }
 
   /**
@@ -165,7 +165,7 @@ class APIClient {
   */
   Channel usersMeDMSCreate(Snowflake recipientID) {
     VibeJSON payload = VibeJSON(["recipient_id": VibeJSON(recipientID)]);
-    auto json = this.requestJSON(Routes.USERS_ME_DMS_CREATE()).ok().fastJSON;
+    auto json = this.requestJSON(Routes.USERS_ME_DMS_CREATE()).ok().vibeJSON;
     return new Channel(this.client, json);
   }
 
@@ -173,7 +173,7 @@ class APIClient {
     Returns a Guild for a Snowflake ID.
   */
   Guild guildsGet(Snowflake id) {
-    auto json = this.requestJSON(Routes.GUILDS_GET(id)).ok().fastJSON;
+    auto json = this.requestJSON(Routes.GUILDS_GET(id)).ok().vibeJSON;
     return new Guild(this.client, json);
   }
 
@@ -181,7 +181,7 @@ class APIClient {
     Modifies a guild.
   */
   Guild guildsModify(Snowflake id, VibeJSON obj) {
-    auto json = this.requestJSON(Routes.GUILDS_MODIFY(id), obj).fastJSON;
+    auto json = this.requestJSON(Routes.GUILDS_MODIFY(id), obj).vibeJSON;
     return new Guild(this.client, json);
   }
 
@@ -196,8 +196,8 @@ class APIClient {
     Returns a list of channels for a Guild.
   */
   Channel[] guildsChannelsList(Snowflake id) {
-    auto json = this.requestJSON(Routes.GUILDS_CHANNELS_LIST(id)).ok().fastJSON;
-    return loadManyArray!Channel(this.client, json);
+    auto json = this.requestJSON(Routes.GUILDS_CHANNELS_LIST(id)).ok().vibeJSON;
+    return deserializeFromJSONArray(json, v => new Channel(this.client, v));
   }
 
   /**
@@ -218,7 +218,7 @@ class APIClient {
     ]);
 
     // Send payload and return message object
-    auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_CREATE(chan), payload).ok().fastJSON;
+    auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_CREATE(chan), payload).ok().vibeJSON;
     return new Message(this.client, json);
   }
 
@@ -228,7 +228,7 @@ class APIClient {
   Message channelsMessagesModify(Snowflake chan, Snowflake msg, inout(string) content) {
     VibeJSON payload = VibeJSON(["content": VibeJSON(content)]);
 
-    auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_MODIFY(chan, msg), payload).ok().fastJSON;
+    auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_MODIFY(chan, msg), payload).ok().vibeJSON;
     return new Message(this.client, json);
   }
 

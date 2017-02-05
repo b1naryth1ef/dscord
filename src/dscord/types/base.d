@@ -7,7 +7,7 @@ import std.conv,
        std.algorithm,
        std.traits,
        std.functional,
-       std.algorithm.sorting;
+       std.algorithm.setops : nWayUnion;
 
 import dscord.client;
 
@@ -141,26 +141,20 @@ class AsyncChainer(T) {
   utility constructor code.
 */
 class IModel {
+  @JSONIgnore
   Client  client;
 
   void init() {};
-  void load(JSONDecoder obj) {};
+  // void load(JSONDecoder obj) {};
 
-  this(Client client, JSONDecoder obj) {
-    version (TIMING) {
-      client.log.tracef("Starting creation of model %s", this.toString);
-      auto sw = StopWatch(AutoStart.yes);
-    }
+  this() {}
 
-    this.client = client;
-    this.init();
+  this(IModel parent, VibeJSON obj) {
+    throw new Exception(":(");
+  }
 
-    if (obj) this.load(obj);
-
-    version (TIMING) {
-      this.client.log.tracef("Finished creation of model %s in %sms", this.toString,
-        sw.peek().to!("msecs", real));
-    }
+  this(Client client, VibeJSON obj) {
+    throw new Exception(":(");
   }
 }
 
@@ -169,8 +163,28 @@ class IModel {
   a base constructor that calls the parent IModel constructor.
 */
 mixin template Model() {
-  this(Client client, JSONDecoder obj) {
-    super(client, obj);
+  this(IModel parent, VibeJSON obj) {
+    this.load(parent.client, obj);
+  }
+ 
+  this(Client client, VibeJSON obj) {
+    this.load(client, obj);
+  }
+
+  void load(Client client, VibeJSON obj) {
+    version (TIMING) {
+      client.log.tracef("Starting creation of model %s", this.toString);
+      auto sw = StopWatch(AutoStart.yes);
+    }
+
+    this.client = client;
+    this.deserializeFromJSON(obj);
+    this.init();
+
+    version (TIMING) {
+      this.client.log.tracef("Finished creation of model %s in %sms", this.toString,
+        sw.peek().to!("msecs", real));
+    }
   }
 
   /// Allows chaining based on a delay. Returns a new AsyncChainer of this type.
@@ -186,50 +200,7 @@ mixin template Model() {
   void call(string blah, T...)(T args) {
     __traits(getMember, this, blah)(args);
   }
-}
 
-/**
-  Utility method which reads a Snowflake off of a fast JSON object.
-*/
-Snowflake readSnowflake(JSONDecoder obj) {
-  string data = obj.read!string;
-  if (!data) return 0;
-  return data.to!Snowflake;
-}
-
-/**
-  Utility method which loads many of a model T off of a fast JSON object. Returns
-  an array of model T objects.
-*/
-T[] loadManyArray(T)(Client client, JSONDecoder obj) {
-  T[] data;
-
-  foreach (item; obj) {
-    data ~= new T(client, obj);
-  }
-
-  return data;
-}
-
-/**
-  Utility method that loads many of a model T off of a fast JSON object. Calls
-  the delegate f for each member loaded, returning nothing.
-*/
-void loadMany(T)(Client client, JSONDecoder obj, void delegate(T) F) {
-  foreach (item; obj) {
-    F(new T(client, obj));
-  }
-}
-
-/**
-  Utility method that loads many of a model T off of a fast JSON object, passing
-  in a sub-type TSub as the first argument to the constructor. Calls the delegate
-  f for each member loaded, returning nothing.
-*/
-void loadManyComplex(TSub, T)(TSub sub, JSONDecoder obj, void delegate(T) F) {
-  foreach (item; obj) {
-    F(new T(sub, obj));
-  }
 }
 
 /**
@@ -239,6 +210,17 @@ void loadManyComplex(TSub, T)(TSub sub, JSONDecoder obj, void delegate(T) F) {
 class ModelMap(TKey, TValue) {
   /// Underlying associative array
   TValue[TKey]  data;
+
+  static ModelMap!(TKey, TValue) fromJSONArray(string key)(IModel model, VibeJSON data) {
+    auto result = new ModelMap!(TKey, TValue);
+
+    foreach (value; data) {
+      TValue v = new TValue(model.client, value);
+      result[__traits(getMember, v, key)] = v;
+    }
+
+    return result;
+  }
 
   /// Set the key to a value.
   TValue set(TKey key, TValue value) {
@@ -360,7 +342,7 @@ class ModelMap(TKey, TValue) {
 
   /// Return the set-union for an array of keys
   TKey[] keyUnion(TKey[] other) {
-    return merge(this.keys, other).array;
+    return nWayUnion([this.keys, other]).array;
   }
 
   int opApply(int delegate(ref TKey, ref TValue) dg) {

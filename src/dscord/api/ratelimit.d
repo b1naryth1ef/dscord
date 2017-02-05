@@ -7,7 +7,6 @@ import std.conv,
        std.math,
        std.random,
        core.time,
-       core.sync.condition,
        core.sync.mutex;
 
 import vibe.core.core;
