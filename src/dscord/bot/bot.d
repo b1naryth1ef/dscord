@@ -185,9 +185,6 @@ class Bot {
     // Strip all mentions and spaces from the message
     string contents = strip(event.msg.withoutMentions);
 
-    this.log.infof("content: `%s`", event.msg.content);
-    this.log.infof("contents: `%s`", contents);
-
     // If the message doesn't start with the command prefix, break
     if (this.config.cmdPrefix.length) {
       if (!contents.startsWith(this.config.cmdPrefix)) {
@@ -203,8 +200,6 @@ class Bot {
     foreach (ref plugin; this.plugins.values) {
       foreach (ref command; plugin.commands) {
         if (!command.enabled) continue;
-
-        this.log.infof("trying match of %s against %s", command, contents);
 
         auto c = command.match(contents);
         if (c.length) {

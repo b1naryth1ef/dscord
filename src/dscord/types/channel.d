@@ -68,7 +68,6 @@ class Channel : IModel, IPermissible {
   VoiceClient  vc;
 
   @property Guild guild() {
-    this.client.log.infof("%s vs %s", this.guildID, this.client.state.guilds.keys);
     return this.client.state.guilds.get(this.guildID);
   }
 
