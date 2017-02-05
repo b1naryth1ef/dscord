@@ -143,6 +143,7 @@ class GuildCreate {
 class GuildUpdate {
   mixin Event;
 
+  @JSONFlat
   Guild  guild;
 }
 
@@ -219,6 +220,7 @@ class GuildMembersChunk {
 class GuildMemberAdd {
   mixin Event;
 
+  @JSONFlat
   GuildMember  member;
 }
 

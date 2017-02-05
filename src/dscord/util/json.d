@@ -11,7 +11,7 @@ import std.conv,
 
 public import vibe.data.json : VibeJSON = Json, parseJsonString;
 
-import dscord.types.base : IModel, Snowflake;
+import dscord.types.base : IModel;
 public import dscord.util.string : camelCaseToUnderscores;
 
 

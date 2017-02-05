@@ -30,7 +30,7 @@ import dscord.types,
        dscord.util.ticker;
 
 /// VoiceClient connection states
-enum VoiceState {
+enum VoiceStatus {
   DISCONNECTED = 0,
   CONNECTING = 1,
   CONNECTED = 2,
@@ -146,7 +146,7 @@ class VoiceClient {
   UDPVoiceClient  udp;
 
   // Current voice connection state
-  VoiceState state = VoiceState.DISCONNECTED;
+  VoiceStatus state = VoiceStatus.DISCONNECTED;
 
   // Currently playing item + player task
   Playable  playable;
@@ -242,7 +242,7 @@ class VoiceClient {
     sleep(250.msecs);
 
     // Set the state to READY, we can now send voice data
-    this.state = VoiceState.READY;
+    this.state = VoiceStatus.READY;
 
     // Emit the connected event
     this.waitForConnected.emit();
@@ -342,7 +342,7 @@ class VoiceClient {
 
   /// Plays a Playable
   VoiceClient play(Playable p) {
-    assert(this.state == VoiceState.READY, "Must be connected to play audio");
+    assert(this.state == VoiceStatus.READY, "Must be connected to play audio");
 
     // If we are currently playing something, kill it
     if (this.playerTask && this.playerTask.running) {
@@ -355,7 +355,7 @@ class VoiceClient {
   }
 
   private void heartbeat(ushort heartbeatInterval) {
-    while (this.state >= VoiceState.CONNECTED) {
+    while (this.state >= VoiceStatus.CONNECTED) {
       uint unixTime = cast(uint)core.stdc.time.time(null);
       this.send(new VoiceHeartbeatPacket(unixTime * 1000));
       sleep(heartbeatInterval.msecs);
@@ -437,7 +437,7 @@ class VoiceClient {
     this.log.warningf("Lost voice websocket connection in state %s", this.state);
 
     // If we where in state READY, reconnect fully
-    if (this.state == VoiceState.READY) {
+    if (this.state == VoiceStatus.READY) {
       this.log.warning("Attempting reconnection of voice connection");
       this.disconnect(false);
       this.connect();
@@ -457,7 +457,7 @@ class VoiceClient {
 
     // If we're connected (e.g. have a WS open), close it so we can reconnect
     //  to the new voice endpoint.
-    if (this.state >= VoiceState.CONNECTED) {
+    if (this.state >= VoiceStatus.CONNECTED) {
       this.log.warningf("Voice server updated while connected to voice, attempting server change");
 
       // If we're playing, pause until we finish reconnecting
@@ -467,12 +467,12 @@ class VoiceClient {
       }
 
       // Set state before we close so we don't attempt to reconnect
-      this.state = VoiceState.CONNECTED;
+      this.state = VoiceStatus.CONNECTED;
       if (this.sock.connected) this.sock.close();
     }
 
     // Make sure our state is now CONNECTED
-    this.state = VoiceState.CONNECTED;
+    this.state = VoiceStatus.CONNECTED;
 
     // Grab endpoint and create a proper URL out of it
     this.endpoint = URL("ws", event.endpoint.split(":")[0], 0, Path());
@@ -490,7 +490,7 @@ class VoiceClient {
 
   /// Attempt a connection to the voice channel this VoiceClient is attached to.
   bool connect(Duration timeout=5.seconds) {
-    this.state = VoiceState.CONNECTING;
+    this.state = VoiceStatus.CONNECTING;
     this.waitForConnected = createManualEvent();
 
     // Start listening for VoiceServerUpdates
@@ -498,7 +498,7 @@ class VoiceClient {
       &this.onVoiceServerUpdate
     );
 
-    // Send our VoiceStateUpdate
+    // Send our VoiceStateUpdate 
     this.client.gw.send(new VoiceStateUpdatePacket(
       this.channel.guild.id,
       this.channel.id,
@@ -537,8 +537,8 @@ class VoiceClient {
     this.updateListener.unbind();
 
     // If we're actually connected, close the voice socket
-    if (this.state >= VoiceState.CONNECTING) {
-      this.state = VoiceState.DISCONNECTED;
+    if (this.state >= VoiceStatus.CONNECTING) {
+      this.state = VoiceStatus.DISCONNECTED;
       if (this.sock && this.sock.connected) this.sock.close();
     }
 
@@ -550,6 +550,6 @@ class VoiceClient {
     }
 
     // Finally set state to disconnected
-    this.state = VoiceState.DISCONNECTED;
+    this.state = VoiceStatus.DISCONNECTED;
   }
 }
