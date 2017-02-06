@@ -5,7 +5,7 @@ import std.functional,
        std.algorithm.iteration,
        std.experimental.logger;
 
-import vibe.core.core : createManualEvent, ManualEvent;
+import vibe.core.sync : createManualEvent, ManualEvent;
 import std.algorithm.searching : canFind, countUntil;
 import std.algorithm.mutation : remove;
 

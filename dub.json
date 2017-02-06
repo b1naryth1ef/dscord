@@ -6,7 +6,8 @@
   "license": "zlib",
   "dependencies": {
     "shaker": "~>0.0.7",
-    "vibe-d": "~>0.7.29",
+    "vibe-d:core": "~>0.8.0-beta.2",
+    "vibe-d:http": "~>0.8.0-beta.2",
     "dcad": "~>0.0.8"
   },
   "configurations": [

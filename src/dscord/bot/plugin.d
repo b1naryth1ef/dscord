@@ -9,7 +9,7 @@ import std.path,
        std.variant;
 
 import std.experimental.logger,
-       vibe.d : runTask;
+       vibe.core.core : runTask;
 
 import dscord.bot,
        dscord.types,
