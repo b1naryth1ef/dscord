@@ -244,7 +244,7 @@ class APIClient {
   */
   void channelsMessagesDeleteBulk(Snowflake chan, Snowflake[] msgs) {
     VibeJSON payload = VibeJSON(["messages": VibeJSON(array(map!((m) => VibeJSON(m))(msgs)))]);
-    this.requestJSON(Routes.CHANNELS_MESSAGES_DELETE_BULK(chan)).ok();
+    this.requestJSON(Routes.CHANNELS_MESSAGES_DELETE_BULK(chan), payload).ok();
   }
 
   /**
