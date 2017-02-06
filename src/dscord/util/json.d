@@ -198,6 +198,10 @@ template ArrayElementType(T : T[]) {
 }
 
 private bool loadSingleField(T, Z)(T sourceObj, ref Z result, VibeJSON data) {
+  version (JSON_DEBUG) {
+    writefln("  -> parsing type %s from %s", fullyQualifiedName!Z, data.type);
+  }
+
   static if (is(Z == struct)) {
     result.deserializeFromJSON(data);
   } else static if (is(Z == class)) {
@@ -212,7 +216,6 @@ private bool loadSingleField(T, Z)(T sourceObj, ref Z result, VibeJSON data) {
       result.attach(sourceObj);
     } else {
       result = new Z;
-      // TODO: might have to check null here
       result.deserializeFromJSON(data);
     }
   } else static if (isSomeString!Z) {
@@ -231,12 +234,15 @@ private bool loadSingleField(T, Z)(T sourceObj, ref Z result, VibeJSON data) {
       loadSingleField!(T, AT)(sourceObj, v, obj);
       result ~= v;
     }
-    // TODO: map loadSingleField over this array
   } else static if (isIntegral!Z) {
     if (data.type == VibeJSON.Type.string) {
       result = data.get!string.to!Z;
     } else {
-      result = data.get!Z;
+      static if (__traits(compiles, { result = data.to!Z; })) {
+        result = data.to!Z;
+      } else {
+        result = data.get!Z;
+      }
     }
   } else {
     result = data.to!Z;

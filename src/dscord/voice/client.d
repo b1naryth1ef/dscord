@@ -21,6 +21,7 @@ import vibe.core.core,
 
 import dcad.types : DCAFile;
 
+import shaker : crypto_secretbox_easy;
 
 import dscord.types,
        dscord.voice,
@@ -167,6 +168,11 @@ class VoiceClient {
     // Heartbeater task
     Task  heartbeater;
 
+    // Secret key + encryption state
+    ubyte[32] secretKey;
+    ubyte[12] headerRaw;
+    ubyte[24] nonceRaw;
+
     // Various connection attributes
     string  token;
     URL     endpoint;
@@ -228,13 +234,18 @@ class VoiceClient {
       return;
     }
 
+    // TODO: ensure the mode is supported
+
     // Select the protocol
     //  TODO: encryption/xsalsa
-    this.send(new VoiceSelectProtocolPacket("udp", "plain", this.udp.ip, this.udp.port));
+    this.send(new VoiceSelectProtocolPacket("udp", "xsalsa20_poly1305", this.udp.ip, this.udp.port));
   }
 
   private void handleVoiceSessionDescription(VoiceSessionDescriptionPacket p) {
     this.log.tracef("Recieved VoiceSessionDescription, finished connection sequence.");
+
+    this.secretKey = cast(ubyte[32])p.secretKey[0..32];
+    this.log.tracef("secret_key %s", this.secretKey);
 
     // Toggle our voice speaking state so everyone learns our SSRC
     this.send(new VoiceSpeakingPacket(true, 0));
@@ -325,7 +336,23 @@ class VoiceClient {
       // Get the next frame from the playable, and send it
       frame = this.playable.nextFrame();
       header.seq++;
-      this.udp.conn.send(header.pack() ~ frame);
+
+      // Encrypt the packet
+      this.headerRaw = header.pack();
+      this.nonceRaw[0..12] = headerRaw;
+
+      ubyte[] payload;
+      payload.length = 16 + frame.length;
+
+      assert(crypto_secretbox_easy(
+        payload.ptr,
+        frame.ptr, frame.length,
+        this.nonceRaw,
+        this.secretKey,
+      ) == 0);
+
+      // And send the header + encrypted payload
+      this.udp.conn.send(this.headerRaw ~ payload);
       header.ts += this.playable.getFrameSize();
 
       // Wait until its time to play the next frame
@@ -498,7 +525,7 @@ class VoiceClient {
       &this.onVoiceServerUpdate
     );
 
-    // Send our VoiceStateUpdate 
+    // Send our VoiceStateUpdate
     this.client.gw.send(new VoiceStateUpdatePacket(
       this.channel.guild.id,
       this.channel.id,

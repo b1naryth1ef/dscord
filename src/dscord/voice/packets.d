@@ -119,13 +119,5 @@ class VoiceSpeakingPacket : BasePacket, Serializable {
 }
 
 class VoiceSessionDescriptionPacket : BasePacket, Deserializable {
-  // string  secretKey;
-
-  /*
-  void deserialize(JSONDecoder obj) {
-    /+ obj.keySwitch!("secret_key")(
-      { this.secretKey = obj.read!string; }
-    ); +/
-  }
-  */
+  byte[]  secretKey;
 }
