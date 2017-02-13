@@ -4,28 +4,37 @@
   "authors": ["Andrei Zbikowski"],
   "homepage": "http://github.com/b1naryth1ef/dscord",
   "license": "zlib",
+  "targetType": "library",
   "dependencies": {
-    "shaker": "~>0.0.7",
+    "shaker": "~>0.0.8",
     "vibe-d:core": "~>0.8.0-beta.3",
     "vibe-d:http": "~>0.8.0-beta.3",
-    "dcad": "~>0.0.8"
+    "dcad": "~>0.0.9"
   },
   "configurations": [
     {
-      "name": "dscord-linux",
-      "targetType": "library",
+      "name": "dscord-linux-static-x64",
+      "platforms": ["linux", "x86_64"],
+      "subConfigurations": {
+        "shaker": "shaker-static-x64",
+        "opus": "opus-static-x64"
+      }
+    },
+    {
+      "name": "dscord-linux-dynamic",
       "platforms": ["linux"],
-      "versions": []
+      "subConfigurations": {
+        "shaker": "shaker-dynamic",
+        "opus": "opus-dynamic"
+      }
     },
     {
       "name": "dscord-osx",
-      "targetType": "library",
       "lflags": ["-L/usr/local/opt/openssl/lib"],
       "platforms": ["OSX"]
     },
     {
       "name": "dscord-windows",
-      "targetType": "library",
       "platforms": ["Windows"]
     }
   ],

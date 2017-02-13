@@ -3,5 +3,17 @@
   "targetType": "executable",
   "dependencies": {
     "dscord": {"path": "../"}
-  }
+  },
+  "configurations": [
+    {
+      "name": "dscord-examples-linux-static-x64",
+      "subConfigurations": {
+        "dscord": "dscord-linux-static-x64"
+      },
+      "platforms": ["linux", "x86_64"]
+    },
+    {
+      "name": "dscord"
+    }
+  ]
 }

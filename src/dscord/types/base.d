@@ -163,10 +163,12 @@ class IModel {
   a base constructor that calls the parent IModel constructor.
 */
 mixin template Model() {
+  this() {}
+
   this(IModel parent, VibeJSON obj) {
     this.load(parent.client, obj);
   }
- 
+
   this(Client client, VibeJSON obj) {
     this.load(client, obj);
   }

@@ -27,6 +27,7 @@ struct JSONListToMap {
 }
 
 
+/+
 VibeJSON serializeArrayToJSON(T)(in ref T array) if (isArray!T) {
   alias ElementType = ForeachType!T;
   VibeJSON result = VibeJSON.emptyArray;
@@ -92,28 +93,83 @@ VibeJSON serializeToJSON(T)(T obj) {
 
   return result;
 }
++/
 
-void deserializeFromJSONArray(T)(ref T array, VibeJSON jsonData) {
-  alias ElementType = ForeachType!T;
+VibeJSON serializeToJSON(T)(T sourceObj, string[] ignoredFields = []) {
+  import std.algorithm : canFind;
 
-  foreach (item; jsonData) {
-    static if (is(ElementType == struct)) {
-      ElementType inst;
-      inst.deserializeFromJSON(item);
-      array ~= inst;
-    } else static if (is(ElementType == class)) {
-      auto inst = new ElementType();
-      inst.deserializeFromJSON(item);
-      array ~= inst;
-    } else static if (isSomeString!ElementType) {
-      array ~= item.to!ElementType;
-    } else static if (isArray!ElementType) {
-      ElementType subArray;
-      subArray.deserializeFromJSONArray(item);
-      array ~= subArray;
-    } else {
-      array ~= item.get!ElementType;
+  version (JSON_DEBUG_S) {
+    pragma(msg, "Generating Serialization for: ", typeof(sourceObj));
+  }
+
+  VibeJSON result = VibeJSON.emptyObject;
+  string sourceFieldName, dstFieldName;
+
+  foreach (fieldName; FieldNameTuple!T) {
+    // Runtime check if we are being ignored
+    if (ignoredFields.canFind(fieldName)) continue;
+
+    version(JSON_DEBUG_S) {
+      pragma(msg, "  -> ", fieldName);
     }
+
+    alias FieldType = typeof(__traits(getMember, sourceObj, fieldName));
+
+    static if (hasUDA!(mixin("sourceObj." ~ fieldName), JSONIgnore)) {
+      version (JSON_DEBUG) {
+        pragma(msg, "    -> skipping");
+        writefln("  -> skipping");
+      }
+      continue;
+    } else static if ((is(FieldType == struct) || is(FieldType == class)) &&
+        hasUDA!(typeof(mixin("sourceObj." ~ fieldName)), JSONIgnore)) {
+      version (JSON_DEBUG) {
+        pragma(msg, "    -> skipping");
+        writefln("  -> skipping");
+      }
+      continue;
+    } else static if (fieldName[0] == '_') {
+      version (JSON_DEBUG) {
+        pragma(msg, "    -> skipping");
+        writefln("  -> skipping");
+      }
+      continue;
+    } else {
+        static if (hasUDA!(mixin("sourceObj." ~ fieldName), JSONSource)) {
+          dstFieldName = getUDAs!(mixin("sourceObj." ~ fieldName), JSONSource)[0].src;
+        } else {
+          dstFieldName = camelCaseToUnderscores(fieldName);
+        }
+
+
+      static if (hasUDA!(mixin("sourceObj." ~ fieldName), JSONListToMap)) {
+        version (JSON_DEBUG) pragma(msg, "    -= TODO");
+        // TODO
+        /+
+          __traits(getMember, sourceObj, fieldName) = typeof(__traits(getMember, sourceObj, fieldName)).fromJSONArray!(
+            getUDAs!(mixin("sourceObj." ~ fieldName), JSONListToMap)[0].field
+          )(sourceObj, fieldData);
+        +/
+      } else {
+        version (JSON_DEBUG) pragma(msg, "    -= dumpSingleField");
+        result[dstFieldName] = dumpSingleField(mixin("sourceObj." ~ fieldName));
+      }
+    }
+  }
+
+  return result;
+}
+
+private VibeJSON dumpSingleField(T)(ref T field) {
+  static if (is(T == struct) || is(T == class)) {
+    return field.serializeToJSON;
+  } else static if (isSomeString!T) {
+    return VibeJSON(field);
+  } else static if (isArray!T) {
+    return VibeJSON();
+    // TODO
+  } else {
+    return VibeJSON(field);
   }
 }
 

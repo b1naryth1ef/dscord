@@ -40,7 +40,7 @@ class BasicPlugin : Plugin {
 
   @Command("ping")
   void onPing(CommandEvent event) {
-    event.msg.reply("Pong!");
+    event.msg.reply(format("Pong: %s", event.msg.author.serializeToJSON));
   }
 
   //An example command that clears messages in the channel
