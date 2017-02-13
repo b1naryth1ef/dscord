@@ -43,6 +43,42 @@ class BasicPlugin : Plugin {
     event.msg.reply("Pong!");
   }
 
+  //An example command that clears messages in the channel
+  @Command("clear")
+  void onClearMessages(CommandEvent event) {
+    uint limit = 100;
+
+    //This command can take an integer argument.
+    if(event.args.length > 0){
+      try {
+        limit = event.args[0].to!int;
+      }
+      catch(Exception e){
+        event.msg.reply("You must supply a number of messages to clear (100 max).\n```" ~
+        this.bot.config.cmdPrefix ~ "clear <number>```");
+        return;
+      }
+    }
+
+    //Delete the command message itself
+    event.msg.del();
+
+    try {
+      Message[] messages = this.client.getMessages(event.msg.channelID, limit, event.msg.id);
+
+      if(messages.length > 0){
+        this.client.deleteMessages(event.msg.channelID, messages);
+
+        event.msg.replyf("I deleted %s messages for you.", messages.length).after(3.seconds).del();
+      }
+    }
+    catch(Exception e){
+      event.msg.replyf("%s", e.msg);
+      return;
+    }
+
+  }
+
   @Command("sound")
   void onSound(CommandEvent event) {
     auto chan = this.userVoiceChannel(event.msg.guild, event.msg.author);
@@ -72,7 +108,7 @@ class BasicPlugin : Plugin {
   void onWhereAmI(CommandEvent event) {
     auto chan = this.userVoiceChannel(event.msg.guild, event.msg.author);
     if (chan) {
-      event.msg.reply(format("Your in channel `%s`", chan.name));
+      event.msg.reply(format("You're in channel `%s`", chan.name));
     } else {
       event.msg.reply("You are not in a voice channel!");
     }

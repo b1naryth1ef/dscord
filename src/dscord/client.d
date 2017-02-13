@@ -72,18 +72,49 @@ class Client {
   }
 
   /**
+    Gets an array of messages for a given channel.
+
+    Params:
+      channelID = the channelID all the messages originate from.
+      limit = the number of messages to retrieve.
+      msgID = the message which other messages are selected, with respect to the filter
+      filter = get messages before, around, or after the supplied msgID
+  */
+  Message[] getMessages(Snowflake channelID, uint limit = 100, Snowflake msgID = 0, MessageFilter filter = MessageFilter.BEFORE) {
+    return this.api.channelsMessagesList(channelID, limit, filter, msgID);
+  }
+
+  /**
+    Deletes an array of messages for a given channel, properly bulking them
+    if required.
+
+    Params:
+      channelID = the channelID all the messages originate from.
+      messages = the array of messages.
+  */
+  void deleteMessages(Snowflake channelID, Message[] messages) {
+    Snowflake[] msgIDs;
+
+    foreach(message; messages){
+      msgIDs ~= message.id;
+    }
+    
+    return deleteMessages(channelID, msgIDs);
+  }
+
+  /**
     Deletes an array of message IDs for a given channel, properly bulking them
     if required.
 
     Params:
       channelID = the channelID all the messages originate from
-      messages = the array of message IDs
+      msgIDs = the array of message IDs
   */
-  void deleteMessages(Snowflake channelID, Snowflake[] messages) {
-    if (messages.length <= 2) {
-      messages.each!(x => this.api.channelsMessagesDelete(channelID, x));
+  void deleteMessages(Snowflake channelID, Snowflake[] msgIDs) {
+    if (msgIDs.length <= 2) {
+      msgIDs.each!(x => this.api.channelsMessagesDelete(channelID, x));
     } else {
-      this.api.channelsMessagesDeleteBulk(channelID, messages);
+      this.api.channelsMessagesDeleteBulk(channelID, msgIDs);
     }
   }
 

@@ -13,13 +13,23 @@ import std.conv,
 
 import vibe.core.core,
        vibe.http.client,
-       vibe.stream.operations;
+       vibe.stream.operations,
+       vibe.textfilter.urlencode;
 
 import dscord.api,
        dscord.info,
        dscord.types,
        dscord.api.routes,
        dscord.api.ratelimit;
+
+/**
+  How messages are returned with respect to a provided messageID.
+*/
+enum MessageFilter : string {
+  AROUND = "around",
+  BEFORE = "before",
+  AFTER = "after"
+}
 
 /**
   APIClient is the base abstraction for interacting with the Discord API.
@@ -50,7 +60,18 @@ class APIClient {
       route = route to make the request for
   */
   APIResponse requestJSON(CompiledRoute route) {
-    return requestJSON(route, "");
+    return requestJSON(route, null, "");
+  }
+
+  /**
+    Makes a HTTP request to the API (with JSON body), returning an APIResponse
+
+    Params:
+      route = route to make the request for
+      params = HTTP parameter hash table to pass to the URL router
+  */
+  APIResponse requestJSON(CompiledRoute route, string[string] params) {
+    return requestJSON(route, params, "");
   }
 
   /**
@@ -61,7 +82,7 @@ class APIClient {
       obj = VibeJSON object for the JSON body
   */
   APIResponse requestJSON(CompiledRoute route, VibeJSON obj) {
-    return requestJSON(route, obj.toString);
+    return requestJSON(route, null, obj.toString);
   }
 
   /**
@@ -70,8 +91,9 @@ class APIClient {
     Params:
       route = route to make the request for
       content = body content as a string
+      params = HTTP parameter hash table to pass to the URL router
   */
-  APIResponse requestJSON(CompiledRoute route, string content) {
+  APIResponse requestJSON(CompiledRoute route, string[string] params, string content) {
     // High timeout, we should never hit this
     Duration timeout = 15.seconds;
 
@@ -80,7 +102,20 @@ class APIClient {
       throw new APIError(-1, "Request expired before rate-limit cooldown.");
     }
 
-    auto res = new APIResponse(requestHTTP(this.baseURL ~ route.compiled,
+    string paramString = "";  //A string containing URL encoded parameters
+
+    //If there are parameters, URL encode them into a string for appending
+    if(params != null){
+      if(params.length > 0){
+        paramString = "?";
+      }
+      foreach(key; params.keys){
+        paramString ~= urlEncode(key) ~ "=" ~ urlEncode(params[key]) ~ "&";
+      }
+      paramString = paramString[0..$-1];
+    }
+
+    auto res = new APIResponse(requestHTTP(this.baseURL ~ route.compiled ~ paramString,
       (scope req) {
         req.method = route.method;
         req.headers["Authorization"] = "Bot " ~ this.token;
@@ -102,11 +137,11 @@ class APIClient {
     /// request fully.
     if (res.statusCode == 429) {
       this.log.error("Request returned 429. This should not happen.");
-      return this.requestJSON(route, content);
+      return this.requestJSON(route, params, content);
     // If we got a 502, just retry after a random backoff
     } else if (res.statusCode == 502) {
       sleep(randomBackoff());
-      return this.requestJSON(route, content);
+      return this.requestJSON(route, params, content);
     }
 
     return res;
@@ -240,10 +275,32 @@ class APIClient {
   }
 
   /**
+    Returns an array of message IDs for a channel up to limit (max 100),
+    filter with respect to supplied messageID.
+  */
+  Message[] channelsMessagesList(Snowflake chan, uint limit = 50, MessageFilter filter = MessageFilter.BEFORE, Snowflake msg = 0){
+    enum string errorTooMany = "The maximum number of messages that can be returned at one time is 100.";
+    assert(limit <= 100, errorTooMany);
+
+    if(limit > 100){
+      throw new Exception(errorTooMany);
+    }
+
+    string[string] params = ["limit":limit.toString];
+
+    if(msg){
+      params[filter] = msg.toString;
+    }
+
+    auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_LIST(chan), params).ok().vibeJSON;
+    return deserializeFromJSONArray(json, v => new Message(this.client, v));
+  }
+
+  /**
     Deletes messages in bulk.
   */
-  void channelsMessagesDeleteBulk(Snowflake chan, Snowflake[] msgs) {
-    VibeJSON payload = VibeJSON(["messages": VibeJSON(array(map!((m) => VibeJSON(m))(msgs)))]);
+  void channelsMessagesDeleteBulk(Snowflake chan, Snowflake[] msgIDs) {
+    VibeJSON payload = VibeJSON(["messages": VibeJSON(array(map!((m) => VibeJSON(m))(msgIDs)))]);
     this.requestJSON(Routes.CHANNELS_MESSAGES_DELETE_BULK(chan), payload).ok();
   }
 
