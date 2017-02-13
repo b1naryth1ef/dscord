@@ -7,6 +7,7 @@ before_install:
   - wget http://ftp.us.debian.org/debian/pool/main/libs/libsodium/libsodium18_1.0.11-1_amd64.deb
   - wget http://ftp.us.debian.org/debian/pool/main/libs/libsodium/libsodium-dev_1.0.11-1_amd64.deb
   - "sudo dpkg -i *.deb"
+  - dub upgrade
 
 d:
   - dmd

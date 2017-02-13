@@ -2,7 +2,7 @@
 *.a
 docs.json
 docs/
-__test__library__
+__test*
 *.html
 dub.selections.json
 
