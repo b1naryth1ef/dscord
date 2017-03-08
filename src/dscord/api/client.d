@@ -200,7 +200,7 @@ class APIClient {
   */
   Channel usersMeDMSCreate(Snowflake recipientID) {
     VibeJSON payload = VibeJSON(["recipient_id": VibeJSON(recipientID)]);
-    auto json = this.requestJSON(Routes.USERS_ME_DMS_CREATE()).ok().vibeJSON;
+    auto json = this.requestJSON(Routes.USERS_ME_DMS_CREATE(), payload).ok().vibeJSON;
     return new Channel(this.client, json);
   }
 
