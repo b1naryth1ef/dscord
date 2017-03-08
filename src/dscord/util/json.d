@@ -253,6 +253,11 @@ template ArrayElementType(T : T[]) {
   alias T ArrayElementType;
 }
 
+template AATypes(T) {
+  alias ArrayElementType!(typeof(T.keys)) key;
+  alias ArrayElementType!(typeof(T.values)) value;
+}
+
 private bool loadSingleField(T, Z)(T sourceObj, ref Z result, VibeJSON data) {
   version (JSON_DEBUG) {
     writefln("  -> parsing type %s from %s", fullyQualifiedName!Z, data.type);
@@ -289,6 +294,17 @@ private bool loadSingleField(T, Z)(T sourceObj, ref Z result, VibeJSON data) {
       AT v;
       loadSingleField!(T, AT)(sourceObj, v, obj);
       result ~= v;
+    }
+  } else static if (isAssociativeArray!Z) {
+    alias ArrayElementType!(typeof(result.keys)) Tk;
+    alias ArrayElementType!(typeof(result.values)) Tv;
+
+    foreach (ref string k, ref v; data) {
+      Tv val;
+
+      loadSingleField!(T, Tv)(sourceObj, val, v);
+
+      result[k.to!Tk] = val;
     }
   } else static if (isIntegral!Z) {
     if (data.type == VibeJSON.Type.string) {
