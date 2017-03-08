@@ -183,7 +183,7 @@ class Plugin {
 
     string group = this.options.commandGroup;
 
-    if (this.options.useOverrides) {
+    if (this.options.useOverrides && this.config) {
       if (this.config.has("levels")) {
         auto levels = this.config.get!(VibeJSON[string])("levels");
 
