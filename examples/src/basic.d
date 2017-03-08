@@ -33,9 +33,9 @@ class BasicPlugin : Plugin {
     super();
   }
 
-  @Listener!MessageCreate
+  @Listener!(MessageCreate, EmitterOrder.AFTER)
   void onMessageCreate(MessageCreate event) {
-    this.log.infof("MessageCreate: %s", event.message.mentions.length);
+    this.log.infof("MessageCreate: %s", event.message.content);
   }
 
   @Command("ping")

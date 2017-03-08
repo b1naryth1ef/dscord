@@ -19,7 +19,7 @@ import dscord.types,
   Params:
     T = Event type to listen for
 */
-ListenerDef!T Listener(T)(EmitterOrder order = EmitterOrder.UNSPECIFIED) {
+ListenerDef!T Listener(T, EmitterOrder order = EmitterOrder.UNSPECIFIED)() {
   return ListenerDef!(T)(T.stringof, order, (event, func) {
     func(event.get!(T));
   });
