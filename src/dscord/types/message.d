@@ -6,7 +6,8 @@ import std.stdio,
        std.format,
        std.regex,
        std.array,
-       std.algorithm.iteration;
+       std.algorithm.iteration,
+       std.algorithm.setops : nWayUnion;
 
 import dscord.types,
        dscord.client;
@@ -124,14 +125,14 @@ class Message : IModel {
         m = msg.guild.members.get(user.id);
       }
       return "@" ~ ((m && m.nick != "") ? m.nick : user.username);
-    }, (msg, role) { return "@" ~ role.name; });
+    }, (msg, role) { return "@" ~ msg.guild.roles.get(role).name; });
   }
 
   /**
     Returns the message contents, replacing all mentions with the result from the
     specified delegate.
   */
-  string replaceMentions(string delegate(Message, User) fu, string delegate(Message, Role) fr) {
+  string replaceMentions(string delegate(Message, User) fu, string delegate(Message, Snowflake) fr) {
     if (!this.mentions.length && !this.roleMentions.length) {
       return this.content;
     }
@@ -141,8 +142,8 @@ class Message : IModel {
       result = replaceAll(result, regex(format("<@!?(%s)>", user.id)), fu(this, user));
     }
 
-    foreach (ref Role role; this.roleMentions.values) {
-      result = replaceAll(result, regex(format("<@!?(%s)>", role.id)), fr(this, role));
+    foreach (ref Snowflake role; this.roleMentions) {
+      result = replaceAll(result, regex(format("<@!?(%s)>", role)), fr(this, role));
     }
 
     return result;
@@ -205,9 +206,7 @@ class Message : IModel {
   @property bool mentioned() {
     return this.mentionEveryone ||
       this.mentions.has(this.client.state.me.id) ||
-      this.roleMentions.keyUnion(
-        this.guild.getMember(this.client.state.me).roles
-      ).length != 0;
+        nWayUnion([this.roleMentions, this.guild.getMember(this.client.state.me).roles]).array.length != 0;
   }
 
   /**
