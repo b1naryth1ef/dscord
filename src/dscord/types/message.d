@@ -86,9 +86,8 @@ class Message : IModel {
   @JSONListToMap("id")
   UserMap    mentions;
 
-  @JSONListToMap("id")
   @JSONSource("mention_roles")
-  RoleMap    roleMentions;
+  Snowflake[]    roleMentions;
 
   // Embeds
   MessageEmbed[]  embeds;
