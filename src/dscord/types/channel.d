@@ -23,6 +23,7 @@ enum ChannelType : ushort {
   DM = 1,
   GUILD_VOICE = 2,
   GROUP_DM = 3,
+  GUILD_CATEGORY = 4,
 }
 
 class PermissionOverwrite : IModel {
@@ -91,6 +92,7 @@ class Channel : IModel, IPermissible {
     return this.sendMessage(obj.toSendableString());
   }
 
+  /// Whether this is a direct message
   @property bool DM() {
     return (
       this.type == ChannelType.DM ||
@@ -98,6 +100,7 @@ class Channel : IModel, IPermissible {
     );
   }
 
+  /// Whether this is a voice channel
   @property bool voice() {
     return (
       this.type == ChannelType.GUILD_VOICE ||
@@ -106,12 +109,18 @@ class Channel : IModel, IPermissible {
     );
   }
 
+  /// Whether this is a text channel
   @property bool text() {
     return (
       this.type == ChannelType.GUILD_TEXT ||
       this.type == ChannelType.DM ||
       this.type == ChannelType.GROUP_DM
     );
+  }
+
+  /// Whether this channel is a category
+  @property bool category() {
+    return this.type == ChannelType.GUILD_CATEGORY;
   }
 
   @property auto voiceStates() {
