@@ -245,12 +245,16 @@ class APIClient {
   /**
     Sends a message to a channel.
   */
-  Message channelsMessagesCreate(Snowflake chan, inout(string) content, string nonce, bool tts) {
+  Message channelsMessagesCreate(Snowflake chan, inout(string) content, inout(string) nonce, inout(bool) tts, inout(MessageEmbed) embed) {
     VibeJSON payload = VibeJSON([
       "content": VibeJSON(content),
       "nonce": VibeJSON(nonce),
       "tts": VibeJSON(tts),
     ]);
+
+    if (embed) {
+      payload["embed"] = embed.serializeToJSON();
+    }
 
     // Send payload and return message object
     auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_CREATE(chan), payload).ok().vibeJSON;
@@ -260,8 +264,12 @@ class APIClient {
   /**
     Edits a messages contents.
   */
-  Message channelsMessagesModify(Snowflake chan, Snowflake msg, inout(string) content) {
+  Message channelsMessagesModify(Snowflake chan, Snowflake msg, inout(string) content, inout(MessageEmbed) embed) {
     VibeJSON payload = VibeJSON(["content": VibeJSON(content)]);
+
+    if (embed) {
+      payload["embed"] = embed.serializeToJSON();
+    }
 
     auto json = this.requestJSON(Routes.CHANNELS_MESSAGES_MODIFY(chan, msg), payload).ok().vibeJSON;
     return new Message(this.client, json);

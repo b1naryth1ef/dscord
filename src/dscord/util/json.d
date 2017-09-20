@@ -26,75 +26,6 @@ struct JSONListToMap {
   string field;
 }
 
-
-/+
-VibeJSON serializeArrayToJSON(T)(in ref T array) if (isArray!T) {
-  alias ElementType = ForeachType!T;
-  VibeJSON result = VibeJSON.emptyArray;
-
-  foreach (item; array) {
-    static if (is(ElementType == struct)) {
-      result ~= item.serializeToJSON();
-    } else static if (is(ElementType == class)) {
-      if (result !is null) {
-        result ~= item.serializeToJSON();
-      }
-    } else static if (isSomeString!ElementType) {
-      result ~= VibeJSON(item.to!string);
-    } else static if (isArray!ElementType) {
-      result ~= item.serializeArrayToJSON();
-    } else {
-      result ~= VibeJSON(item);
-    }
-  }
-
-  return result;
-}
-
-VibeJSON serializeToJSON(T)(T obj) {
-  enum fieldNames = FieldNameTuple!T;
-  VibeJSON result = VibeJSON.emptyObject;
-
-  foreach(fieldName; fieldNames) {
-    static if (fieldName != "") {
-      auto outFieldName = camelCaseToUnderscores(fieldName);
-      auto field = __traits(getMember, obj, fieldName);
-      alias FieldType = typeof(field);
-
-      static if (hasUDA!(mixin("obj." ~ fieldName), JSONIgnore)) {
-        // Ignore any fields that have JSONIgnore
-        continue;
-      } else static if (is(FieldType == struct)) {
-          // This field is a struct - recurse into it
-          result[outFieldName] = field.serializeToJSON();
-      } else static if (is(FieldType == class)) {
-        static if (hasUDA!(typeof(mixin("obj." ~ fieldName)), JSONIgnore)) {
-          continue;
-        } else {
-          // This field is a class - recurse into it unless it is null
-          if (field !is null) {
-            result[outFieldName] = field.serializeToJSON();
-          }
-        }
-      } else static if (isSomeString!FieldType) {
-          // Because JSONValue only seems to work with string strings (and not char[], etc), convert all string types to string
-          result[outFieldName] = VibeJSON(field.to!string);
-      } else static if (isArray!FieldType) {
-          // Field is an array
-          result[outFieldName] = field.serializeArrayToJSON();
-      } else static if (isAssociativeArray!FieldType) {
-          // Field is an associative array
-          result[outFieldName] = field.serializeToJSON();
-      } else {
-          result[outFieldName] = VibeJSON(field);
-      }
-    }
-  }
-
-  return result;
-}
-+/
-
 VibeJSON serializeToJSON(T)(T sourceObj, string[] ignoredFields = []) {
   import std.algorithm : canFind;
 
@@ -161,8 +92,10 @@ VibeJSON serializeToJSON(T)(T sourceObj, string[] ignoredFields = []) {
 }
 
 private VibeJSON dumpSingleField(T)(ref T field) {
-  static if (is(T == struct) || is(T == class)) {
+  static if (is(T == struct)) {
     return field.serializeToJSON;
+  } else static if (is(T == class)) {
+    return field ? field.serializeToJSON : VibeJSON(null);
   } else static if (isSomeString!T) {
     return VibeJSON(field);
   } else static if (isArray!T) {

@@ -43,6 +43,15 @@ class BasicPlugin : Plugin {
     event.msg.reply(format("Pong: %s", event.msg.author.serializeToJSON));
   }
 
+  @Command("embed")
+  void onEmbed(CommandEvent event) {
+    auto embed = new MessageEmbed;
+    embed.title = "TESTING";
+    embed.color = 0x77dd77;
+    embed.description = "lol hey man";
+    event.msg.reply(embed);
+  }
+
   //An example command that clears messages in the channel
   @Command("clear")
   void onClearMessages(CommandEvent event) {

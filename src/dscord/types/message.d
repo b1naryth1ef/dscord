@@ -16,8 +16,38 @@ import dscord.types,
   An interface implementting something that can be sent as a message.
 */
 interface Sendable {
-  /// Returns a string that will NEVER be greater than 2000 characters
-  immutable(string) toSendableString();
+  /// Returns the embed (or null if none) for this sendable
+  immutable(MessageEmbed) getEmbed();
+
+  /// Returns the contents for this sendable, no more than 2000 chars long
+  immutable(string) getContents();
+
+  /// Returns the nonce for this sendable
+  immutable(string) getNonce();
+
+  /// Returns the tts setting for this sendable
+  immutable(bool) getTTS();
+
+  /// Returns the attachments for this sendable (if any)
+  //immutable(Attachment[]) getAttachments();
+}
+
+class BaseSendable : Sendable {
+  immutable(MessageEmbed) getEmbed() {
+    return null;
+  }
+
+  immutable(string) getContents() {
+    return "";
+  }
+
+  immutable(string) getNonce() {
+    return "";
+  }
+
+  immutable(bool) getTTS() {
+    return false;
+  }
 }
 
 /**
@@ -31,6 +61,7 @@ enum MessageType {
   CHANNEL_NAME_CHANGE = 4,
   CHANNEL_ICON_CHANGE = 5,
   PINS_ADD = 6,
+  GUILD_MEMBER_JOIN = 7,
 }
 
 // TODO
@@ -42,19 +73,88 @@ class MessageEmbedFooter : IModel {
   mixin Model;
 
   string  text;
+
+  @JSONSource("icon_url")
   string  iconURL;
+
+  @JSONSource("proxy_icon_url")
   string  proxyIconURL;
 }
 
-class MessageEmbed : IModel {
+class MessageEmbedImage : IModel {
+  mixin Model;
+
+  string  url;
+
+  @JSONSource("proxy_url")
+  string  proxyURL;
+
+  uint    width;
+  uint    height;
+}
+
+class MessageEmbedThumbnail : IModel {
+  mixin Model;
+
+  string  url;
+
+  @JSONSource("proxy_url")
+  string  proxyURL;
+
+  uint    width;
+  uint    height;
+}
+
+class MessageEmbedVideo : IModel {
+  mixin Model;
+
+  string  url;
+  uint    height;
+  uint    width;
+}
+
+class MessageEmbedAuthor : IModel {
+  mixin Model;
+
+  string  name;
+  string  url;
+
+  @JSONSource("icon_url")
+  string  iconURL;
+
+  @JSONSource("proxy_icon_url")
+  string  proxyIconURL;
+}
+
+class MessageEmbedField : IModel {
+  mixin Model;
+
+  string  name;
+  string  value;
+  bool    inline;
+}
+
+class MessageEmbed : IModel, Sendable {
   mixin Model;
 
   string  title;
   string  type;
   string  description;
   string  url;
+  string  timestamp;
+  uint    color;
 
-  // TODO: thumbnail, provider
+  MessageEmbedFooter     footer;
+  MessageEmbedImage      image;
+  MessageEmbedThumbnail  thumbnail;
+  MessageEmbedVideo      video;
+  MessageEmbedAuthor     author;
+  MessageEmbedField[]    fields;
+
+  immutable(MessageEmbed) getEmbed() { return cast(immutable(MessageEmbed))this; }
+  immutable(string) getContents() { return ""; }
+  immutable(string) getNonce() { return ""; }
+  immutable(bool) getTTS() { return false; }
 }
 
 class MessageAttachment : IModel {
@@ -158,35 +258,44 @@ class Message : IModel {
       tts = whether this is a TTS message
   */
   Message reply(inout(string) content, string nonce=null, bool tts=false) {
-    return this.client.api.channelsMessagesCreate(this.channelID, content, nonce, tts);
+    return this.client.api.channelsMessagesCreate(this.channelID, content, nonce, tts, null);
   }
 
   /**
     Sends a Sendable to the same channel as this message.
   */
   Message reply(Sendable obj) {
-    return this.client.api.channelsMessagesCreate(this.channelID, obj.toSendableString(), null, false);
+    return this.client.api.channelsMessagesCreate(
+      this.channelID,
+      obj.getContents(),
+      obj.getNonce(),
+      obj.getTTS(),
+      obj.getEmbed(),
+    );
   }
 
   /**
     Sends a new formatted message to the same channel as this message.
   */
   Message replyf(T...)(inout(string) content, T args) {
-    return this.client.api.channelsMessagesCreate(this.channelID, format(content, args), null, false);
+    return this.client.api.channelsMessagesCreate(this.channelID, format(content, args), null, false, null);
   }
 
   /**
     Edits this message contents.
   */
-  Message edit(inout(string) content) {
-    return this.client.api.channelsMessagesModify(this.channelID, this.id, content);
+  Message edit(inout(string) content, inout(MessageEmbed) embed=null) {
+    return this.client.api.channelsMessagesModify(this.channelID, this.id, content, embed);
   }
 
   /**
     Edits this message contents with a Sendable.
   */
   Message edit(Sendable obj) {
-    return this.edit(obj.toSendableString());
+    return this.edit(
+      obj.getContents(),
+      obj.getEmbed(),
+    );
   }
 
   /**
@@ -200,13 +309,17 @@ class Message : IModel {
     return this.client.api.channelsMessagesDelete(this.channelID, this.id);
   }
 
-  /*
+  /**
     True if this message mentions the current user in any way (everyone, direct mention, role mention)
   */
   @property bool mentioned() {
-    return this.mentionEveryone ||
+    return (
+      this.mentionEveryone ||
       this.mentions.has(this.client.state.me.id) ||
-        nWayUnion([this.roleMentions, this.guild.getMember(this.client.state.me).roles]).array.length != 0;
+      nWayUnion(
+        [this.roleMentions, this.guild.getMember(this.client.state.me).roles]
+      ).array.length != 0
+    );
   }
 
   /**

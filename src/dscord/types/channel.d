@@ -54,6 +54,7 @@ class Channel : IModel, IPermissible {
   short        position;
   uint         bitrate;
   ChannelType  type;
+  Snowflake    parentID;
 
   @JSONListToMap("id")
   UserMap         recipients;
@@ -81,15 +82,21 @@ class Channel : IModel, IPermissible {
   }
 
   Message sendMessage(inout(string) content, string nonce=null, bool tts=false) {
-    return this.client.api.channelsMessagesCreate(this.id, content, nonce, tts);
+    return this.client.api.channelsMessagesCreate(this.id, content, nonce, tts, null);
   }
 
   Message sendMessagef(T...)(inout(string) content, T args) {
-    return this.client.api.channelsMessagesCreate(this.id, format(content, args), null, false);
+    return this.client.api.channelsMessagesCreate(this.id, format(content, args), null, false, null);
   }
 
   Message sendMessage(Sendable obj) {
-    return this.sendMessage(obj.toSendableString());
+    return this.client.api.channelsMessagesCreate(
+      this.id,
+      obj.getContents(),
+      obj.getNonce(),
+      obj.getTTS(),
+      obj.getEmbed(),
+    );
   }
 
   /// Whether this is a direct message
