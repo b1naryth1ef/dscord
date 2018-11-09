@@ -4,6 +4,8 @@
 
 module dscord.voice.youtubedl;
 
+version (YOUTUBE_DL):
+
 import dcad.types : DCAFile, rawReadFramesFromFile;
 import vibe.core.core,
        vibe.core.concurrency;

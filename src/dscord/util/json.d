@@ -176,7 +176,8 @@ void deserializeFromJSON(T)(T sourceObj, VibeJSON sourceData) {
         )(sourceObj, fieldData);
       } else {
         version (JSON_DEBUG) pragma(msg, "    -= loadSingleField");
-        loadSingleField!(T, FieldType)(sourceObj, __traits(getMember, sourceObj, fieldName), fieldData);
+        __traits(getMember, sourceObj, fieldName) = loadSingleField!(T, FieldType)(sourceObj, fieldData);
+        // loadSingleField!(T, FieldType)(sourceObj, __traits(getMember, sourceObj, fieldName), fieldData);
       }
     }
   }
@@ -191,13 +192,17 @@ template AATypes(T) {
   alias ArrayElementType!(typeof(T.values)) value;
 }
 
-private bool loadSingleField(T, Z)(T sourceObj, ref Z result, VibeJSON data) {
+private Z loadSingleField(T, Z)(T sourceObj, VibeJSON data) {
   version (JSON_DEBUG) {
     writefln("  -> parsing type %s from %s", fullyQualifiedName!Z, data.type);
   }
 
+  // Some deserialization strategies we take require a reference to the type.
+  Z result;
+
   static if (is(Z == struct)) {
     result.deserializeFromJSON(data);
+    return result;
   } else static if (is(Z == class)) {
     // If we have a constructor which allows the parent object and the JSON data use it
     static if (__traits(compiles, {
@@ -212,48 +217,50 @@ private bool loadSingleField(T, Z)(T sourceObj, ref Z result, VibeJSON data) {
       result = new Z;
       result.deserializeFromJSON(data);
     }
+    return result;
   } else static if (isSomeString!Z) {
     static if (__traits(compiles, {
-      result = cast(Z)data.get!string;
+      return cast(Z)data.get!string;
     })) {
-      result = cast(Z)data.get!string;
+      return cast(Z)data.get!string;
     } else {
-      result = data.get!string.to!Z;
+      return data.get!string.to!Z;
     }
   } else static if (isArray!Z) {
     alias AT = ArrayElementType!(Z);
 
     foreach (obj; data) {
-      AT v;
-      loadSingleField!(T, AT)(sourceObj, v, obj);
+      /* AT v; */
+      /* loadSingleField!(T, AT)(sourceObj, v, obj); */
+      AT v = loadSingleField!(T, AT)(sourceObj, obj);
       result ~= v;
     }
+    return result;
   } else static if (isAssociativeArray!Z) {
     alias ArrayElementType!(typeof(result.keys)) Tk;
     alias ArrayElementType!(typeof(result.values)) Tv;
 
     foreach (ref string k, ref v; data) {
-      Tv val;
-
-      loadSingleField!(T, Tv)(sourceObj, val, v);
+      /* Tv val; */
+      /* loadSingleField!(T, Tv)(sourceObj, val, v); */
+      Tv val = loadSingleField!(T, Tv)(sourceObj, v);
 
       result[k.to!Tk] = val;
     }
+    return result;
   } else static if (isIntegral!Z) {
     if (data.type == VibeJSON.Type.string) {
-      result = data.get!string.to!Z;
+      return data.get!string.to!Z;
     } else {
       static if (__traits(compiles, { result = data.to!Z; })) {
-        result = data.to!Z;
+        return data.to!Z;
       } else {
-        result = data.get!Z;
+        return data.get!Z;
       }
     }
   } else {
-    result = data.to!Z;
+    return data.to!Z;
   }
-
-  return false;
 }
 
 private void attach(T, Z)(T baseObj, Z parentObj) {

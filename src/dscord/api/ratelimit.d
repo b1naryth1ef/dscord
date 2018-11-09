@@ -10,6 +10,7 @@ import std.conv,
        core.sync.mutex;
 
 import vibe.core.core;
+import vibe.core.sync : LocalManualEvent, createManualEvent;
 
 import dscord.api.routes,
        dscord.util.time;
@@ -50,7 +51,7 @@ struct RateLimitState {
   RateLimiter provides an interface for rate limiting HTTP Requests.
 */
 class RateLimiter {
-  ManualEvent[Bucket]     cooldowns;
+  LocalManualEvent[Bucket]     cooldowns;
   RateLimitState[Bucket]  states;
 
   /// Cooldown a bucket for a given duration. Blocks ALL requests from completing.

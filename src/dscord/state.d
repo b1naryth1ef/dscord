@@ -5,7 +5,7 @@ import std.functional,
        std.algorithm.iteration,
        std.experimental.logger;
 
-import vibe.core.sync : createManualEvent, ManualEvent;
+import vibe.core.sync : createManualEvent, LocalManualEvent;
 import std.algorithm.searching : canFind, countUntil;
 import std.algorithm.mutation : remove;
 
@@ -47,7 +47,7 @@ class State : Emitter {
   VoiceStateMap  voiceStates;
 
   /// Event triggered when all guilds are synced
-  ManualEvent  ready;
+  LocalManualEvent  ready;
 
   bool requestOfflineMembers = true;
 

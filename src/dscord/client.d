@@ -98,7 +98,7 @@ class Client {
     foreach(message; messages){
       msgIDs ~= message.id;
     }
-    
+
     return deleteMessages(channelID, msgIDs);
   }
 

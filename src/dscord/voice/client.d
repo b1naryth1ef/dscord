@@ -19,6 +19,8 @@ import vibe.core.core,
        vibe.inet.url,
        vibe.http.websockets;
 
+import vibe.core.sync : createManualEvent, LocalManualEvent;
+
 import dcad.types : DCAFile;
 
 import shaker : crypto_secretbox_easy;
@@ -157,7 +159,7 @@ class VoiceClient {
     Logger  log;
 
     // Event triggered when connection is complete
-    ManualEvent  waitForConnected;
+    LocalManualEvent  waitForConnected;
 
     // Player task
     Task  playerTask;
@@ -189,7 +191,7 @@ class VoiceClient {
     EventListener  updateListener;
 
     // Used to control pausing state
-    ManualEvent pauseEvent;
+    // LocalManualEvent pauseEvent;
   }
 
   this(Channel c, bool mute=false, bool deaf=false) {
@@ -268,30 +270,31 @@ class VoiceClient {
 
   /// Whether the player is currently paused
   @property bool paused() {
-    return (this.pauseEvent !is null);
+    return false;
+    // return (this.pauseEvent !is null);
   }
 
   /// Pause the player
   bool pause(bool wait=false) {
-    if (this.pauseEvent) {
-      if (!wait) return false;
-      this.pauseEvent.wait();
-    }
-
-    this.pauseEvent = createManualEvent();
+    /* if (this.pauseEvent) { */
+    /*   if (!wait) return false; */
+    /*   this.pauseEvent.wait(); */
+    /* } */
+    /*  */
+    /* this.pauseEvent = createManualEvent(); */
     return true;
   }
 
   /// Resume the player
   bool resume() {
-    if (!this.paused) {
-      return false;
-    }
-
-    // Avoid race conditions by copying
-    auto e = this.pauseEvent;
-    this.pauseEvent = null;
-    e.emit();
+    /* if (!this.paused) { */
+    /*   return false; */
+    /* } */
+    /*  */
+    /* // Avoid race conditions by copying */
+    /* auto e = this.pauseEvent; */
+    /* this.pauseEvent = null; */
+    /* e.emit(); */
     return true;
   }
 
@@ -326,7 +329,7 @@ class VoiceClient {
       if (this.paused) {
         // Only set our speaking status if we're still connected
         if (this.sock.connected) this.setSpeaking(false);
-        this.pauseEvent.wait();
+        // this.pauseEvent.wait();
         this.setSpeaking(true);
 
         // Reset the ticker so we don't fast forward it to catch up
@@ -373,7 +376,7 @@ class VoiceClient {
 
     // If we are currently playing something, kill it
     if (this.playerTask && this.playerTask.running) {
-      this.playerTask.terminate();
+      this.playerTask.interrupt();
     }
 
     this.playable = p;
@@ -502,7 +505,7 @@ class VoiceClient {
     this.state = VoiceStatus.CONNECTED;
 
     // Grab endpoint and create a proper URL out of it
-    this.endpoint = URL("ws", event.endpoint.split(":")[0], 0, Path());
+    this.endpoint = URL("ws", event.endpoint.split(":")[0], 0, NativePath());
     this.sock = connectWebSocket(this.endpoint);
     runTask(&this.run);
 

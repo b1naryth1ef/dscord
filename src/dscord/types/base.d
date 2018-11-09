@@ -12,7 +12,7 @@ import std.conv,
 import dscord.client;
 
 import vibe.core.core : runTask, sleep;
-import vibe.core.sync;
+import vibe.core.sync : createManualEvent, LocalManualEvent ;
 
 // Commonly used public imports
 public import dscord.util.json;
@@ -39,7 +39,7 @@ class AsyncChainer(T) {
   private {
     T obj;
     AsyncChainer!T parent;
-    ManualEvent resolveEvent;
+    LocalManualEvent resolveEvent;
     bool ignoreFailure;
   }
 

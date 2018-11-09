@@ -7,8 +7,8 @@
   "targetType": "library",
   "dependencies": {
     "shaker": "~>0.0.8",
-    "vibe-d:core": "~>0.8.0-beta.3",
-    "vibe-d:http": "~>0.8.0-beta.3",
+    "vibe-d:core": "~>0.8.4",
+    "vibe-d:http": "~>0.8.4",
     "dcad": "~>0.0.9"
   },
   "configurations": [
