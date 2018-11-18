@@ -144,7 +144,7 @@ class IModel {
   @JSONIgnore
   Client  client;
 
-  void init() {};
+  void initialize() {};
   // void load(JSONDecoder obj) {};
 
   this() {}
@@ -181,7 +181,7 @@ mixin template Model() {
 
     this.client = client;
     this.deserializeFromJSON(obj);
-    this.init();
+    this.initialize();
 
     version (TIMING) {
       this.client.log.tracef("Finished creation of model %s in %sms", this.toString,

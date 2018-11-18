@@ -73,7 +73,7 @@ class Channel : IModel, IPermissible {
     return this.client.state.guilds.get(this.guildID);
   }
 
-  override void init() {
+  override void initialize() {
     this.overwrites = new PermissionOverwriteMap;
   }
 

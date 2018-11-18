@@ -247,7 +247,7 @@ class CommandEvent {
 
   /// Returns mentions for this command, sans the bot
   @property UserMap mentions() {
-    return this.msg.mentions.filter((k, v) => k != this.event.client.me.id);
+    return this.msg.mentions.filter((k, v) => k != this.event.client.state.me.id);
   }
 }
 

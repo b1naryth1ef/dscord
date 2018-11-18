@@ -88,11 +88,7 @@ class GuildMember : IModel {
   }
 
   override string toString() {
-    return format("<GuildMember %s#%s (%s / %s)>",
-      this.user.username,
-      this.user.discriminator,
-      this.id,
-      this.guild.id);
+    return format("<GuildMember %s (%s)>", this.id, this.guildID);
   }
 
   bool hasRole(Role role) {
@@ -139,7 +135,7 @@ class Guild : IModel, IPermissible {
   @JSONListToMap("id")
   EmojiMap        emojis;
 
-  override void init() {
+  override void initialize() {
     // It's possible these are not created
     if (!this.members) return;
 
@@ -152,6 +148,13 @@ class Guild : IModel, IPermissible {
 
   override string toString() {
     return format("<Guild %s (%s)>", this.name, this.id);
+  }
+
+  string getIconURL(string fmt = "webp", size_t size = 1024) {
+    if (this.icon == "") {
+      return "";
+    }
+    return format("https://cdn.discordapp.com/icons/%s/%s.%s?size=%s", this.id, this.icon, fmt, size);
   }
 
   /// Returns a GuildMember for a given user object
@@ -221,4 +224,23 @@ class Guild : IModel, IPermissible {
   void setRegion(string region) {
     this.client.api.guildsModify(this.id, VibeJSON(["region" : VibeJSON(region)]));
   }
+}
+
+class UserGuildSettings : IModel {
+  mixin Model;
+
+  Snowflake guildID;
+  bool suppressEveryone;
+  bool muted;
+  bool mobilePush;
+  int messageNotifications;
+  UserGuildSettingsChannelOverride[] channelOverrides;
+}
+
+class UserGuildSettingsChannelOverride : IModel {
+  mixin Model;
+
+  Snowflake channelID;
+  bool muted;
+  int messageNotifications;
 }

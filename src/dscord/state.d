@@ -26,6 +26,7 @@ class State : Emitter {
 
   /// Currently logged in user, recieved from READY payload.
   User        me;
+  Settings    settings;
 
   /*
     TODO: all of these should contain weakrefs too the objects.
@@ -96,13 +97,18 @@ class State : Emitter {
   }
 
   private void onReady(Ready r) {
-    this.me = r.me;
+    this.me = r.user;
+    this.settings = r.userSettings;
 
     foreach (guild; r.guilds) {
-      this.awaitingCreate ~= guild.id;
+      if (guild.unavailable) {
+        this.awaitingCreate ~= guild.id;
+      } else {
+        this.guilds[guild.id] = guild;
+      }
     }
 
-    foreach (dm; r.dms) {
+    foreach (dm; r.privateChannels) {
       this.directMessages[dm.id] = dm;
     }
   }
@@ -212,6 +218,10 @@ class State : Emitter {
 
   private void onVoiceStateUpdate(VoiceStateUpdate u) {
     // TODO: shallow tracking, don't require guilds
+    if (!this.guilds.has(u.state.guildID)) {
+      return;
+    }
+
     auto guild = this.guilds.get(u.state.guildID);
     if (!guild) return;
 

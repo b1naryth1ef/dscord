@@ -118,7 +118,7 @@ class APIClient {
     auto res = new APIResponse(requestHTTP(this.baseURL ~ route.compiled ~ paramString,
       (scope req) {
         req.method = route.method;
-        req.headers["Authorization"] = "Bot " ~ this.token;
+        req.headers["Authorization"] = this.token;
         req.headers["Content-Type"] = "application/json";
         req.headers["User-Agent"] = this.userAgent;
         req.bodyWriter.write(content);

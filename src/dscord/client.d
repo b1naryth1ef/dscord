@@ -54,21 +54,17 @@ class Client {
   /** Emitter for gateway events */
   Emitter  events;
 
-  this(string token, LogLevel lvl=LogLevel.all, ShardInfo* shardInfo = null) {
+  this(string token, LogLevel lvl=LogLevel.all, ShardInfo* shardInfo = null, bool withState = false) {
     this.log = new FileLogger(stdout, lvl);
     this.token = token;
     this.shardInfo = shardInfo ? shardInfo : new ShardInfo();
 
     this.api = new APIClient(this);
     this.gw = new GatewayClient(this);
-    this.state = new State(this);
-  }
 
-  /**
-    Returns the current user.
-  */
-  @property User me() {
-    return this.state.me;
+    if (withState) {
+      this.state = new State(this);
+    }
   }
 
   /**

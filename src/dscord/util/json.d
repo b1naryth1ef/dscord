@@ -3,11 +3,10 @@
 */
 module dscord.util.json;
 
-import std.stdio;
-
 import std.conv,
        std.meta,
-       std.traits;
+       std.traits,
+       std.stdio;
 
 public import vibe.data.json : VibeJSON = Json, parseJsonString;
 
@@ -17,6 +16,7 @@ public import dscord.util.string : camelCaseToUnderscores;
 
 enum JSONIgnore;
 enum JSONFlat;
+enum JSONTimestamp;
 
 struct JSONSource {
   string src;
@@ -174,10 +174,12 @@ void deserializeFromJSON(T)(T sourceObj, VibeJSON sourceData) {
         __traits(getMember, sourceObj, fieldName) = typeof(__traits(getMember, sourceObj, fieldName)).fromJSONArray!(
           getUDAs!(mixin("sourceObj." ~ fieldName), JSONListToMap)[0].field
         )(sourceObj, fieldData);
+      } else static if (hasUDA!(mixin("sourceObj." ~ fieldName), JSONTimestamp)) {
+        version (JSON_DEBUG) pragma(msg, "    -= loadTimestampField");
+        __traits(getMember, sourceObj, fieldName) = loadTimestampField!(T, FieldType)(sourceObj, fieldData);
       } else {
         version (JSON_DEBUG) pragma(msg, "    -= loadSingleField");
         __traits(getMember, sourceObj, fieldName) = loadSingleField!(T, FieldType)(sourceObj, fieldData);
-        // loadSingleField!(T, FieldType)(sourceObj, __traits(getMember, sourceObj, fieldName), fieldData);
       }
     }
   }
@@ -192,6 +194,10 @@ template AATypes(T) {
   alias ArrayElementType!(typeof(T.values)) value;
 }
 
+private DateT loadTimestampField(T, DateT)(T sourceObj, VibeJSON data) {
+  return DateT.fromISOExtString(data.to!string);
+}
+
 private Z loadSingleField(T, Z)(T sourceObj, VibeJSON data) {
   version (JSON_DEBUG) {
     writefln("  -> parsing type %s from %s", fullyQualifiedName!Z, data.type);
@@ -200,9 +206,14 @@ private Z loadSingleField(T, Z)(T sourceObj, VibeJSON data) {
   // Some deserialization strategies we take require a reference to the type.
   Z result;
 
-  static if (is(Z == struct)) {
+  static if (is(Z == VibeJSON)) {
+    return data;
+  } else static if (is(Z == struct)) {
     result.deserializeFromJSON(data);
     return result;
+  } else static if (is(Z == enum)) {
+    // Read the stored type and then cast it to our enum type
+    return cast(Z)data.to!(OriginalType!Z);
   } else static if (is(Z == class)) {
     // If we have a constructor which allows the parent object and the JSON data use it
     static if (__traits(compiles, {
@@ -230,8 +241,6 @@ private Z loadSingleField(T, Z)(T sourceObj, VibeJSON data) {
     alias AT = ArrayElementType!(Z);
 
     foreach (obj; data) {
-      /* AT v; */
-      /* loadSingleField!(T, AT)(sourceObj, v, obj); */
       AT v = loadSingleField!(T, AT)(sourceObj, obj);
       result ~= v;
     }
@@ -241,8 +250,6 @@ private Z loadSingleField(T, Z)(T sourceObj, VibeJSON data) {
     alias ArrayElementType!(typeof(result.values)) Tv;
 
     foreach (ref string k, ref v; data) {
-      /* Tv val; */
-      /* loadSingleField!(T, Tv)(sourceObj, val, v); */
       Tv val = loadSingleField!(T, Tv)(sourceObj, v);
 
       result[k.to!Tk] = val;
@@ -273,7 +280,6 @@ private void attach(T, Z)(T baseObj, Z parentObj) {
   }
 }
 
-
 T deserializeFromJSON(T)(VibeJSON jsonData) {
   T result = new T;
   result.deserializeFromJSON(jsonData);
@@ -288,4 +294,32 @@ T[] deserializeFromJSONArray(T)(VibeJSON jsonData, T delegate(VibeJSON) cons) {
   }
 
   return result;
+}
+
+unittest {
+  // Test Enums
+  enum TestEnum {
+    A = "A",
+    B = "B",
+  }
+
+  class TestEnumClass {
+    TestEnum test;
+  }
+
+  (new TestEnumClass()).deserializeFromJSON(
+    parseJsonString(q{{"test": "A"}}),
+  );
+
+  // Test Timestamp
+  import std.datetime : SysTime;
+
+  class TestTimestampClass {
+    @JSONTimestamp
+    SysTime timestamp;
+  }
+
+  (new TestTimestampClass()).deserializeFromJSON(
+    parseJsonString(q{{"timestamp": "2018-11-13T02:51:57.736000+00:00"}}),
+  );
 }

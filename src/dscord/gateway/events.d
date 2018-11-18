@@ -81,14 +81,17 @@ mixin template Event() {
 class Ready {
   mixin Event;
 
-  ushort     ver;
+  ushort     v;
   string     sessionID;
-
-  @JSONSource("user")
-  User       me;
-
+  User       user;
+  ReadState[] readState;
+  Channel[]  privateChannels;
   Guild[]    guilds;
-  Channel[]  dms;
+  Settings userSettings;
+  UserGuildSettings[] userGuildSettings;
+  Relationship[] relationships;
+  Presence[] presences;
+  string[string] notes;
 }
 
 /**
@@ -386,3 +389,12 @@ class MessageDeleteBulk {
   Snowflake channelID;
   Snowflake[] ids;
 }
+
+/*
+  TODO:
+    MESSAGE_ACK
+    MESSAGE_REACTION_ADD
+    MESSAGE_REACTION_REMOVE
+    MESSAGE_REACTION_REMOVE_ALL
+    SESSIONS_REPLACE
+*/

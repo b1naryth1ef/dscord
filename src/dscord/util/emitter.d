@@ -104,7 +104,12 @@ class AllEventListener : BaseEventListener {
   Event emitter which allows the emission and subscription of events.
 */
 class Emitter {
-  BoundEmitter[][string][EmitterOrder]  listeners;
+  protected BoundEmitter[][string][EmitterOrder]  listeners;
+  protected bool useTask;
+
+  this(bool useTask = true) {
+    this.useTask = useTask;
+  }
 
   /**
     Listen to an event by string, ignoring the actual event in the callback.
@@ -156,6 +161,11 @@ class Emitter {
     this.emitByName!T(T.stringof, obj, true);
   }
 
+  void emitNamed(T)(T obj, string name) {
+    this.emitByName!T(name, obj, false);
+    this.emitByName!T(name, obj, true);
+  }
+
   private void emitByName(T)(string name, T obj, bool all) {
     Variant v;
 
@@ -167,13 +177,17 @@ class Emitter {
       if (!v.hasValue()) v = Variant(obj);
 
       foreach (func; this.listeners[order][name]) {
-        runTask({
-          try {
-            func.call(name, v);
-          } catch (Exception e) {
-            writeln(e.toString);
-          }
-        });
+        if (this.useTask) {
+          runTask({
+            try {
+              func.call(name, v);
+            } catch (Exception e) {
+              writeln(e.toString);
+            }
+          });
+        } else {
+          func.call(name, v);
+        }
       }
     }
   }
