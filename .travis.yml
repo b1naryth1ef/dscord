@@ -12,5 +12,6 @@ before_install:
 
 d:
   - dmd
-  - dmd-2.072.2
-  - dmd-2.071.2
+  - dmd-2.085.0
+  - dmd-2.084.0
+  - dmd-2.082.0
