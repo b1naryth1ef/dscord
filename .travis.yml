@@ -3,15 +3,11 @@ language: d
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install libevent-dev
-  - wget http://ftp.us.debian.org/debian/pool/main/o/opus/libopus0_1.1-2_amd64.deb
-  - wget http://ftp.us.debian.org/debian/pool/main/o/opus/libopus-dev_1.1-2_amd64.deb
-  - wget http://ftp.us.debian.org/debian/pool/main/libs/libsodium/libsodium18_1.0.11-2_amd64.deb
-  - wget http://ftp.us.debian.org/debian/pool/main/libs/libsodium/libsodium-dev_1.0.11-2_amd64.deb
-  - "sudo dpkg -i *.deb"
   - dub upgrade
 
 d:
   - dmd
   - dmd-2.085.0
   - dmd-2.084.0
+  - dmd-2.083.0
   - dmd-2.082.0
