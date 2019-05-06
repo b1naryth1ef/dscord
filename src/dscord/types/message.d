@@ -176,12 +176,21 @@ class Message : IModel {
   Snowflake  channelID;
   User       author;
   string     content;
-  string     timestamp; // TODO: timestamps lol
-  string     editedTimestamp; // TODO: timestamps lol
   bool       tts;
   bool       mentionEveryone;
-  string     nonce;
   bool       pinned;
+
+  // Nonce is very unpredictable and user-provided, so we don't unpack it into
+  //  a concrete type.
+  VibeJSON nonce;
+
+  @JSONTimestamp
+  SysTime timestamp;
+
+  @JSONTimestamp
+  SysTime editedTimestamp;
+
+  GuildMember member;
 
   // TODO: GuildMemberMap here
   @JSONListToMap("id")

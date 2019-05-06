@@ -7,7 +7,6 @@ import std.stdio,
        core.vararg;
 
 import dscord.types,
-       dscord.voice,
        dscord.client;
 
 alias ChannelMap = ModelMap!(Snowflake, Channel);
@@ -64,16 +63,11 @@ class Channel : IModel, IPermissible {
   @JSONSource("permission_overwrites")
   PermissionOverwriteMap  overwrites;
 
-  // Voice Connection
-  //  TODO: move?
-  @JSONIgnore
-  VoiceClient  vc;
-
   @property Guild guild() {
     return this.client.state.guilds.get(this.guildID);
   }
 
-  override void init() {
+  override void initialize() {
     this.overwrites = new PermissionOverwriteMap;
   }
 
@@ -132,11 +126,6 @@ class Channel : IModel, IPermissible {
 
   @property auto voiceStates() {
     return this.guild.voiceStates.filter(c => c.channelID == this.id);
-  }
-
-  VoiceClient joinVoice() {
-    this.vc = new VoiceClient(this);
-    return this.vc;
   }
 
   override Permission getPermissions(Snowflake user) {

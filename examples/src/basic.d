@@ -13,13 +13,11 @@ import std.stdio,
 
 import vibe.core.core;
 import vibe.http.client;
-import dcad.types : DCAFile;
 
 
 import dscord.core,
        dscord.util.process,
-       dscord.util.emitter,
-       dscord.voice.youtubedl;
+       dscord.util.emitter;
 
 import core.sys.posix.signal;
 import etc.linux.memoryerror;
@@ -27,12 +25,6 @@ import etc.linux.memoryerror;
 import dscord.util.string : camelCaseToUnderscores;
 
 class BasicPlugin : Plugin {
-  DCAFile sound;
-
-  this() {
-    super();
-  }
-
   @Listener!(MessageCreate, EmitterOrder.AFTER)
   void onMessageCreate(MessageCreate event) {
     this.log.infof("MessageCreate: %s", event.message.content);
@@ -84,31 +76,6 @@ class BasicPlugin : Plugin {
     catch(Exception e){
       event.msg.replyf("%s", e.msg);
       return;
-    }
-
-  }
-
-  @Command("sound")
-  void onSound(CommandEvent event) {
-    auto chan = this.userVoiceChannel(event.msg.guild, event.msg.author);
-
-    if (!chan) {
-      event.msg.reply("You are not in a voice channel!");
-      return;
-    }
-
-    if (!this.sound) {
-      this.sound = new DCAFile(File("test.dca", "r"));
-    }
-
-    auto playable = new DCAPlayable(this.sound);
-
-    auto vc = chan.joinVoice();
-
-    if (vc.connect()) {
-        vc.play(playable).disconnect();
-    } else {
-      event.msg.reply("Failed :(");
     }
 
   }

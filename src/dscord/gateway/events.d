@@ -166,6 +166,7 @@ class GuildDelete {
 class GuildBanAdd {
   mixin Event;
 
+  Snowflake guildID;
   User  user;
 }
 
@@ -175,6 +176,7 @@ class GuildBanAdd {
 class GuildBanRemove {
   mixin Event;
 
+  Snowflake guildID;
   User  user;
 }
 

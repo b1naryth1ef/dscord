@@ -12,7 +12,6 @@ import std.algorithm.iteration;
 import dscord.api,
        dscord.types,
        dscord.state,
-       dscord.voice,
        dscord.gateway,
        dscord.util.emitter;
 
@@ -47,9 +46,6 @@ class Client {
 
   /** State instance */
   State  state;
-
-  /** Mapping of voice connections */
-  VoiceClient[Snowflake]  voiceConns;
 
   /** Emitter for gateway events */
   Emitter  events;
@@ -98,7 +94,7 @@ class Client {
     foreach(message; messages){
       msgIDs ~= message.id;
     }
-    
+
     return deleteMessages(channelID, msgIDs);
   }
 

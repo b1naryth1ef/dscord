@@ -139,7 +139,7 @@ class Guild : IModel, IPermissible {
   @JSONListToMap("id")
   EmojiMap        emojis;
 
-  override void init() {
+  override void initialize() {
     // It's possible these are not created
     if (!this.members) return;
 
@@ -152,6 +152,14 @@ class Guild : IModel, IPermissible {
 
   override string toString() {
     return format("<Guild %s (%s)>", this.name, this.id);
+  }
+
+  /// Returns a URL to the guild icon
+  string getIconURL(string fmt = "webp", size_t size = 1024) {
+    if (this.icon == "") {
+      return "";
+    }
+    return format("https://cdn.discordapp.com/icons/%s/%s.%s?size=%s", this.id, this.icon, fmt, size);
   }
 
   /// Returns a GuildMember for a given user object

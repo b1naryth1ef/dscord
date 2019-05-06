@@ -12,7 +12,7 @@ import std.conv,
 import dscord.client;
 
 import vibe.core.core : runTask, sleep;
-import vibe.core.sync;
+import vibe.core.sync : createManualEvent, LocalManualEvent;
 
 // Commonly used public imports
 public import dscord.util.json;
@@ -39,7 +39,7 @@ class AsyncChainer(T) {
   private {
     T obj;
     AsyncChainer!T parent;
-    ManualEvent resolveEvent;
+    LocalManualEvent resolveEvent;
     bool ignoreFailure;
   }
 
@@ -144,7 +144,7 @@ class IModel {
   @JSONIgnore
   Client  client;
 
-  void init() {};
+  void initialize() {};
   // void load(JSONDecoder obj) {};
 
   this() {}
@@ -181,7 +181,7 @@ mixin template Model() {
 
     this.client = client;
     this.deserializeFromJSON(obj);
-    this.init();
+    this.initialize();
 
     version (TIMING) {
       this.client.log.tracef("Finished creation of model %s in %sms", this.toString,
